@@ -1,0 +1,30 @@
+# MVVM Pattern Guidelines
+
+## Structure:
+- **Model**: Business logic and data (core module)
+- **View**: FXML files and UI components
+- **ViewModel**: Java classes that bridge Model and View
+
+## Rules:
+1. **ViewModels must be separate from Controllers**: Create dedicated ViewModel classes
+2. **Use Observable Properties**: Bind UI controls to observable properties in ViewModels
+3. **No direct UI manipulation in Controllers**: Controllers should only handle UI events and delegate to ViewModels
+4. **Data binding**: Use JavaFX properties for automatic UI updates
+5. **Separation of concerns**: Business logic stays in Model, UI logic in ViewModel
+
+## Example Structure:
+```
+ui/
+  ├── view/           # FXML files
+  ├── viewmodel/      # ViewModel classes
+  └── controller/     # Minimal controllers
+```
+
+## Implementation:
+- Use `SimpleStringProperty`, `SimpleObjectProperty`, etc. for data binding
+- ViewModels should contain observable properties that Views can bind to
+- Controllers should be thin and only handle UI events
+description: when building ui logic use MVVM (Model View View Model) pattern 
+globs:
+alwaysApply: false
+---
