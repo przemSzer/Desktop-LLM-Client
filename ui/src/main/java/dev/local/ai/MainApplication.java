@@ -1,4 +1,4 @@
-package com.example.ui;
+package dev.local.ai;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -10,9 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class ChatApplication extends Application {
+public class MainApplication extends Application {
     
-    private static final Logger logger = LoggerFactory.getLogger(ChatApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
+
     
     @Override
     public void start(Stage primaryStage) {

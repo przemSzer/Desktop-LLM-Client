@@ -1,0 +1,26 @@
+package dev.local.ai.core;
+
+/**
+ * Simple callback interface for chat events.
+ * Pure Java, no GUI dependencies.
+ */
+public interface ChatCallback {
+    /**
+     * Called when a new message is added to the chat
+     * @param message the message content
+     * @param isUserMessage true if it's a user message, false if it's an AI response
+     */
+    void onMessageAdded(String message, boolean isUserMessage);
+    
+    /**
+     * Called when an error occurs during message processing
+     * @param errorMessage description of the error
+     * @param exception the exception that occurred
+     */
+    void onError(String errorMessage, Exception exception);
+    
+    /**
+     * Called when the chat memory is cleared
+     */
+    void onMemoryCleared();
+}
