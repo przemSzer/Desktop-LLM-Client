@@ -10,7 +10,7 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.local.ai.core.chat.DefaultChat;
+import dev.local.ai.core.chat.DefaultChats;
 import dev.local.ai.ui.chat.model.ChatMessage;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
@@ -44,7 +44,7 @@ public class ChatController {
         logger.info("Initializing ChatController");
         
         // Create ViewModel with the Chat model
-        chatViewModel = new ChatViewModel(DefaultChat.createDefaultChat(), new CommandManager());
+        chatViewModel = new ChatViewModel(DefaultChats.openAIGPT4oMini(), new CommandManager());
         
         // Set up data binding
         setupDataBinding();
@@ -80,7 +80,7 @@ public class ChatController {
         
         // Enter key handler for message input
         messageInput.setOnKeyPressed(event -> {
-            if (event.getCode().toString().equals("ENTER") && !event.isShiftDown()) {
+            if (event.getCode().toString().equals("ENTER") && event.isControlDown()) {
                 event.consume(); // Prevent new line
                 chatViewModel.sendMessage();
             }
