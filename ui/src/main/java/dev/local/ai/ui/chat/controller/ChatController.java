@@ -25,6 +25,9 @@ public class ChatController {
     
     // UI Components
     @FXML
+    private TextArea systemMessageTextArea;
+
+    @FXML
     private TextArea messageInput;
     
     @FXML
@@ -41,7 +44,7 @@ public class ChatController {
     
     @FXML
     public void initialize() {
-        logger.info("Initializing ChatController");
+        logger.debug("Initializing ChatController");
         
         // Create ViewModel with the Chat model
         chatViewModel = new ChatViewModel(DefaultChats.openAIGPT4oMini(), new CommandManager());
@@ -55,17 +58,16 @@ public class ChatController {
         // Set up custom cell factory for better message display
         setupCellFactory();
         
-        logger.info("ChatController initialized with MVVM pattern");
+        logger.debug("ChatController initialized.");
     }
     
     private void setupDataBinding() {
-        // Bind chat messages to ListView
+        systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
+
         chatListView.setItems(chatViewModel.getChatMessages());
         
-        // Bind input message to TextArea (two-way binding)
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
         
-        // Bind status message to status label
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
         
         logger.debug("Data binding setup completed");

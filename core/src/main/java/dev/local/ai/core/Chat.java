@@ -1,5 +1,6 @@
 package dev.local.ai.core;
 
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -15,14 +16,26 @@ public class Chat {
     
     private final ChatModel chatModel;
     private final ChatMemory chatMemory;
-    
-    // Callback for notifying about changes
     private ChatCallback callback;
     
     public Chat(ChatModel chatModel) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
         logger.info("Chat instance created with model: {}", chatModel.getClass().getSimpleName());
+    }
+
+    public String getSystemMessage() {
+        return chatMemory.messages().stream()
+            .filter(message -> message instanceof SystemMessage)
+            .map(message -> ((SystemMessage) message).text())
+            .findFirst()
+            .orElse("");
+    }
+
+    public void setSystemMessage(String message) {
+        var newSystemMessage = new SystemMessage(message);
+        chatMemory.add(newSystemMessage);
+        logger.info("System message updated to: {}", message);
     }
 
     public void sendMessage(String message) {

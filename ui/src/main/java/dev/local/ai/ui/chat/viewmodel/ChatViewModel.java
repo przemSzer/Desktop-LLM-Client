@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public class ChatViewModel implements ChatCallback {
     
     // Observable properties for data binding
     private final ListProperty<ChatMessage> chatMessages;
+    private SimpleStringProperty systemMessage;
     private final StringProperty inputMessage;
     private final StringProperty statusMessage;
     private final BooleanProperty canUndo;
@@ -39,12 +41,15 @@ public class ChatViewModel implements ChatCallback {
     // Model and command management
     private final Chat chat;
     private final CommandManager commandManager;
+
     
     public ChatViewModel(Chat chat, CommandManager commandManager) {
         this.chat = chat;
         this.commandManager = commandManager;
         
         // Initialize observable properties
+        this.systemMessage = new SimpleStringProperty(chat.getSystemMessage());
+        
         this.chatMessages = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.inputMessage = new SimpleStringProperty("");
         this.statusMessage = new SimpleStringProperty("Ready");
@@ -56,10 +61,21 @@ public class ChatViewModel implements ChatCallback {
         
         // Bind undo/redo properties to command manager state
         setupCommandBindings();
+        setupPropertyBindings();
         
         logger.info("ChatViewModel initialized");
     }
     
+    private void setupPropertyBindings() {
+        systemMessage.addListener((obs, oldVal, newVal) -> {
+            if (newVal == null){
+                chat.setSystemMessage("");
+            } else if (!newVal.equals(oldVal)) {
+                chat.setSystemMessage(newVal);
+            }
+        });
+    }
+
     private void setupCommandBindings() {
         // Update undo/redo state when commands are executed
         canUndo.bind(Bindings.createBooleanBinding(
@@ -101,6 +117,18 @@ public class ChatViewModel implements ChatCallback {
     public String getStatusMessage() {
         return statusMessage.get();
     }
+
+    public StringProperty systemMessageProperty() {
+        return systemMessage;
+    }
+    
+    public String getSystemMessage() {
+        return systemMessage.get();
+    }
+    
+    public void setSystemMessage(String message) {
+        systemMessage.set(message);
+    }
     
     public BooleanProperty canUndoProperty() {
         return canUndo;
@@ -119,7 +147,7 @@ public class ChatViewModel implements ChatCallback {
         }
         
         try {
-            // Clear input immediately
+            
             setInputMessage("");
             
             // Update status

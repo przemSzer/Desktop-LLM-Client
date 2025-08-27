@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Console appender for development -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
+    
     <!-- File appender for local.log -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>local.log</file>
@@ -22,19 +16,16 @@
 
     <!-- Root logger configuration -->
     <root level="INFO">
-        <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </root>
 
     <!-- UI-specific logger configuration -->
-    <logger name="com.example.ui" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE" />
+    <logger name="dev.local.ai" level="DEBUG" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 
     <!-- JavaFX logging -->
-    <logger name="javafx" level="WARN" additivity="false">
-        <appender-ref ref="CONSOLE" />
+    <logger name="javafx" level="DEBUG" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 </configuration> 
