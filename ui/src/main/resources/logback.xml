@@ -18,8 +18,7 @@
     <root level="INFO">
         <appender-ref ref="FILE" />
     </root>
-
-    <!-- UI-specific logger configuration -->
+    
     <logger name="dev.local.ai" level="DEBUG" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
