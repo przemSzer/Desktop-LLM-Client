@@ -14,7 +14,6 @@ public class ClearChatCommand implements ICommand {
     
     private final Chat chat;
     private List<String> previousMessages;
-    private boolean executed = false;
     
     public ClearChatCommand(Chat chat) {
         this.chat = chat;
@@ -34,9 +33,11 @@ public class ClearChatCommand implements ICommand {
             if (supportsUndo()) {
                 previousMessages = null;
             }
-            
+            var systemMessage = chat.getSystemMessage();
             chat.clearMemory();
-            executed = true;
+            if (systemMessage != null && !systemMessage.isEmpty()) {
+                chat.setSystemMessage(systemMessage);
+            }
             logger.info("ClearChatCommand executed successfully");
             return true;
             

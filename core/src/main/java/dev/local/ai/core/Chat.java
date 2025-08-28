@@ -33,9 +33,16 @@ public class Chat {
     }
 
     public void setSystemMessage(String message) {
-        var newSystemMessage = new SystemMessage(message);
-        chatMemory.add(newSystemMessage);
-        logger.info("System message updated to: {}", message);
+        if (message == null || message.isEmpty()){
+            logger.debug("Removing system message, since it is null or empty");
+            chatMemory.messages().removeIf(m -> m instanceof SystemMessage);
+            logger.info("System message removed");
+            return;
+        }else{
+            var newSystemMessage = new SystemMessage(message);
+            chatMemory.add(newSystemMessage);
+            logger.info("System message updated to: {}", message);
+        }
     }
 
     public void sendMessage(String message) {
@@ -84,9 +91,7 @@ public class Chat {
      * @return number of messages
      */
     public int getMessageCount() {
-        int count = chatMemory.messages().size();
-        logger.debug("Current message count in memory: {}", count);
-        return count;
+        return chatMemory.messages().size();
     }
     
     /**

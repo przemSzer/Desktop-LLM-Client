@@ -38,6 +38,9 @@ public class ChatController {
     
     @FXML
     private Label statusLabel;
+
+    @FXML
+    private Button clearChatButton;
     
     // ViewModel
     private ChatViewModel chatViewModel;
@@ -86,6 +89,10 @@ public class ChatController {
                 event.consume(); // Prevent new line
                 chatViewModel.sendMessage();
             }
+        });
+
+        clearChatButton.setOnAction(event -> {
+            chatViewModel.clearChat();
         });
         
         logger.debug("Event handlers setup completed");
