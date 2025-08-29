@@ -15,6 +15,7 @@ public class ChatMessage {
     public enum MessageType {
         USER("User"),
         AI("AI"),
+        PARTIAL("Partial"),
         SYSTEM("System"),
         ERROR("Error");
         

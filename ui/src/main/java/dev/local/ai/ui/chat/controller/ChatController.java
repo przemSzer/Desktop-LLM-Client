@@ -1,5 +1,7 @@
 package dev.local.ai.ui.chat.controller;
 
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -50,7 +52,7 @@ public class ChatController {
         logger.debug("Initializing ChatController");
         
         // Create ViewModel with the Chat model
-        chatViewModel = new ChatViewModel(DefaultChats.openAIGPT4oMini(), new CommandManager());
+        chatViewModel = new ChatViewModel(DefaultChats.openAIGPT4oMiniStreaming(), new CommandManager());
         
         // Set up data binding
         setupDataBinding();
@@ -68,6 +70,17 @@ public class ChatController {
         systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
 
         chatListView.setItems(chatViewModel.getChatMessages());
+        chatViewModel.getChatMessages().addListener((ListChangeListener<ChatMessage>) change -> {
+            if (change.next() && change.wasAdded()) {
+                // Use Platform.runLater to ensure UI is updated first
+                Platform.runLater(() -> {
+                    int lastIndex = chatListView.getItems().size() - 1;
+                    if (lastIndex >= 0) {
+                        chatListView.scrollTo(lastIndex);                        
+                    }
+                });
+            }
+        });
         
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
         
@@ -124,7 +137,7 @@ public class ChatController {
                                 case ERROR:
                                     setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
                                     break;
-                                case SYSTEM:
+                                case SYSTEM,PARTIAL:
                                     setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
                                     break;
                                 default:

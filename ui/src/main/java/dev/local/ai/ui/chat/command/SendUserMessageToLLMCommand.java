@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.command;
 
-import dev.local.ai.core.Chat;
+import dev.local.ai.core.ILLMChat;
 import dev.local.ai.ui.commands.ICommand;
 
 import org.slf4j.Logger;
@@ -10,11 +10,11 @@ public class SendUserMessageToLLMCommand implements ICommand {
     
     private static final Logger logger = LoggerFactory.getLogger(SendUserMessageToLLMCommand.class);
     
-    private final Chat chat;
+    private final ILLMChat chat;
     private final String message;
     private boolean executed = false;
     
-    public SendUserMessageToLLMCommand(Chat chat, String message) {
+    public SendUserMessageToLLMCommand(ILLMChat chat, String message) {
         this.chat = chat;
         this.message = message;
     }

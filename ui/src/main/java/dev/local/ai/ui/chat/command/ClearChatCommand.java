@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.command;
 
-import dev.local.ai.core.Chat;
+import dev.local.ai.core.ILLMChat;
 import dev.local.ai.ui.commands.ICommand;
 
 import org.slf4j.Logger;
@@ -12,10 +12,10 @@ public class ClearChatCommand implements ICommand {
     
     private static final Logger logger = LoggerFactory.getLogger(ClearChatCommand.class);
     
-    private final Chat chat;
+    private final ILLMChat chat;
     private List<String> previousMessages;
     
-    public ClearChatCommand(Chat chat) {
+    public ClearChatCommand(ILLMChat chat) {
         this.chat = chat;
     }
     

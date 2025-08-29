@@ -11,12 +11,12 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents a chat conversation with messages and metadata.
  */
-public class Chat {
+public class Chat implements ILLMChat {
     private static final Logger logger = LoggerFactory.getLogger(Chat.class);
     
     private final ChatModel chatModel;
     private final ChatMemory chatMemory;
-    private ChatCallback callback;
+    private ChatListener callback;
     
     public Chat(ChatModel chatModel) {
         this.chatModel = chatModel;
@@ -81,7 +81,7 @@ public class Chat {
      * Sets the callback for receiving chat events
      * @param callback the callback to set, or null to remove
      */
-    public void setCallback(ChatCallback callback) {
+    public void setCallback(ChatListener callback) {
         this.callback = callback;
         logger.debug("Chat callback {} set", callback != null ? "was" : "was not");
     }

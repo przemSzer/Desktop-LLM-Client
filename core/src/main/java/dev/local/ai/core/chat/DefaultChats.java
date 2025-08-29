@@ -1,8 +1,13 @@
 package dev.local.ai.core.chat;
 
 import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.local.ai.core.Chat;
+import dev.local.ai.core.ILLMChat;
+import dev.local.ai.core.StreamingChat;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +32,25 @@ public class DefaultChats {
         return new Chat(chatModel);
     }
 
-    public static Chat localOllamaGemma3_270m() {
+    public static ILLMChat openAIGPT4oMiniStreaming() {
+        logger.info("Creating default chat instance with OpenAI model");
+        
+        String apiKey = System.getenv("OPENAI_API_KEY");
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            logger.error("OPENAI_API_KEY environment variable is not set");
+            throw new IllegalStateException("OPENAI_API_KEY environment variable is required");
+        }
+        
+        OpenAiStreamingChatModel chatModel = OpenAiStreamingChatModel.builder()
+            .apiKey(apiKey)
+            .modelName("gpt-4o-mini")
+            .build();
+            
+        logger.info("OpenAI chat model created successfully with model: gpt-4o-mini");
+        return new StreamingChat(chatModel);
+    }
+
+    public static ILLMChat localOllamaGemma3_270m() {
         logger.info("Creating local Ollama chat instance");
         var chatModel = OllamaChatModel.builder()
             .baseUrl("http://localhost:11434")
@@ -36,5 +59,16 @@ public class DefaultChats {
             .modelName("gemma3:270m")
             .build();
         return new Chat(chatModel);
+    }
+
+    public static ILLMChat localOllamaGemma3_270mStreaming() {
+        logger.info("Creating local Ollama chat instance");
+        OllamaStreamingChatModel chatModel = OllamaStreamingChatModel.builder()
+            .baseUrl("http://localhost:11434")
+            .logRequests(true)
+            .logResponses(true)
+            .modelName("gemma3:270m")
+            .build();
+        return new StreamingChat(chatModel);
     }
 }
