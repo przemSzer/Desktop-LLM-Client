@@ -7,12 +7,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
+import dev.local.ai.ui.chat.controls.MessageCell;
 import dev.local.ai.ui.chat.model.ChatMessage;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
@@ -60,8 +59,7 @@ public class ChatController {
         // Set up event handlers
         setupEventHandlers();
         
-        // Set up custom cell factory for better message display
-        setupCellFactory();
+        chatListView.setCellFactory(lv -> new MessageCell());
         
         logger.debug("ChatController initialized.");
     }
@@ -109,47 +107,6 @@ public class ChatController {
         });
         
         logger.debug("Event handlers setup completed");
-    }
-    
-    private void setupCellFactory() {
-        chatListView.setCellFactory(new Callback<ListView<ChatMessage>, ListCell<ChatMessage>>() {
-            @Override
-            public ListCell<ChatMessage> call(ListView<ChatMessage> param) {
-                return new ListCell<ChatMessage>() {
-                    @Override
-                    protected void updateItem(ChatMessage item, boolean empty) {
-                        super.updateItem(item, empty);
-                        
-                        if (empty || item == null) {
-                            setText(null);
-                            setStyle("");
-                        } else {
-                            setText(item.toString());
-                            
-                            // Apply different styles based on message type
-                            switch (item.getType()) {
-                                case USER:
-                                    setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
-                                    break;
-                                case AI:
-                                    setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-                                    break;
-                                case ERROR:
-                                    setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                                    break;
-                                case SYSTEM,PARTIAL:
-                                    setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
-                                    break;
-                                default:
-                                    setStyle("");
-                            }
-                        }
-                    }
-                };
-            }
-        });
-        
-        logger.debug("Custom cell factory setup completed");
     }
     
     // Public method to access ViewModel if needed
