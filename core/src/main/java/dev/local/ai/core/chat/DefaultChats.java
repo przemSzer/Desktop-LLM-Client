@@ -14,6 +14,10 @@ import org.slf4j.LoggerFactory;
 public class DefaultChats {
     private static final Logger logger = LoggerFactory.getLogger(DefaultChats.class);
 
+    public static ILLMChat defaultChat() {
+        return localOllamaGemma3n_Streaming();
+    }
+
     public static Chat openAIGPT4oMini() {
         logger.info("Creating default chat instance with OpenAI model");
         
@@ -68,6 +72,28 @@ public class DefaultChats {
             .logRequests(true)
             .logResponses(true)
             .modelName("gemma3:270m")
+            .build();
+        return new StreamingChat(chatModel);
+    }
+
+    public static ILLMChat localOllamaGemma3n_Streaming() {
+        logger.info("Creating local Ollama Gemma3n chat instance");
+        OllamaStreamingChatModel chatModel = OllamaStreamingChatModel.builder()
+            .baseUrl("http://localhost:11434")
+            .logRequests(true)
+            .logResponses(true)
+            .modelName("gemma3n:latest")
+            .build();
+        return new StreamingChat(chatModel);
+    }
+
+    public static ILLMChat localOllamaPhi_streaming() {
+        logger.info("Creating local Ollama Phi chat instance");
+        OllamaStreamingChatModel chatModel = OllamaStreamingChatModel.builder()
+            .baseUrl("http://localhost:11434")
+            .logRequests(true)
+            .logResponses(true)
+            .modelName("phi4:latest")
             .build();
         return new StreamingChat(chatModel);
     }

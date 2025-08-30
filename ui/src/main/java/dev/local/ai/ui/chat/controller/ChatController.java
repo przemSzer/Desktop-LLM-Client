@@ -51,7 +51,7 @@ public class ChatController {
         logger.debug("Initializing ChatController");
         
         // Create ViewModel with the Chat model
-        chatViewModel = new ChatViewModel(DefaultChats.openAIGPT4oMiniStreaming(), new CommandManager());
+        chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), new CommandManager());
         
         // Set up data binding
         setupDataBinding();

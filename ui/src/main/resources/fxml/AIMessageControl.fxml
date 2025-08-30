@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import one.jpro.platform.mdfx.MarkdownView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Priority?>
+
+<VBox 
+      spacing="10.0" 
+      xmlns="http://javafx.com/javafx/17" 
+      xmlns:fx="http://javafx.com/fxml/1">
+   
+   <Label fx:id="messageType" 
+          text="LLM" 
+          wrapText="true" 
+          style="-fx-text-fill: green; -fx-font-weight: bold;" />
+   
+   <MarkdownView fx:id="markdownView" 
+                      VBox.vgrow="ALWAYS" 
+                      maxWidth="700"
+                      />
+   
+</VBox>

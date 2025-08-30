@@ -40,6 +40,11 @@
             <version>21.0.2</version>
         </dependency>
         
+        <dependency>
+                <groupId>one.jpro.platform</groupId>
+                <artifactId>jpro-mdfx</artifactId>
+        </dependency>  
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -143,5 +148,6 @@
                 </plugins>
             </build>
         </profile>
+
     </profiles>
 </project> 

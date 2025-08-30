@@ -18,7 +18,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        
+        <jpro.version>0.5.7</jpro.version>
         <!-- Dependency versions -->
         <langchain4j.version>1.3.0</langchain4j.version>
         <typesafe-config.version>1.4.4</typesafe-config.version>
@@ -75,6 +75,12 @@
                 <version>${slf4j.version}</version>
             </dependency>
             
+            <dependency>
+                <groupId>one.jpro.platform</groupId>
+                <artifactId>jpro-mdfx</artifactId>
+                <version>${jpro.version}</version>
+            </dependency>            
+
             <!-- Testing dependencies -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
