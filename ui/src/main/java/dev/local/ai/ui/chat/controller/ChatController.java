@@ -59,7 +59,7 @@ public class ChatController {
         // Set up event handlers
         setupEventHandlers();
         
-        chatListView.setCellFactory(lv -> new MessageCell());
+        chatListView.setCellFactory(lv -> new MessageCell(chatViewModel));
         
         logger.debug("ChatController initialized.");
     }

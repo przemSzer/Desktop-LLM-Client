@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Button?>
 <?import one.jpro.platform.mdfx.MarkdownView?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.geometry.Pos?>
 
 <VBox 
       spacing="10.0" 
@@ -15,9 +18,21 @@
           wrapText="true" 
           style="-fx-text-fill: green; -fx-font-weight: bold;" />
    
-   <MarkdownView fx:id="markdownView" 
-                      VBox.vgrow="ALWAYS" 
-                      maxWidth="700"
-                      />
+   <HBox spacing="10.0" alignment="CENTER_LEFT">
+      <MarkdownView fx:id="markdownView" 
+                         HBox.hgrow="ALWAYS" 
+                         minWidth="0.0"
+                         prefWidth="0.0"
+                         maxWidth="Infinity"
+                         />
+      
+      <VBox fx:id="messageActions" 
+            alignment="CENTER" 
+            spacing="5.0">
+         <Button fx:id="copyMessageButton" 
+                 text="Copy" 
+                 style="-fx-font-size: 11px;" />
+      </VBox>
+   </HBox>
    
 </VBox>

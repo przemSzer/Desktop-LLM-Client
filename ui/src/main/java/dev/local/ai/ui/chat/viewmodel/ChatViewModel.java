@@ -12,6 +12,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 
@@ -295,5 +297,19 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
     public void shutdown() {
         commandManager.shutdown();
         logger.info("ChatViewModel shutdown");
+    }
+
+    public void copyMessage(ChatMessage message) {
+        try {
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            final ClipboardContent content = new ClipboardContent();
+            content.putString(message.getContent());
+            clipboard.setContent(content);
+            
+            statusMessage.set("Message copied to clipboard");            
+        } catch (Exception e) {
+            logger.error("Failed to copy message to clipboard", e);
+            statusMessage.set("Failed to copy message");
+        }
     }
 }

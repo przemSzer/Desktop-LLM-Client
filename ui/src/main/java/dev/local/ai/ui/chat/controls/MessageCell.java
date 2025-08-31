@@ -1,9 +1,16 @@
 package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import javafx.scene.control.ListCell;
 
 public class MessageCell extends ListCell<ChatMessage> {
+
+    private final ChatViewModel chatViewModel;
+
+    public MessageCell(ChatViewModel chatViewModel) {
+        this.chatViewModel = chatViewModel;
+    }
 
     @Override
     protected void updateItem(ChatMessage item, boolean empty) {
@@ -23,8 +30,7 @@ public class MessageCell extends ListCell<ChatMessage> {
                     setText(null);
                     break;
                 case AI:
-                    var aiControl = new AIMessageControl();
-                    aiControl.setMessage(item);
+                    var aiControl = new AIMessageControl(item, chatViewModel);
                     setGraphic(aiControl);
                     setText(null);
                     break;

@@ -8,6 +8,8 @@ import dev.local.ai.core.Chat;
 import dev.local.ai.core.ILLMChat;
 import dev.local.ai.core.StreamingChat;
 
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,7 @@ public class DefaultChats {
         var chatModel = OpenAiChatModel.builder()
             .apiKey(apiKey)
             .modelName("gpt-4o-mini")
+            .timeout(Duration.ofMinutes(5))
             .build();
             
         logger.info("OpenAI chat model created successfully with model: gpt-4o-mini");
@@ -48,6 +51,7 @@ public class DefaultChats {
         OpenAiStreamingChatModel chatModel = OpenAiStreamingChatModel.builder()
             .apiKey(apiKey)
             .modelName("gpt-4o-mini")
+            .timeout(Duration.ofMinutes(5))
             .build();
             
         logger.info("OpenAI chat model created successfully with model: gpt-4o-mini");
@@ -61,6 +65,7 @@ public class DefaultChats {
             .logRequests(true)
             .logResponses(true)
             .modelName("gemma3:270m")
+            .timeout(Duration.ofMinutes(5))
             .build();
         return new Chat(chatModel);
     }
@@ -72,6 +77,7 @@ public class DefaultChats {
             .logRequests(true)
             .logResponses(true)
             .modelName("gemma3:270m")
+            .timeout(Duration.ofMinutes(5))
             .build();
         return new StreamingChat(chatModel);
     }
@@ -83,6 +89,7 @@ public class DefaultChats {
             .logRequests(true)
             .logResponses(true)
             .modelName("gemma3n:latest")
+            .timeout(Duration.ofMinutes(5))
             .build();
         return new StreamingChat(chatModel);
     }
@@ -94,6 +101,7 @@ public class DefaultChats {
             .logRequests(true)
             .logResponses(true)
             .modelName("phi4:latest")
+            .timeout(Duration.ofMinutes(5))
             .build();
         return new StreamingChat(chatModel);
     }
