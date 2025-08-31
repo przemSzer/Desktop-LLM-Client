@@ -24,8 +24,7 @@ public class MessageCell extends ListCell<ChatMessage> {
             // Apply different styles based on message type
             switch (item.getType()) {
                 case USER:
-                    var userControl = new UserMessageControl();
-                    userControl.setMessage(item);
+                    var userControl = new UserMessageControl(item, chatViewModel);
                     setGraphic(userControl);
                     setText(null);
                     break;

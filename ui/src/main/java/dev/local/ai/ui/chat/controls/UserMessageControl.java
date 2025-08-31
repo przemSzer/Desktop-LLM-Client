@@ -1,36 +1,48 @@
 package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.Priority;
+
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserMessageControl extends VBox {
     
-    private final Label messageType;
-    private final Label content;
+    @FXML
+    private Label messageType;
     
-    public UserMessageControl() {
-        super(10); // 10px spacing between elements
-        
-        messageType = new Label("You");
-        messageType.setWrapText(true);
-        messageType.setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
-        
-        content = new Label();
-        content.setWrapText(true);
-        content.setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
-        
-        // Make content expand to fill available space
-        HBox.setHgrow(content, Priority.ALWAYS);
-        
-        getChildren().addAll(messageType, content);
-    }
+    @FXML
+    private Label content;
+
+    @FXML
+    private Button copyMessageButton;
+
+    private final Logger logger = LoggerFactory.getLogger(UserMessageControl.class);
     
-    public void setMessage(ChatMessage message) {
-        if (message != null) {
-            content.setText(message.getContent());
+    public UserMessageControl(ChatMessage message, ChatViewModel chatViewModel) {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/UserMessageControl.fxml"));
+        loader.setController(this);
+        try {
+            VBox loadedContent = loader.load();
+            getChildren().addAll(loadedContent.getChildren());
+            getStyleClass().addAll(loadedContent.getStyleClass());
+            setSpacing(loadedContent.getSpacing());
+            
+            if (message != null) {
+                content.setText(message.getContent());
+            }
+            
+            copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
+        } catch (IOException e) {
+            logger.error("Failed to load UserMessageControl FXML", e);
+            throw new RuntimeException("Failed to load UserMessageControl FXML", e);
         }
     }
 }
