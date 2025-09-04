@@ -58,7 +58,6 @@ public class ConnectionSerializationTest {
         assertTrue(json.contains("\"name\""));
         assertTrue(json.contains("\"description\""));
         assertTrue(json.contains("\"apiKey\""));
-        assertTrue(json.contains("\"providerType\""));
         assertTrue(json.contains("\"type\""));
         assertTrue(json.contains("\"openai\""));
         

@@ -39,7 +39,7 @@
                   <ListView fx:id="chatListView" prefHeight="442.0" prefWidth="873.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="5.0" />
                </children>
             </AnchorPane>
-          <AnchorPane prefHeight="290.0" prefWidth="873.0">
+          <AnchorPane prefHeight="200.0" prefWidth="873.0" SplitPane.resizableWithParent="false">
                <children>
                   <VBox AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                      <children>
