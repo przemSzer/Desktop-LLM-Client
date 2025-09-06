@@ -64,20 +64,30 @@ public class LLMSelectorView extends HBox implements Initializable {
     }
     
     private void setupDataBinding() {
+        logger.debug("Setting up data binding...");
+        
         // Bind connections to ComboBox
         connectionComboBox.setItems(viewModel.getConnections());
         connectionComboBox.valueProperty().bindBidirectional(viewModel.selectedConnectionProperty());
+        logger.debug("Connection binding established");
         
         // Bind models to ComboBox
         modelComboBox.setItems(viewModel.getAvailableModels());
-        modelComboBox.itemsProperty().bind(viewModel.availableModelsProperty());
+        modelComboBox.itemsProperty().bind(viewModel.availableModelsProperty());    
         modelComboBox.valueProperty().bindBidirectional(viewModel.selectedModelProperty());
+        
+        // Ensure ComboBox is not editable for consistent binding behavior
+        modelComboBox.setEditable(false);
+        
+        logger.debug("Model binding established");
                 
         // Bind loading indicator
         loadingIndicator.visibleProperty().bind(viewModel.isLoadingModelsProperty());
         
         // Setup cell factories for better display
         setupCellFactories();
+        
+        logger.debug("Data binding setup complete");
     }
     
     private void setupCellFactories() {
@@ -149,8 +159,21 @@ public class LLMSelectorView extends HBox implements Initializable {
         modelComboBox.setOnAction(event -> {
             LLMInfoViewModel selectedModel = modelComboBox.getValue();
             if (selectedModel != null) {
-                logger.info("Model selected: {}", selectedModel.getName());
+                logger.info("ComboBox onAction: Model selected: {}", selectedModel.getName());
+                logger.debug("ComboBox onAction: ViewModel selectedModel = {}", viewModel.getSelectedModel());
+                logger.debug("ComboBox editable: {}", modelComboBox.isEditable());
+                
+                // Ensure the ViewModel is updated (backup for binding issues)
+                if (!selectedModel.equals(viewModel.getSelectedModel())) {
+                    logger.warn("Binding mismatch detected! Manually updating ViewModel");
+                    viewModel.setSelectedModel(selectedModel);
+                }
             }
+        });
+        
+        // Additional listener to track ComboBox value changes
+        modelComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
+            logger.debug("ComboBox valueProperty changed from {} to {}", oldValue, newValue);
         });
     }
     

@@ -10,19 +10,27 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.local.ai.core.chat.LLMChangedEvent;
+import dev.local.ai.core.events.CoreEventBusProvider;
+import dev.local.ai.core.events.EventListener;
+import dev.local.ai.core.models.StreamingChatModelsProvider;
+import dev.local.ai.core.models.LLMInfoAndConnection;
 
-public class StreamingChat implements ILLMChat,IPartialMessageAware{
+public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListener<LLMChangedEvent>{
 
-    private final StreamingChatModel chatModel;
+    private StreamingChatModel chatModel;
     private final ChatMemory chatMemory;
     private ChatListener callback;
     private IPartialMessagesListener partialMessageListener;
+    private final StreamingChatModelsProvider chatModelsProvider;
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
     
     public StreamingChat(StreamingChatModel chatModel) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
+        this.chatModelsProvider = new StreamingChatModelsProvider();
         logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
+        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
     }
 
     @Override
@@ -75,6 +83,16 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
             
             throw e;
         }
+    }
+
+    @Override
+    public void onEvent(LLMChangedEvent event) {
+        logger.info("LLMChangedEvent received: {}", event.getModelInfo());
+        changeModel(event.getModelInfo());
+    }
+
+    void changeModel(LLMInfoAndConnection modelInfo) {
+        this.chatModel = chatModelsProvider.createStreamingChatModel(modelInfo);
     }
 
     private static class StreamingResponseHandler implements StreamingChatResponseHandler{

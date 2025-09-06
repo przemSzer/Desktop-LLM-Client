@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<?import dev.local.ai.ui.models.view.ModelSelectorView?>
+<?import dev.local.ai.ui.models.view.LLMSelectorView?>
 
 <VBox minHeight="400.0" minWidth="300.0" prefHeight="800.0" prefWidth="900.0" spacing="10" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
     <padding>
@@ -62,7 +62,7 @@
                               <Button fx:id="undoButton" disable="true" text="Undo" />
                               <Button fx:id="redoButton" disable="true" text="Redo" />
                               <Button fx:id="clearChatButton" text="Clear Chat" />
-                              <ModelSelectorView fx:id="modelSelectorView" />
+                              <LLMSelectorView fx:id="modelSelectorView" />
                           </HBox>
                         <VBox fx:id="promptToolsHBox" />
                      </children>

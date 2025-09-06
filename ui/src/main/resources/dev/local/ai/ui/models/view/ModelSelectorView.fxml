@@ -11,7 +11,7 @@
       <HBox spacing="10.0" HBox.hgrow="ALWAYS">
          <children>
             <ProgressIndicator fx:id="loadingIndicator" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="20.0" visible="false" HBox.hgrow="SOMETIMES" />
-            <ComboBox fx:id="modelComboBox" editable="true" promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS" />
+            <ComboBox fx:id="modelComboBox" promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS" />
          </children>
       </HBox>      
    </children>

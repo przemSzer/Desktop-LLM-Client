@@ -5,23 +5,39 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.local.ai.core.chat.LLMChangedEvent;
+import dev.local.ai.core.events.CoreEventBusProvider;
+import dev.local.ai.core.events.EventListener;
+import dev.local.ai.core.models.LLMInfoAndConnection;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Represents a chat conversation with messages and metadata.
  */
-public class Chat implements ILLMChat {
+public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
     private static final Logger logger = LoggerFactory.getLogger(Chat.class);
     
-    private final ChatModel chatModel;
+    private ChatModel chatModel;
     private final ChatMemory chatMemory;
     private ChatListener callback;
     
     public Chat(ChatModel chatModel) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
+        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
         logger.info("Chat instance created with model: {}", chatModel.getClass().getSimpleName());
+    }
+
+    @Override
+    public void onEvent(LLMChangedEvent event) {
+        logger.info("LLMChangedEvent received: {}", event.getModelInfo());
+        changeModel(event.getModelInfo());
+    }
+
+    void changeModel(LLMInfoAndConnection modelInfo) {
+        throw new UnsupportedOperationException("Not implemented");        
     }
 
     public String getSystemMessage() {

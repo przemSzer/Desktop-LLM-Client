@@ -1,9 +1,13 @@
 package dev.local.ai.ui.models.viewmodel;
 
+import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ModelProviderConnection;
+import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
+import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.models.ModelService;
 import dev.local.ai.core.models.ModelServicesFactory;
 import javafx.application.Platform;
@@ -33,6 +37,8 @@ public class LLMSelectorViewModel {
     
     // Dependencies
     private final ConnectionsStore connectionsStore;
+
+    private final CoreEventBus coreEventBus;
     
     public LLMSelectorViewModel() {
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
@@ -43,7 +49,8 @@ public class LLMSelectorViewModel {
         this.isLoadingModels = new SimpleBooleanProperty(false);
         
         // Initialize dependencies  
-        this.connectionsStore = new ConnectionsStore();        
+        this.connectionsStore = new ConnectionsStore();
+        this.coreEventBus = CoreEventBusProvider.getInstance();        
         // Load connections and setup listeners
         loadConnections();
         setupPropertyListeners();
@@ -71,7 +78,10 @@ public class LLMSelectorViewModel {
     }
     
     private void setupPropertyListeners() {        
+        logger.debug("Setting up property listeners...");
+        
         selectedConnection.addListener((obs, oldConnection, newConnection) -> {
+            logger.debug("Selected connection changed from {} to {}", oldConnection, newConnection);
             if (newConnection != null) {
                 loadModelsForConnection(newConnection);
             } else {               
@@ -79,6 +89,36 @@ public class LLMSelectorViewModel {
                 selectedModel.set(null);
             }
         });
+        
+        selectedModel.addListener((obs, oldModel, newModel) -> {
+            logger.debug("Selected model changed from {} to {}", oldModel, newModel);
+            if (newModel != null) {
+                try {
+                    var selectedConnection = getSelectedConnection();
+                    if (selectedConnection == null) {
+                        logger.warn("Cannot publish LLMChangedEvent: no connection selected");
+                        return;
+                    }
+                    
+                    var connection = findConnectionById(selectedConnection.getId());
+                    if (connection == null) {
+                        logger.warn("Cannot publish LLMChangedEvent: connection not found for ID: {}", selectedConnection.getId());
+                        return;
+                    }
+                    
+                    var llmChangedEvent = new LLMChangedEvent(
+                        getClass().getSimpleName(), 
+                        new LLMInfoAndConnection(newModel.getCoreModelInfo(), connection)
+                    );
+                    logger.info("Publishing LLMChangedEvent for model: {}", newModel.getName());
+                    coreEventBus.publish(llmChangedEvent);
+                } catch (Exception e) {
+                    logger.error("Error publishing LLMChangedEvent", e);
+                }
+            }
+        });
+        
+        logger.debug("Property listeners setup complete");
     }
     
     private void loadModelsForConnection(ConnectionViewModel connectionViewModel) {
