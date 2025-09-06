@@ -3,7 +3,7 @@ package dev.local.ai.ui.models.viewmodel;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
-import dev.local.ai.ui.models.model.ModelInfoViewModel;
+import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.core.models.ModelService;
 import dev.local.ai.core.models.ModelServicesFactory;
 import javafx.application.Platform;
@@ -19,22 +19,22 @@ import java.util.concurrent.CompletableFuture;
  * ViewModel for the Model Selector UI following MVVM pattern.
  * Manages the observable data and commands for the model selection interface.
  */
-public class ModelSelectorViewModel {
+public class LLMSelectorViewModel {
     
-    private static final Logger logger = LoggerFactory.getLogger(ModelSelectorViewModel.class);
+    private static final Logger logger = LoggerFactory.getLogger(LLMSelectorViewModel.class);
     
     // Observable properties for data binding
     private final ListProperty<ConnectionViewModel> connections;
     private final ObjectProperty<ConnectionViewModel> selectedConnection;
-    private final ListProperty<ModelInfoViewModel> availableModels;
-    private final ObjectProperty<ModelInfoViewModel> selectedModel;
+    private final ListProperty<LLMInfoViewModel> availableModels;
+    private final ObjectProperty<LLMInfoViewModel> selectedModel;
     private final StringProperty statusMessage;
     private final BooleanProperty isLoadingModels;
     
     // Dependencies
     private final ConnectionsStore connectionsStore;
     
-    public ModelSelectorViewModel() {
+    public LLMSelectorViewModel() {
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.selectedConnection = new SimpleObjectProperty<>();
         this.availableModels = new SimpleListProperty<>(FXCollections.observableArrayList());
@@ -104,7 +104,7 @@ public class ModelSelectorViewModel {
             .thenAccept(models -> {
                 Platform.runLater(() -> {
                     var modelViewModels = models.stream()
-                        .map(ModelInfoViewModel::new)
+                        .map(LLMInfoViewModel::new)
                         .toList();
                     availableModels.set(FXCollections.observableArrayList(modelViewModels));
                     setStatusMessage("Loaded " + models.size() + " models for " + connectionViewModel.getName());
@@ -154,23 +154,23 @@ public class ModelSelectorViewModel {
         selectedConnection.set(connection);
     }
     
-    public ListProperty<ModelInfoViewModel> availableModelsProperty() {
+    public ListProperty<LLMInfoViewModel> availableModelsProperty() {
         return availableModels;
     }
     
-    public ObservableList<ModelInfoViewModel> getAvailableModels() {
+    public ObservableList<LLMInfoViewModel> getAvailableModels() {
         return availableModels.get();
     }
     
-    public ObjectProperty<ModelInfoViewModel> selectedModelProperty() {
+    public ObjectProperty<LLMInfoViewModel> selectedModelProperty() {
         return selectedModel;
     }
     
-    public ModelInfoViewModel getSelectedModel() {
+    public LLMInfoViewModel getSelectedModel() {
         return selectedModel.get();
     }
     
-    public void setSelectedModel(ModelInfoViewModel model) {
+    public void setSelectedModel(LLMInfoViewModel model) {
         selectedModel.set(model);
     }
     

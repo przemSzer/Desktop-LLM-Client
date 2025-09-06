@@ -4,13 +4,13 @@ import dev.local.ai.core.models.ModelInfo;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-public class ModelInfoViewModel {
+public class LLMInfoViewModel {
     
     private final StringProperty name;
     private final StringProperty description;
     private final ModelInfo coreModelInfo;
     
-    public ModelInfoViewModel(ModelInfo coreModelInfo) {
+    public LLMInfoViewModel(ModelInfo coreModelInfo) {
         this.coreModelInfo = coreModelInfo;
         this.name = new SimpleStringProperty(coreModelInfo.name());
         this.description = new SimpleStringProperty(coreModelInfo.description());
@@ -53,7 +53,7 @@ public class ModelInfoViewModel {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        ModelInfoViewModel that = (ModelInfoViewModel) obj;
+        LLMInfoViewModel that = (LLMInfoViewModel) obj;
         return coreModelInfo.equals(that.coreModelInfo);
     }
     

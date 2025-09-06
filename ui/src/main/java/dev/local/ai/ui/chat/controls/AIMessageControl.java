@@ -46,5 +46,8 @@ public class AIMessageControl extends VBox {
         }
     }
     
+    public AIMessageControl() {
+        this(new ChatMessage("Hello I am *AI Assistant*", ChatMessage.MessageType.AI), null);
+    }
     
 }

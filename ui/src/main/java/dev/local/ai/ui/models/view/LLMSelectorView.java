@@ -1,14 +1,18 @@
-package dev.local.ai.ui.models.controller;
+package dev.local.ai.ui.models.view;
 
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
-import dev.local.ai.ui.models.model.ModelInfoViewModel;
-import dev.local.ai.ui.models.viewmodel.ModelSelectorViewModel;
+import dev.local.ai.ui.models.model.LLMInfoViewModel;
+import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -16,34 +20,39 @@ import java.util.ResourceBundle;
  * Controller for the Model Selector view following MVVM pattern.
  * Handles UI events and delegates to the ViewModel.
  */
-public class ModelSelectorController implements Initializable {
+public class LLMSelectorView extends HBox implements Initializable {
     
-    private static final Logger logger = LoggerFactory.getLogger(ModelSelectorController.class);
+    private static final Logger logger = LoggerFactory.getLogger(LLMSelectorView.class);
         
     @FXML
     private ComboBox<ConnectionViewModel> connectionComboBox;
     
     @FXML
-    private ComboBox<ModelInfoViewModel> modelComboBox;
-        
-    @FXML
     private ProgressIndicator loadingIndicator;
     
     @FXML
-    private Button refreshConnectionsButton;
+    private ComboBox<LLMInfoViewModel> modelComboBox;
+            
+    private LLMSelectorViewModel viewModel;
     
-    @FXML
-    private Button refreshModelsButton;
-    
-    // ViewModel
-    private ModelSelectorViewModel viewModel;
-    
+    public LLMSelectorView() {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("ModelSelectorView.fxml"));
+        loader.setRoot(this);
+        loader.setController(this);
+        try {
+            loader.load();
+        } catch (IOException e) {
+            logger.error("Failed to load ModelSelectorView FXML", e);
+            throw new RuntimeException("Failed to load ModelSelectorView FXML", e);
+        }
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.info("Initializing ModelSelectorController");
         
         // Initialize ViewModel
-        viewModel = new ModelSelectorViewModel();
+        viewModel = new LLMSelectorViewModel();
         
         // Setup data binding
         setupDataBinding();
@@ -102,9 +111,9 @@ public class ModelSelectorController implements Initializable {
             }
         });
         
-        modelComboBox.setCellFactory(listView -> new ListCell<ModelInfoViewModel>() {
+        modelComboBox.setCellFactory(listView -> new ListCell<LLMInfoViewModel>() {
             @Override
-            protected void updateItem(ModelInfoViewModel item, boolean empty) {
+            protected void updateItem(LLMInfoViewModel item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
@@ -114,9 +123,9 @@ public class ModelSelectorController implements Initializable {
             }
         });
                 
-        modelComboBox.setButtonCell(new ListCell<ModelInfoViewModel>() {
+        modelComboBox.setButtonCell(new ListCell<LLMInfoViewModel>() {
             @Override
-            protected void updateItem(ModelInfoViewModel item, boolean empty) {
+            protected void updateItem(LLMInfoViewModel item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
@@ -138,7 +147,7 @@ public class ModelSelectorController implements Initializable {
         
         // Model selection change handler
         modelComboBox.setOnAction(event -> {
-            ModelInfoViewModel selectedModel = modelComboBox.getValue();
+            LLMInfoViewModel selectedModel = modelComboBox.getValue();
             if (selectedModel != null) {
                 logger.info("Model selected: {}", selectedModel.getName());
             }
@@ -147,7 +156,7 @@ public class ModelSelectorController implements Initializable {
     
     
     // Public getters for external access
-    public ModelSelectorViewModel getViewModel() {
+    public LLMSelectorViewModel getViewModel() {
         return viewModel;
     }
     
@@ -155,7 +164,7 @@ public class ModelSelectorController implements Initializable {
         return viewModel.getSelectedConnection();
     }
     
-    public ModelInfoViewModel getSelectedModel() {
+    public LLMInfoViewModel getSelectedModel() {
         return viewModel.getSelectedModel();
     }
     
@@ -163,7 +172,7 @@ public class ModelSelectorController implements Initializable {
         viewModel.setSelectedConnection(connection);
     }
     
-    public void setSelectedModel(ModelInfoViewModel model) {
+    public void setSelectedModel(LLMInfoViewModel model) {
         viewModel.setSelectedModel(model);
     }
 }

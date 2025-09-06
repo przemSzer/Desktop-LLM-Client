@@ -1,41 +1,36 @@
 package dev.local.ai.ui.models;
 
-import dev.local.ai.ui.models.controller.ModelSelectorController;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dev.local.ai.ui.models.view.LLMSelectorView;
 
 /**
  * Demo application for the Model Selector control.
  * Shows how to use the ModelSelector in a standalone application.
  */
-public class ModelSelectorDemo extends Application {
+public class LLMSelectorDemo extends Application {
     
-    private static final Logger logger = LoggerFactory.getLogger(ModelSelectorDemo.class);
+    private static final Logger logger = LoggerFactory.getLogger(LLMSelectorDemo.class);
     
     @Override
     public void start(Stage primaryStage) {
         try {
             logger.info("Starting ModelSelectorDemo");
-            
-            // Load the FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ModelSelector.fxml"));
-            VBox root = loader.load();
-            
+                     
             // Get the controller
-            ModelSelectorController controller = loader.getController();
+            LLMSelectorView view = new LLMSelectorView();
             
             // Log controller initialization
-            logger.info("ModelSelectorController initialized: {}", controller.getClass().getSimpleName());
+            logger.info("ModelSelectorController initialized");
             
             // Create scene and stage
-            Scene scene = new Scene(root, 400, 300);
+            Scene scene = new Scene(view, 400, 300);
             primaryStage.setTitle("Model Selector Demo");
             primaryStage.setScene(scene);
             primaryStage.setResizable(false);
