@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -10,6 +10,7 @@ import javafx.scene.layout.VBox;
 import one.jpro.platform.mdfx.MarkdownView;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class AIMessageControl extends VBox {
 
     private final Logger logger = LoggerFactory.getLogger(AIMessageControl.class);
     
-    public AIMessageControl(ChatMessage message, ChatViewModel chatViewModel) {
+    public AIMessageControl(ChatMessageViewModel message, ChatViewModel chatViewModel) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/AIMessageControl.fxml"));
         loader.setController(this);
         try {
@@ -47,7 +48,7 @@ public class AIMessageControl extends VBox {
     }
     
     public AIMessageControl() {
-        this(new ChatMessage("Hello I am *AI Assistant*", ChatMessage.MessageType.AI), null);
+        this(new ChatMessageViewModel("Hello I am *AI Assistant*", ChatMessageViewModel.MessageType.AI,List.of()), null);
     }
     
 }

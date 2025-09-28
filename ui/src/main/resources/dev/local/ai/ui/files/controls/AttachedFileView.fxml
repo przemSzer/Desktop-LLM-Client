@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<HBox prefHeight="68.0" prefWidth="186.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox alignment="CENTER_LEFT" spacing="2.0">
+         <children>
+            <Label fx:id="fileNameLabel" text="File Name" />
+            <HBox alignment="CENTER_LEFT" spacing="5.0">
+               <children>
+                  <Label fx:id="statusLabel" text="Status" />
+                  <ProgressIndicator fx:id="progressIndicator" prefHeight="16.0" prefWidth="16.0" visible="false" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <HBox alignment="CENTER" HBox.hgrow="ALWAYS">
+         <children>
+            <Label fx:id="fileTypeLabel" text="PDF">
+               <font>
+                  <Font size="17.0" />
+               </font>
+            </Label>
+         </children>
+      </HBox>
+      <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeFile" styleClass="remove-button" text="✕" />
+   </children>
+   
+</HBox>

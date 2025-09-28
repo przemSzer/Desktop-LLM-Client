@@ -1,7 +1,11 @@
 package dev.local.ai.ui.chat.command;
 
 import dev.local.ai.core.ILLMChat;
+import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.documents.DocumentDescription;
 import dev.local.ai.ui.commands.ICommand;
+
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +16,13 @@ public class SendUserMessageToLLMCommand implements ICommand {
     
     private final ILLMChat chat;
     private final String message;
+    private final List<DocumentDescription> files;
     private boolean executed = false;
     
-    public SendUserMessageToLLMCommand(ILLMChat chat, String message) {
+    public SendUserMessageToLLMCommand(ILLMChat chat, String message, List<DocumentDescription> files) {
         this.chat = chat;
         this.message = message;
+        this.files = files;
     }
     
     @Override
@@ -28,7 +34,7 @@ public class SendUserMessageToLLMCommand implements ICommand {
         
         try {
             logger.debug("Executing SendMessageCommand: {}", message);
-            chat.sendMessage(message);
+            chat.sendMessage(new Message(message, files));
             executed = true;
             logger.info("SendMessageCommand executed successfully: {}", message);
             return true;

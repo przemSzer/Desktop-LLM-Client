@@ -5,12 +5,15 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 
 /**
  * Model class representing a chat message.
  * Used in the MVVM pattern to structure message data.
  */
-public class ChatMessage {
+public class ChatMessageViewModel {
     
     public enum MessageType {
         USER("User"),
@@ -34,17 +37,20 @@ public class ChatMessage {
     private final StringProperty content;
     private final ObjectProperty<MessageType> type;
     private final ObjectProperty<LocalDateTime> timestamp;
+    private final ObjectProperty<List<AttachedFileViewModel>> attachedFiles;
     
-    public ChatMessage(String content, MessageType type) {
+    public ChatMessageViewModel(String content, MessageType type, List<AttachedFileViewModel> attachedFiles) {
         this.content = new SimpleStringProperty(content);
         this.type = new SimpleObjectProperty<>(type);
         this.timestamp = new SimpleObjectProperty<>(LocalDateTime.now());
+        this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
     }
     
-    public ChatMessage(String content, MessageType type, LocalDateTime timestamp) {
+    public ChatMessageViewModel(String content, MessageType type, LocalDateTime timestamp, List<AttachedFileViewModel> attachedFiles) {
         this.content = new SimpleStringProperty(content);
         this.type = new SimpleObjectProperty<>(type);
         this.timestamp = new SimpleObjectProperty<>(timestamp);
+        this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
     }
     
     // Properties for data binding
@@ -82,6 +88,18 @@ public class ChatMessage {
     
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp.set(timestamp);
+    }
+    
+    public ObjectProperty<List<AttachedFileViewModel>> attachedFilesProperty() {
+        return attachedFiles;
+    }
+    
+    public List<AttachedFileViewModel> getAttachedFiles() {
+        return attachedFiles.get();
+    }
+    
+    public void setAttachedFiles(List<AttachedFileViewModel> attachedFiles) {
+        this.attachedFiles.set(attachedFiles);
     }
     
     @Override

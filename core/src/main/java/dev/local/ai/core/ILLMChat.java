@@ -1,12 +1,22 @@
 package dev.local.ai.core;
 
+import dev.local.ai.core.chat.messages.Message;
+
 public interface ILLMChat {
 
     String getSystemMessage() ;
 
-    void setSystemMessage(String message) ;
+    default void setSystemMessage(String message) {
+        setSystemMessage(new Message(message));
+    }
 
-    void sendMessage(String message) ;
+    void setSystemMessage(Message message) ;
+
+    default void sendMessage(String message) {
+        sendMessage(new Message(message));
+    }
+
+    void sendMessage(Message message) ;
 
     void clearMemory() ;
 

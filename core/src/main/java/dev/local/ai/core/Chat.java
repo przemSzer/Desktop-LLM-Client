@@ -6,6 +6,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.local.ai.core.chat.LLMChangedEvent;
+import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.LLMInfoAndConnection;
@@ -61,10 +62,10 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
         }
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(Message message) {
         logger.debug("Sending message: {}", message);
         try {
-            var newMessage = new UserMessage(message);
+            var newMessage = new UserMessage(message.text());
             chatMemory.add(newMessage);
             
             // Notify callback about user message
@@ -74,10 +75,10 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
             
             var response = chatModel.chat(chatMemory.messages());
             chatMemory.add(response.aiMessage());
-            
+            Message aiMessage = new Message(response.aiMessage().text(), message.files());
             // Notify callback about AI response
-            if (callback != null) {
-                callback.onMessageAdded(response.aiMessage().text(), false);
+            if (callback != null) { 
+                callback.onMessageAdded(aiMessage, false);
             }
             
             logger.info("Message processed successfully. AI response added to memory.");
@@ -122,5 +123,10 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
         }
         
         logger.info("Chat memory cleared");
+    }
+
+    @Override
+    public void setSystemMessage(Message message) {        
+        throw new UnsupportedOperationException("Unimplemented method 'setSystemMessage'");
     }
 } 

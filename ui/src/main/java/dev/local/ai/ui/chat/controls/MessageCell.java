@@ -1,10 +1,10 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import javafx.scene.control.ListCell;
 
-public class MessageCell extends ListCell<ChatMessage> {
+public class MessageCell extends ListCell<ChatMessageViewModel> {
 
     private final ChatViewModel chatViewModel;
 
@@ -13,7 +13,7 @@ public class MessageCell extends ListCell<ChatMessage> {
     }
 
     @Override
-    protected void updateItem(ChatMessage item, boolean empty) {
+    protected void updateItem(ChatMessageViewModel item, boolean empty) {
         super.updateItem(item, empty);
         
         if (empty || item == null) {

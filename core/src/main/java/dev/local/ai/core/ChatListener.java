@@ -1,5 +1,7 @@
 package dev.local.ai.core;
 
+import dev.local.ai.core.chat.messages.Message;
+
 /**
  * Simple callback interface for chat events.
  * Pure Java, no GUI dependencies.
@@ -10,7 +12,7 @@ public interface ChatListener {
      * @param message the message content
      * @param isUserMessage true if it's a user message, false if it's an AI response
      */
-    void onMessageAdded(String message, boolean isUserMessage);
+    void onMessageAdded(Message message, boolean isUserMessage);
     
     /**
      * Called when an error occurs during message processing

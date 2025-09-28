@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox prefHeight="109.0" prefWidth="691.0" spacing="10.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
+   
+   <Label fx:id="messageType" style="-fx-text-fill: blue; -fx-font-weight: bold;" text="You" wrapText="true" />
+   
+   <HBox spacing="10.0" VBox.vgrow="ALWAYS">
+      <Label fx:id="content" alignment="TOP_LEFT" style="-fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 16px;" text="Some example text which is realy long and sofisticated" wrapText="true" HBox.hgrow="ALWAYS" />
+      
+      <VBox fx:id="messageActions" alignment="CENTER_RIGHT" spacing="5.0" HBox.hgrow="ALWAYS">
+         <Button fx:id="copyMessageButton" alignment="CENTER" style="-fx-font-size: 11px;" text="Copy">
+            <opaqueInsets>
+               <Insets />
+            </opaqueInsets>
+            <VBox.margin>
+               <Insets right="10.0" />
+            </VBox.margin></Button>
+      </VBox>
+   </HBox>
+   <ListView fx:id="attachmentList" minHeight="0.0" minWidth="0.0" orientation="HORIZONTAL" prefHeight="47.0" prefWidth="518.0" VBox.vgrow="ALWAYS" />
+   
+</VBox>

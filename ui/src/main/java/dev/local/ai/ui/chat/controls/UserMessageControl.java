@@ -1,11 +1,14 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
@@ -24,10 +27,13 @@ public class UserMessageControl extends VBox {
     @FXML
     private Button copyMessageButton;
 
+    @FXML
+    private ListView<AttachedFileViewModel> attachmentList;
+
     private final Logger logger = LoggerFactory.getLogger(UserMessageControl.class);
     
-    public UserMessageControl(ChatMessage message, ChatViewModel chatViewModel) {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/UserMessageControl.fxml"));
+    public UserMessageControl(ChatMessageViewModel message, ChatViewModel chatViewModel) {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("UserMessageControl.fxml"));
         loader.setController(this);
         try {
             VBox loadedContent = loader.load();
@@ -37,6 +43,7 @@ public class UserMessageControl extends VBox {
             
             if (message != null) {
                 content.setText(message.getContent());
+                configureFiles(message);
             }
             
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
@@ -44,5 +51,25 @@ public class UserMessageControl extends VBox {
             logger.error("Failed to load UserMessageControl FXML", e);
             throw new RuntimeException("Failed to load UserMessageControl FXML", e);
         }
+    }
+
+    private void configureFiles(ChatMessageViewModel message) {
+        attachmentList.itemsProperty()
+            .bind(message.attachedFilesProperty().map(FXCollections::observableArrayList));
+        attachmentList.setCellFactory(listView -> new javafx.scene.control.ListCell<AttachedFileViewModel>() {
+            @Override
+            protected void updateItem(AttachedFileViewModel item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(null);
+                if (empty || item == null) {
+                    setText(null);
+                }else{
+                    setText(item.getDescription().title());
+                }
+            }
+        });
+        attachmentList
+            .visibleProperty()
+            .bind(message.attachedFilesProperty().map(list -> !list.isEmpty()));
     }
 }

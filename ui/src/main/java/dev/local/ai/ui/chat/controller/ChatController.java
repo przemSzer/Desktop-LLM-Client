@@ -12,9 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
 import dev.local.ai.ui.chat.controls.MessageCell;
-import dev.local.ai.ui.chat.model.ChatMessage;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.files.controls.FileAttachmentControl;
 
 /**
  * Controller for the Chat UI following MVVM pattern.
@@ -35,13 +36,19 @@ public class ChatController {
     private Button sendButton;
 
     @FXML
-    private ListView<ChatMessage> chatListView;
+    private ListView<ChatMessageViewModel> chatListView;
     
     @FXML
     private Label statusLabel;
 
     @FXML
     private Button clearChatButton;
+    
+    @FXML
+    private FileAttachmentControl fileAttachmentControl;
+
+    @FXML
+    private FileAttachmentControl systemMessageFileAttachments;
     
     // ViewModel
     private ChatViewModel chatViewModel;
@@ -66,9 +73,10 @@ public class ChatController {
     
     private void setupDataBinding() {
         systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
+        systemMessageFileAttachments.attachedFilesProperty().bind(chatViewModel.systemMessageAttachedFilesProperty());
 
         chatListView.setItems(chatViewModel.getChatMessages());
-        chatViewModel.getChatMessages().addListener((ListChangeListener<ChatMessage>) change -> {
+        chatViewModel.getChatMessages().addListener((ListChangeListener<ChatMessageViewModel>) change -> {
             if (change.next() && change.wasAdded()) {
                 // Use Platform.runLater to ensure UI is updated first
                 Platform.runLater(() -> {
@@ -81,9 +89,9 @@ public class ChatController {
         });
         
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
-        
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
-        
+        fileAttachmentControl.attachedFilesProperty()
+            .bind(chatViewModel.attachedFilesProperty());
         logger.debug("Data binding setup completed");
     }
     

@@ -4,6 +4,8 @@ import dev.local.ai.core.ChatListener;
 import dev.local.ai.core.ILLMChat;
 import dev.local.ai.core.IPartialMessageAware;
 import dev.local.ai.core.IPartialMessagesListener;
+import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.documents.DocumentDescription;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -17,12 +19,17 @@ import javafx.scene.input.ClipboardContent;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 
+import java.util.List;
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.local.ai.ui.chat.model.ChatMessage;
-import dev.local.ai.ui.chat.model.ChatMessage.MessageType;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel;
+import dev.local.ai.ui.chat.model.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
+import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
 import dev.local.ai.ui.chat.command.ClearChatCommand;
 
@@ -35,12 +42,14 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
     private static final Logger logger = LoggerFactory.getLogger(ChatViewModel.class);
 
     // Observable properties for data binding
-    private final ListProperty<ChatMessage> chatMessages;
+    private final ListProperty<ChatMessageViewModel> chatMessages;
     private SimpleStringProperty systemMessage;
     private final StringProperty inputMessage;
     private final StringProperty statusMessage;
     private final BooleanProperty canUndo;
     private final BooleanProperty canRedo;
+    private final ListProperty<AttachedFileViewModel> attachedFiles;
+    private final ListProperty<AttachedFileViewModel> systemMessageAttachedFiles;
 
     // Model and command management
     private final ILLMChat chat;
@@ -55,6 +64,8 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
 
         this.chatMessages = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.inputMessage = new SimpleStringProperty("");
+        this.attachedFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
+        this.systemMessageAttachedFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.statusMessage = new SimpleStringProperty("Ready");
         this.canUndo = new SimpleBooleanProperty(false);
         this.canRedo = new SimpleBooleanProperty(false);
@@ -74,12 +85,30 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
 
     private void setupPropertyBindings() {
         systemMessage.addListener((obs, oldVal, newVal) -> {
-            if (newVal == null) {
-                chat.setSystemMessage("");
-            } else if (!newVal.equals(oldVal)) {
-                chat.setSystemMessage(newVal);
-            }
+            updateSystemMessage();
         });
+        systemMessageAttachedFiles.addListener((obs, oldVal, newVal) -> {
+            for (var file : newVal) {
+                file.descriptionProperty().addListener((obs1, oldVal1, newVal1) -> {
+                    updateSystemMessage();
+                });
+            }
+            updateSystemMessage();
+        });
+    }
+
+    private void updateSystemMessage() {
+        var newSystemMessage = new Message(
+                systemMessage.get(), 
+                systemMessageAttachedFiles
+                    .get()
+                    .stream()
+                    .filter(f -> f.getStatus() == FileStatus.VALID)
+                    .map(AttachedFileViewModel::getDescription)
+                    .filter(Objects::nonNull)
+                    .toList()
+            );
+        chat.setSystemMessage(newSystemMessage);
     }
 
     private void setupCommandBindings() {
@@ -94,11 +123,11 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
     }
 
     // Properties for data binding
-    public ListProperty<ChatMessage> chatMessagesProperty() {
+    public ListProperty<ChatMessageViewModel> chatMessagesProperty() {
         return chatMessages;
     }
 
-    public ObservableList<ChatMessage> getChatMessages() {
+    public ObservableList<ChatMessageViewModel> getChatMessages() {
         return chatMessages;
     }
 
@@ -142,9 +171,22 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
         return canRedo;
     }
 
+    public ListProperty<AttachedFileViewModel> attachedFilesProperty() {
+        return attachedFiles;
+    }
+
+    public ListProperty<AttachedFileViewModel> systemMessageAttachedFilesProperty() {
+        return systemMessageAttachedFiles;
+    }
+
     // Commands
     public void sendMessage() {
         String message = getInputMessage().trim();
+        List<DocumentDescription> files = attachedFiles.get().stream()
+            .filter(f -> f.getStatus() == FileStatus.VALID)
+            .map(AttachedFileViewModel::getDescription)            
+            .toList();
+        attachedFiles.clear();
         if (message.isEmpty()) {
             logger.debug("Empty message ignored");
             return;
@@ -157,7 +199,7 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
             // Update status
             statusMessage.set("Sending message...");
 
-            var command = new SendUserMessageToLLMCommand(chat, message);
+            var command = new SendUserMessageToLLMCommand(chat, message, files);
             var execution = commandManager.executeCommandAsync(command);
             execution.thenAccept(result -> {
                 if (result) {
@@ -222,7 +264,7 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
         }
     }
 
-    private void addMessage(ChatMessage message) {
+    private void addMessage(ChatMessageViewModel message) {
         chatMessages.add(message);
         logger.debug("Message added to view model: {}", message);
     }
@@ -233,20 +275,25 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
 
     // ChatCallback implementation
     @Override
-    public void onMessageAdded(String message, boolean isUserMessage) {
+    public void onMessageAdded(Message message, boolean isUserMessage) {
         Platform.runLater(() -> {
+            var attachedFiles = message.files()
+                .stream()
+                .map(fileDesc -> new AttachedFileViewModel(fileDesc, FileStatus.VALID))
+                .toList();
             if (chatMessages.isEmpty()) {
-                var lastMessage = new ChatMessage(message, isUserMessage ? MessageType.USER : MessageType.AI);
+                var lastMessage = new ChatMessageViewModel(message.text(), isUserMessage ? MessageType.USER : MessageType.AI, attachedFiles);
                 chatMessages.add(lastMessage);
             } else {
                 var lastMessage = chatMessages.get(chatMessages.size() - 1);
                 var replaceLastOneSincePartial = lastMessage.getType() == MessageType.PARTIAL;
                 if (replaceLastOneSincePartial) {
-                    lastMessage.setContent(message);
+                    lastMessage.setContent(message.text());
                     lastMessage.setType(MessageType.AI);
+                    lastMessage.setAttachedFiles(attachedFiles);
                     chatMessages.set(chatMessages.size() - 1, lastMessage);
                 } else {
-                    lastMessage = new ChatMessage(message, isUserMessage ? MessageType.USER : MessageType.AI);
+                    lastMessage = new ChatMessageViewModel(message.text(), isUserMessage ? MessageType.USER : MessageType.AI, attachedFiles);
                     chatMessages.add(lastMessage);
                 }
                 if (isUserMessage) {
@@ -262,7 +309,7 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
     @Override
     public void onError(String errorMessage, Exception exception) {
         Platform.runLater(() -> {
-            ChatMessage errorMsg = new ChatMessage(errorMessage, MessageType.ERROR);
+            ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageType.ERROR, List.of());
             addMessage(errorMsg);
             statusMessage.set("Error occurred: " + errorMessage);
         });
@@ -285,7 +332,7 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
                 lastMessage.setContent(lastMessage.getContent() + message);
                 chatMessages.set(chatMessages.size() - 1, lastMessage);
             } else {
-                lastMessage = new ChatMessage(message, MessageType.PARTIAL);
+                lastMessage = new ChatMessageViewModel(message, MessageType.PARTIAL, List.of());
                 chatMessages.add(lastMessage);
             }
         });
@@ -299,7 +346,7 @@ public class ChatViewModel implements ChatListener, IPartialMessagesListener {
         logger.info("ChatViewModel shutdown");
     }
 
-    public void copyMessage(ChatMessage message) {
+    public void copyMessage(ChatMessageViewModel message) {
         try {
             final Clipboard clipboard = Clipboard.getSystemClipboard();
             final ClipboardContent content = new ClipboardContent();
