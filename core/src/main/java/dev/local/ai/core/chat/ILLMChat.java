@@ -1,4 +1,4 @@
-package dev.local.ai.core;
+package dev.local.ai.core.chat;
 
 import dev.local.ai.core.chat.messages.Message;
 
@@ -22,6 +22,6 @@ public interface ILLMChat {
 
     int getMessageCount() ;
 
-    void setCallback(ChatListener callback) ;
+    void setCallback(IChatListener callback) ;
 
 }

@@ -1,11 +1,10 @@
-package dev.local.ai.core;
+package dev.local.ai.core.chat;
 
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
-import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
@@ -22,7 +21,7 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
     
     private ChatModel chatModel;
     private final ChatMemory chatMemory;
-    private ChatListener callback;
+    private IChatListener callback;
     
     public Chat(ChatModel chatModel) {
         this.chatModel = chatModel;
@@ -98,7 +97,7 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
      * Sets the callback for receiving chat events
      * @param callback the callback to set, or null to remove
      */
-    public void setCallback(ChatListener callback) {
+    public void setCallback(IChatListener callback) {
         this.callback = callback;
         logger.debug("Chat callback {} set", callback != null ? "was" : "was not");
     }

@@ -1,4 +1,4 @@
-package dev.local.ai.core;
+package dev.local.ai.core.chat.streaming;
 
 public interface IPartialMessageAware {
 

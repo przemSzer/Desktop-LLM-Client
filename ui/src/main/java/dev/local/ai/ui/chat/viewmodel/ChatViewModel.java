@@ -1,10 +1,10 @@
 package dev.local.ai.ui.chat.viewmodel;
 
-import dev.local.ai.core.ChatListener;
-import dev.local.ai.core.ILLMChat;
-import dev.local.ai.core.IPartialMessageAware;
-import dev.local.ai.core.IPartialMessagesListener;
+import dev.local.ai.core.chat.IChatListener;
+import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.streaming.IPartialMessageAware;
+import dev.local.ai.core.chat.streaming.IPartialMessagesListener;
 import dev.local.ai.core.documents.DocumentDescription;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
@@ -37,7 +37,7 @@ import dev.local.ai.ui.chat.command.ClearChatCommand;
  * ViewModel for the Chat UI following MVVM pattern.
  * Manages the observable data and commands for the chat interface.
  */
-public class ChatViewModel implements ChatListener, IPartialMessagesListener {
+public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatViewModel.class);
 

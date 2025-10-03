@@ -21,6 +21,7 @@
         <jpro.version>0.5.7</jpro.version>
         <!-- Dependency versions -->
         <langchain4j.version>1.4.0</langchain4j.version>
+        <langchain4j-document-transformer-jsoup.version>1.6.0-beta12</langchain4j-document-transformer-jsoup.version>
         <typesafe-config.version>1.4.4</typesafe-config.version>
         <logback.version>1.5.18</logback.version>
         <slf4j.version>2.0.9</slf4j.version>
@@ -60,6 +61,12 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-parser-apache-tika</artifactId>
                 <version>1.4.0-beta10</version>
+            </dependency>
+            <!-- document transformer jsoup -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-document-transformer-jsoup</artifactId>
+                <version>${langchain4j-document-transformer-jsoup.version}</version>
             </dependency>
         <!-- Configuration management -->
             <dependency>

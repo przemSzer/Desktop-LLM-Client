@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.command;
 
-import dev.local.ai.core.ILLMChat;
+import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.ui.commands.ICommand;
 
 import org.slf4j.Logger;

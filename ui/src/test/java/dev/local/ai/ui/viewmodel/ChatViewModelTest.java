@@ -1,6 +1,6 @@
 package dev.local.ai.ui.viewmodel;
 
-import dev.local.ai.core.Chat;
+import dev.local.ai.core.chat.Chat;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 

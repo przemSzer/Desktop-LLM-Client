@@ -1,4 +1,4 @@
-package dev.local.ai.core;
+package dev.local.ai.core.chat;
 
 import dev.local.ai.core.chat.messages.Message;
 
@@ -6,7 +6,7 @@ import dev.local.ai.core.chat.messages.Message;
  * Simple callback interface for chat events.
  * Pure Java, no GUI dependencies.
  */
-public interface ChatListener {
+public interface IChatListener {
     /**
      * Called when a new message is added to the chat
      * @param message the message content

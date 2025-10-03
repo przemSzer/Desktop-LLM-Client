@@ -4,9 +4,7 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
-import dev.local.ai.core.Chat;
-import dev.local.ai.core.ILLMChat;
-import dev.local.ai.core.StreamingChat;
+import dev.local.ai.core.chat.streaming.StreamingChat;
 
 import java.time.Duration;
 

@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.command;
 
-import dev.local.ai.core.ILLMChat;
+import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.documents.DocumentDescription;
 import dev.local.ai.ui.commands.ICommand;
