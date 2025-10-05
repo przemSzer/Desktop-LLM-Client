@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -20,7 +19,7 @@ import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
-import dev.local.ai.core.documents.DocumentDescription;
+import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
@@ -38,6 +37,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
     private final List<ToolSpecification> toolSpecifications;
     private List<IToolExecutor> toolExecutors;
+    private final MessageToChatMessageConverter messageToChatMessageConverter;
     
     public StreamingChat(StreamingChatModel chatModel) {
         this.chatModel = chatModel;
@@ -47,30 +47,18 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
         CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
         this.toolSpecifications = WebPageDownloaderTools.getInstance().toolSpecifications();
         this.toolExecutors = List.of(WebPageDownloaderTools.getInstance());
+        this.messageToChatMessageConverter = new MessageToChatMessageConverter();
     }
 
     @Override
     public String getSystemMessage() {
         return chatMemory.messages().stream()
-            .filter(message -> message instanceof SystemMessage)
+            .filter(SystemMessage.class::isInstance)
             .map(message -> ((SystemMessage) message).text())
             .findFirst()
             .orElse("");
     }
     
-    @Override
-    public void setSystemMessage(String message) {
-        if (message == null || message.isEmpty()){
-            logger.debug("Removing system message, since it is null or empty");
-            chatMemory.messages().removeIf(m -> m instanceof SystemMessage);
-            logger.info("System message removed");
-            return;
-        }else{
-            var newSystemMessage = new SystemMessage(message);
-            chatMemory.add(newSystemMessage);
-            logger.info("System message updated to: {}", message);
-        }
-    }
 
     @Override
     public void sendMessage(Message message) {
@@ -96,8 +84,6 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             if (callback != null) {
                 callback.onError("Failed to process message: " + e.getMessage(), e);
             }
-            
-            throw e;
         }
     }
 
@@ -109,30 +95,10 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     }
 
     private void addNewMessageToChatMemory(Message message) {
-        UserMessage newMessage = null;
-        if (message.files().isEmpty()){
-            newMessage = new UserMessage(message.text());
-            chatMemory.add(newMessage);
-        }else{
-            StringBuffer buffer = new StringBuffer(message.text());
-            for (var file : message.files()) {
-                var fileContent = createMessageWithFiles(file);
-                buffer.append(fileContent);
-            }
-            newMessage = new UserMessage(buffer.toString());
-            chatMemory.add(newMessage);
-        }
+        messageToChatMessageConverter.convert(message)
+            .ifPresentOrElse(chatMemory::add, () -> logger.warn("Message converter returned empty optional for message: {}", message));    
     }
 
-    private String createMessageWithFiles(DocumentDescription file) {            
-        var buffer = new StringBuilder();
-        buffer.append("\n");
-        buffer.append("<file name=\"").append(file.title()).append("\" type=\"").append(file.type().toString()).append("\">\n");
-        buffer.append(file.text()).append("\n");
-        buffer.append("</file>");                
-        buffer.append("\n");
-        return buffer.toString();
-    }
 
     @Override
     public void onEvent(LLMChangedEvent event) {
@@ -178,7 +144,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
                     this
                 );
             }else{
-                Message aiMessage = new Message(response.aiMessage().text(), List.of());
+                var aiMessage = Message.ai(response.aiMessage().text(), List.of());
                 callback.onMessageAdded(aiMessage, false);
             }
             
@@ -190,10 +156,12 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             for (var toolExecutionRequest : toolExecutionRequests) {                
                 logger.debug("Processing tool execution request: {}", toolExecutionRequest);
                 for (var toolExecutor : toolExecutors) {
+                    callback.onMessageAdded(Message.toolCall(toolExecutionRequest.name(), List.of()), false);
                     var toolExecutionResult = toolExecutor.execute(toolExecutionRequest);
                     if (toolExecutionResult.isPresent()) {
                         logger.info("Tool execution for executor {} was successfull", toolExecutor);
                         chatMemory.add(toolExecutionResult.get());
+                        callback.onMessageAdded(Message.toolResult(toolExecutionResult.get().text(), List.of()), false);
                     }else{
                         logger.warn("No tool executor found for tool execution request: {}", toolExecutionRequest);
                     }
@@ -209,8 +177,8 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
         @Override
         public void onError(Throwable error) {
             logger.error("Error processing message: {}", error.getMessage(), error);
-            if (error instanceof Exception){
-                callback.onError("Failed to process message: " + error.getMessage(), (Exception) error);
+            if (error instanceof Exception errorAsException){
+                callback.onError("Failed to process message: " + error.getMessage(), errorAsException);
             }
             //TODO: Handle other types of critical errors
             else{
@@ -246,20 +214,18 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
 
     @Override
     public void setSystemMessage(Message message) {
-        SystemMessage newMessage = null;
-        if (message.files().isEmpty()){
-            newMessage = new SystemMessage(message.text());
-            chatMemory.add(newMessage);
-        }else{
-            StringBuffer buffer = new StringBuffer(message.text());
-            for (var file : message.files()) {
-                var fileContent = createMessageWithFiles(file);
-                buffer.append(fileContent);
-            }
-            newMessage = new SystemMessage(buffer.toString());
-            chatMemory.add(newMessage);
+        var chatMessageMaybe = messageToChatMessageConverter.convert(message);
+        if (chatMessageMaybe.isEmpty()) {
+            logger.warn("Message converter returned empty optional for message: {}", message);
+            return;
         }
-        logger.info("System message updated to: {}", message.text().substring(0, Math.min(message.text().length(), 100)));
+        var chatMessage = chatMessageMaybe.get();
+        if (chatMessage instanceof SystemMessage) {
+            logger.info("System message updated to: {}", message);
+            chatMemory.add(chatMessage);        
+        }else{
+            logger.warn("Message converter returned non-system message: {}", chatMessage);
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessageViewModel;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import javafx.scene.control.ListCell;
 
@@ -38,7 +38,11 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
                     setGraphic(null);
                     setText("Error: " + item.getContent());
                     break;
-                case SYSTEM:
+                case TOOL:
+                    var toolCallControl = new ToolMessageControl(item, chatViewModel);
+                    setGraphic(toolCallControl);
+                    setText(null);
+                    break;                
                 case PARTIAL:
                     var partialControl = new PartialMessageControl();
                     partialControl.setMessage(item);

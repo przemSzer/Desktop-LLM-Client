@@ -7,7 +7,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import one.jpro.platform.mdfx.MarkdownView;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,13 +14,13 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AIMessageControl extends VBox {
+public class ToolMessageControl extends VBox {
     
     @FXML
     private Label messageType;
     
     @FXML
-    private MarkdownView markdownView;
+    private Label toolContent;
 
     @FXML
     private VBox messageActions;
@@ -29,10 +28,10 @@ public class AIMessageControl extends VBox {
     @FXML
     private Button copyMessageButton;
 
-    private final Logger logger = LoggerFactory.getLogger(AIMessageControl.class);
+    private final Logger logger = LoggerFactory.getLogger(ToolMessageControl.class);
     
-    public AIMessageControl(ChatMessageViewModel message, ChatViewModel chatViewModel) {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("AIMessageControl.fxml"));
+    public ToolMessageControl(ChatMessageViewModel message, ChatViewModel chatViewModel) {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("ToolMessageControl.fxml"));
         loader.setController(this);
         try {
             VBox loadedContent = loader.load();
@@ -40,15 +39,14 @@ public class AIMessageControl extends VBox {
             getStyleClass().addAll(loadedContent.getStyleClass());
             setSpacing(loadedContent.getSpacing());
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
-            markdownView.setMdString(message.getContent());
+            toolContent.setText(message.getContent());
         } catch (IOException e) {
-            logger.error("Failed to load AIMessageControl FXML", e);
-            throw new RuntimeException("Failed to load AIMessageControl FXML", e);
+            logger.error("Failed to load ToolMessageControl FXML", e);            
         }
     }
     
-    public AIMessageControl() {
-        this(new ChatMessageViewModel("Hello I am *AI Assistant*", ChatMessageViewModel.MessageType.AI,List.of()), null);
+    public ToolMessageControl() {
+        this(new ChatMessageViewModel("Tool execution result", ChatMessageViewModel.MessageType.TOOL, List.of()), null);
     }
     
 }

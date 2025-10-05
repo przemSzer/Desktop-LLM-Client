@@ -9,9 +9,9 @@
 
     <!-- File appender for local.log -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>local.log</file>
+        <file>${user.home}/.ai-agent/local.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>local.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${user.home}/.ai-agent/local.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <totalSizeCap>100MB</totalSizeCap>
         </rollingPolicy>

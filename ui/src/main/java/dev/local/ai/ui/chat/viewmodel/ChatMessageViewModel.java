@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.model;
+package dev.local.ai.ui.chat.viewmodel;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -19,6 +19,7 @@ public class ChatMessageViewModel {
         USER("User"),
         AI("AI"),
         PARTIAL("Partial"),
+        TOOL("Tool"),        
         SYSTEM("System"),
         ERROR("Error");
         

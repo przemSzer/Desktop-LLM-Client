@@ -25,12 +25,12 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.local.ai.ui.chat.model.ChatMessageViewModel;
-import dev.local.ai.ui.chat.model.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
+import dev.local.ai.ui.chat.converters.MessageConverter;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.command.ClearChatCommand;
 
 /**
@@ -55,10 +55,12 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final ILLMChat chat;
     private final CommandManager commandManager;
 
+    private final MessageConverter messageConverter;
+
     public ChatViewModel(ILLMChat chat, CommandManager commandManager) {
         this.chat = chat;
         this.commandManager = commandManager;
-
+        this.messageConverter = new MessageConverter();
         // Initialize observable properties
         this.systemMessage = new SimpleStringProperty(chat.getSystemMessage());
 
@@ -98,15 +100,17 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     }
 
     private void updateSystemMessage() {
+        var files = systemMessageAttachedFiles
+            .get()
+            .stream()
+            .filter(f -> f.getStatus() == FileStatus.VALID)
+            .map(AttachedFileViewModel::getDescription)
+            .filter(Objects::nonNull)
+            .toList();
         var newSystemMessage = new Message(
                 systemMessage.get(), 
-                systemMessageAttachedFiles
-                    .get()
-                    .stream()
-                    .filter(f -> f.getStatus() == FileStatus.VALID)
-                    .map(AttachedFileViewModel::getDescription)
-                    .filter(Objects::nonNull)
-                    .toList()
+                files,
+                dev.local.ai.core.chat.messages.MessageType.SYSTEM
             );
         chat.setSystemMessage(newSystemMessage);
     }
@@ -276,35 +280,32 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     // ChatCallback implementation
     @Override
     public void onMessageAdded(Message message, boolean isUserMessage) {
+        logger.debug("Message added to view model: {}", message);
+        final var newChatMessageMaybe = messageConverter.convert(message);
+        if (newChatMessageMaybe.isEmpty()) {
+            logger.warn("Message converter returned empty optional for message: {}", message);
+            return;
+        }
+        final var newChatMessage = newChatMessageMaybe.get();
         Platform.runLater(() -> {
-            var attachedFiles = message.files()
-                .stream()
-                .map(fileDesc -> new AttachedFileViewModel(fileDesc, FileStatus.VALID))
-                .toList();
-            if (chatMessages.isEmpty()) {
-                var lastMessage = new ChatMessageViewModel(message.text(), isUserMessage ? MessageType.USER : MessageType.AI, attachedFiles);
-                chatMessages.add(lastMessage);
-            } else {
-                var lastMessage = chatMessages.get(chatMessages.size() - 1);
-                var replaceLastOneSincePartial = lastMessage.getType() == MessageType.PARTIAL;
-                if (replaceLastOneSincePartial) {
-                    lastMessage.setContent(message.text());
-                    lastMessage.setType(MessageType.AI);
-                    lastMessage.setAttachedFiles(attachedFiles);
-                    chatMessages.set(chatMessages.size() - 1, lastMessage);
-                } else {
-                    lastMessage = new ChatMessageViewModel(message.text(), isUserMessage ? MessageType.USER : MessageType.AI, attachedFiles);
-                    chatMessages.add(lastMessage);
-                }
-                if (isUserMessage) {
-                    statusMessage.set("User message added");
-                } else {
-                    statusMessage.set("AI response received");
-                }
+            boolean shouldReplaceLastMessage = newChatMessage.getType() == MessageType.AI
+                && chatMessages.get(chatMessages.size() - 1).getType() == MessageType.PARTIAL;
+            if (shouldReplaceLastMessage) {
+                chatMessages.set(chatMessages.size() - 1, newChatMessage);
+            }else{
+                chatMessages.add(newChatMessage);
+            }
+            
+            if (newChatMessage.getType() == MessageType.USER) {
+                statusMessage.set("User message added");
+            } else if (newChatMessage.getType() == MessageType.AI) {
+                statusMessage.set("AI response received");
             }
             
         });
     }
+
+   
 
     @Override
     public void onError(String errorMessage, Exception exception) {

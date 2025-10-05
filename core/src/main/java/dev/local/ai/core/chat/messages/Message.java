@@ -4,14 +4,25 @@ import dev.local.ai.core.documents.DocumentDescription;
 import java.util.Collections;
 import java.util.List;
 
-public record Message(String text, List<DocumentDescription> files) {
+public record Message(String text, List<DocumentDescription> files, MessageType type) {
     public Message(String text) {
-        this(text, Collections.emptyList());
+        this(text, Collections.emptyList(), MessageType.USER);
     }
 
     public Message(String text, List<DocumentDescription> files) {
-        this.text = text;
-        this.files = files;
+        this(text, files, MessageType.USER);
+    }
+
+    public static Message toolCall(String text, List<DocumentDescription> files) {
+        return new Message(text, files, MessageType.TOOL_CALL);
+    }
+
+    public static Message ai(String text, List<DocumentDescription> files) {
+        return new Message(text, files, MessageType.AI);
+    }
+
+    public static Message toolResult(String text, List<DocumentDescription> files) {
+        return new Message(text, files, MessageType.TOOL_RESULT);
     }
 
     @Override

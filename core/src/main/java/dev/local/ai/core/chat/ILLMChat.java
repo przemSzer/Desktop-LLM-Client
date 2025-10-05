@@ -1,13 +1,16 @@
 package dev.local.ai.core.chat;
 
+import java.util.List;
+
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.MessageType;
 
 public interface ILLMChat {
 
     String getSystemMessage() ;
 
     default void setSystemMessage(String message) {
-        setSystemMessage(new Message(message));
+        setSystemMessage(new Message(message, List.of(), MessageType.SYSTEM));
     }
 
     void setSystemMessage(Message message) ;

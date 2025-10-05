@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
 import dev.local.ai.ui.chat.controls.MessageCell;
-import dev.local.ai.ui.chat.model.ChatMessageViewModel;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;

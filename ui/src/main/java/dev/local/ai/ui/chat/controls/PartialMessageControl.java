@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessageViewModel;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;

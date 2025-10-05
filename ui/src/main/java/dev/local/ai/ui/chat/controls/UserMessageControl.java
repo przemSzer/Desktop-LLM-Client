@@ -1,6 +1,6 @@
 package dev.local.ai.ui.chat.controls;
 
-import dev.local.ai.ui.chat.model.ChatMessageViewModel;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import javafx.collections.FXCollections;
@@ -49,7 +49,6 @@ public class UserMessageControl extends VBox {
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
         } catch (IOException e) {
             logger.error("Failed to load UserMessageControl FXML", e);
-            throw new RuntimeException("Failed to load UserMessageControl FXML", e);
         }
     }
 

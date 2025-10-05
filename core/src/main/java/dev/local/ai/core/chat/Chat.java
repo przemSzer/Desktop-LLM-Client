@@ -6,6 +6,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.LLMInfoAndConnection;
@@ -74,7 +75,7 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
             
             var response = chatModel.chat(chatMemory.messages());
             chatMemory.add(response.aiMessage());
-            Message aiMessage = new Message(response.aiMessage().text(), message.files());
+            Message aiMessage = new Message(response.aiMessage().text(), message.files(), MessageType.AI);
             // Notify callback about AI response
             if (callback != null) { 
                 callback.onMessageAdded(aiMessage, false);
