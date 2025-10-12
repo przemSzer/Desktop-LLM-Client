@@ -7,7 +7,7 @@ import java.util.List;
  * This interface abstracts the model loading logic and allows for different
  * implementations for different providers (Ollama, OpenAI, etc.).
  */
-public interface ModelService {
+public interface AvailableModelsService {
     
     /**
      * Loads available models for the given connection.

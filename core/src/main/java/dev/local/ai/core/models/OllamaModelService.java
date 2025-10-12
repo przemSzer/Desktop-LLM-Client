@@ -11,7 +11,7 @@ import dev.langchain4j.model.ollama.OllamaModels;
  * Service for loading available models from Ollama.
  * Uses the Ollama API to fetch the list of available models.
  */
-public class OllamaModelService implements ModelService {
+public class OllamaModelService implements AvailableModelsService {
     
     private static final Logger logger = LoggerFactory.getLogger(OllamaModelService.class);    
     private OllamaConnection connection;

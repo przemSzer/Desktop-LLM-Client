@@ -8,7 +8,7 @@ import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.core.models.LLMInfoAndConnection;
-import dev.local.ai.core.models.ModelService;
+import dev.local.ai.core.models.AvailableModelsService;
 import dev.local.ai.core.models.ModelServicesFactory;
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -133,7 +133,7 @@ public class LLMSelectorViewModel {
             isLoadingModels.set(false);
             return;
         }
-        ModelService service = ModelServicesFactory.forConnection(connection);
+        AvailableModelsService service = ModelServicesFactory.forConnection(connection);
                 
         if (service == null) {
             setStatusMessage("No model service available for " + connection.providerType());

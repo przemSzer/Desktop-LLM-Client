@@ -6,7 +6,7 @@ import dev.local.ai.core.connections.OpenAIConnection;
 
 public class ModelServicesFactory {
 
-    public static ModelService forConnection(ModelProviderConnection connection) {
+    public static AvailableModelsService forConnection(ModelProviderConnection connection) {
         if (connection == null) {
             throw new IllegalArgumentException("Connection cannot be null");
         }

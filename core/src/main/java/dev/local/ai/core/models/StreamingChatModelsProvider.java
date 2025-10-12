@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 
@@ -21,7 +22,13 @@ public class StreamingChatModelsProvider {
     }
 
     private StreamingChatModel openAIChatModel(LLMInfoAndConnection modelInfo) {
-        throw new UnsupportedOperationException("Unimplemented method 'openAIChatModel'");
+        var openAIConnection = (OpenAIConnection) modelInfo.connection();
+        return OpenAiStreamingChatModel
+            .builder()
+            .apiKey(openAIConnection.apiKey())
+            .modelName(modelInfo.modelInfo().name())
+            .timeout(Duration.ofMinutes(5))
+            .build();
     }
 
     private StreamingChatModel ollamaChatModel(LLMInfoAndConnection modelInfo) {
