@@ -16,13 +16,13 @@ public class MessageConverter {
             return Optional.empty();
         }
         final var filesFromMessage = extractFilesFromMessage(message);
-        if (messageType == ChatMessageViewModel.MessageType.TOOL) {
-            return toToolMessage(message, filesFromMessage);
+        if (messageType == ChatMessageViewModel.MessageType.TOOL_RESULT || messageType == ChatMessageViewModel.MessageType.TOOL_CALL) {
+            return toToolMessage(message, messageType, filesFromMessage);
         }
         return Optional.of(new ChatMessageViewModel(message.text(), messageType, filesFromMessage));
     }
 
-    private Optional<ChatMessageViewModel> toToolMessage(Message message, List<AttachedFileViewModel> filesFromMessage) {
+    private Optional<ChatMessageViewModel> toToolMessage(Message message, MessageType messageType, List<AttachedFileViewModel> filesFromMessage) {
         var text = "";
         if (message.type() == dev.local.ai.core.chat.messages.MessageType.TOOL_CALL) {
             text = "Tool call: " + message.text();
@@ -30,7 +30,7 @@ public class MessageConverter {
             text = "Tool result: " + message.text();
         }
 
-        return Optional.of(new ChatMessageViewModel(text, ChatMessageViewModel.MessageType.TOOL, filesFromMessage));
+        return Optional.of(new ChatMessageViewModel(text, ChatMessageViewModel.MessageType.TOOL_RESULT, filesFromMessage));
     }
 
     private MessageType getMessageType(Message message) {
@@ -42,9 +42,9 @@ public class MessageConverter {
             case PARTIAL:
                 return ChatMessageViewModel.MessageType.PARTIAL;
             case TOOL_CALL:
-                return ChatMessageViewModel.MessageType.TOOL;
+                return ChatMessageViewModel.MessageType.TOOL_CALL;
             case TOOL_RESULT:
-                return ChatMessageViewModel.MessageType.TOOL;
+                return ChatMessageViewModel.MessageType.TOOL_RESULT;
             default:
                 return null;
         }

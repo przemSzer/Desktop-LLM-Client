@@ -15,6 +15,7 @@ import dev.local.ai.ui.chat.controls.MessageCell;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
 
 /**
@@ -58,7 +59,7 @@ public class ChatController {
         logger.debug("Initializing ChatController");
         
         // Create ViewModel with the Chat model
-        chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), new CommandManager());
+        chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
         
         // Set up data binding
         setupDataBinding();

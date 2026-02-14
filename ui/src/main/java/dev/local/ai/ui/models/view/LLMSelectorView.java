@@ -6,8 +6,12 @@ import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +36,9 @@ public class LLMSelectorView extends HBox implements Initializable {
     
     @FXML
     private ComboBox<LLMInfoViewModel> modelComboBox;
+    
+    @FXML
+    private Button manageConnectionsButton;
             
     private LLMSelectorViewModel viewModel;
     
@@ -175,6 +182,39 @@ public class LLMSelectorView extends HBox implements Initializable {
         modelComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
             logger.debug("ComboBox valueProperty changed from {} to {}", oldValue, newValue);
         });
+        
+        // Manage connections button handler
+        manageConnectionsButton.setOnAction(event -> showConnectionsDialog());
+    }
+    
+    private void showConnectionsDialog() {
+        try {
+            URL fxmlUrl = getClass().getResource("/fxml/ConnectionsView.fxml");
+            if (fxmlUrl == null) {
+                logger.error("ConnectionsView.fxml not found on classpath");
+                return;
+            }
+            
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent root = loader.load();
+            
+            Stage dialogStage = new Stage();
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.initOwner(manageConnectionsButton.getScene().getWindow());
+            dialogStage.setTitle("Manage Connections");
+            dialogStage.setScene(new Scene(root));
+            dialogStage.setMinWidth(600);
+            dialogStage.setMinHeight(400);
+            
+            dialogStage.showAndWait();
+            
+            // Refresh connections after dialog is closed
+            viewModel.refreshConnections();
+            logger.info("Connections refreshed after dialog closed");
+            
+        } catch (IOException e) {
+            logger.error("Failed to open Connections dialog", e);
+        }
     }
     
     

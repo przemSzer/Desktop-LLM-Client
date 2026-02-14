@@ -19,7 +19,8 @@ public class ChatMessageViewModel {
         USER("User"),
         AI("AI"),
         PARTIAL("Partial"),
-        TOOL("Tool"),        
+        TOOL_RESULT("Tool result"),        
+        TOOL_CALL("Tool call"),        
         SYSTEM("System"),
         ERROR("Error");
         

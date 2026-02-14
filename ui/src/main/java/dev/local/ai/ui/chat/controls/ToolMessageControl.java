@@ -39,14 +39,25 @@ public class ToolMessageControl extends VBox {
             getStyleClass().addAll(loadedContent.getStyleClass());
             setSpacing(loadedContent.getSpacing());
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
-            toolContent.setText(message.getContent());
+            toolContent.setText(partialContent(message.getContent()));
         } catch (IOException e) {
-            logger.error("Failed to load ToolMessageControl FXML", e);            
+            logger.error("Failed to load ToolMessageControl FXML", e);
+            throw new RuntimeException("Failed to load ToolMessageControl FXML", e);
         }
     }
     
+    private String partialContent(String content) {
+        if (content == null) {
+            return "";
+        }
+        if (content.length() > 100) {
+            return content.substring(0, 100) + "...";
+        }
+        return content.substring(0, content.length());
+    }
+
     public ToolMessageControl() {
-        this(new ChatMessageViewModel("Tool execution result", ChatMessageViewModel.MessageType.TOOL, List.of()), null);
+        this(new ChatMessageViewModel("Tool execution result", ChatMessageViewModel.MessageType.TOOL_RESULT, List.of()), null);
     }
     
 }

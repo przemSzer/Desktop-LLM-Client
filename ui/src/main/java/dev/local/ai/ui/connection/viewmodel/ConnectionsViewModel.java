@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ConnectionProvider;
 import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.connection.AddNewConnectionCommand;
 import dev.local.ai.ui.connection.INewConnectionDialog;
 import dev.local.ai.ui.connection.ollama.OllamaConnectionDialog;
@@ -43,7 +44,7 @@ public class ConnectionsViewModel {
         reloadAllConnections();
 
         logger.info("ConnectionsViewModel initialized");
-        this.commandManager = new CommandManager();
+        this.commandManager = CommandManagerProvider.get();
     }
 
     private void reloadAllConnections() {

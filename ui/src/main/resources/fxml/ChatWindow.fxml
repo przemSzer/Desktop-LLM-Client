@@ -96,7 +96,7 @@
                            </GridPane.margin>
                         </Label>
                           
-                                <!-- Command buttons -->
+                           <!-- Command buttons -->
                           <HBox alignment="CENTER" minHeight="15.0" minWidth="10.0" spacing="10" GridPane.hgrow="NEVER" GridPane.rowIndex="4" GridPane.vgrow="NEVER">
                               <Button fx:id="undoButton" disable="true" text="Undo" />
                               <Button fx:id="redoButton" disable="true" text="Redo" />

@@ -19,7 +19,6 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
         if (empty || item == null) {
             setText(null);
             setGraphic(null);
-            setStyle("");
         } else {
             // Apply different styles based on message type
             switch (item.getType()) {
@@ -38,7 +37,8 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
                     setGraphic(null);
                     setText("Error: " + item.getContent());
                     break;
-                case TOOL:
+                case TOOL_RESULT:
+                case TOOL_CALL:
                     var toolCallControl = new ToolMessageControl(item, chatViewModel);
                     setGraphic(toolCallControl);
                     setText(null);

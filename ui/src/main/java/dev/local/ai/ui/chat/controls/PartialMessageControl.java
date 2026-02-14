@@ -29,7 +29,7 @@ public class PartialMessageControl extends VBox {
     
     public void setMessage(ChatMessageViewModel message) {
         if (message != null) {
-            content.setText(message.getContent());
+            content.textProperty().bind(message.contentProperty());
         }
     }
 }

@@ -328,10 +328,10 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     public void onPartialMessage(String message) {
         Platform.runLater(() -> {
             var lastMessage = chatMessages.get(chatMessages.size() - 1);
-            var replaceLast = lastMessage.getType() == MessageType.PARTIAL;
-            if (replaceLast) {
+            var updateLast = lastMessage.getType() == MessageType.PARTIAL;
+            if (updateLast) {
                 lastMessage.setContent(lastMessage.getContent() + message);
-                chatMessages.set(chatMessages.size() - 1, lastMessage);
+                //chatMessages.set(chatMessages.size() - 1, lastMessage);
             } else {
                 lastMessage = new ChatMessageViewModel(message, MessageType.PARTIAL, List.of());
                 chatMessages.add(lastMessage);

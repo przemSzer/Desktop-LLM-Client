@@ -1,6 +1,7 @@
 package dev.local.ai;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -19,7 +20,7 @@ public class MainApplication extends Application {
     public void start(Stage primaryStage) {
         try {
             logger.info("Starting Chat Application");
-            
+            Platform.setImplicitExit(true);
             // Load the FXML file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChatWindow.fxml"));
             Parent root = loader.load();
@@ -28,7 +29,7 @@ public class MainApplication extends Application {
             Scene scene = new Scene(root, 600, 400);
             
             // Set up the primary stage
-            primaryStage.setTitle("Agent");
+            primaryStage.setTitle("LLM Chat");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(400);
             primaryStage.setMinHeight(300);
@@ -47,6 +48,7 @@ public class MainApplication extends Application {
     @Override
     public void stop() {
         logger.info("Chat Application stopping");
+        System.exit(0);
     }
     
     public static void main(String[] args) {

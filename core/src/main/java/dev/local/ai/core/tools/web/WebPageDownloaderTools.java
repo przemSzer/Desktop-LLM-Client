@@ -1,5 +1,6 @@
 package dev.local.ai.core.tools.web;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,10 +18,12 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolMemoryId;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
+import dev.langchain4j.data.document.DocumentLoader;
 import dev.langchain4j.data.document.DocumentParser;
 import dev.langchain4j.data.document.DocumentTransformer;
 import dev.langchain4j.data.document.loader.UrlDocumentLoader;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
+import dev.langchain4j.data.document.source.UrlSource;
 import dev.langchain4j.data.document.transformer.jsoup.HtmlToTextDocumentTransformer;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 
@@ -34,7 +37,7 @@ public class WebPageDownloaderTools implements IToolExecutor {
     
 
     public WebPageDownloaderTools() {
-        transformer = new HtmlToTextDocumentTransformer();
+        transformer = new HtmlToTextDocumentTransformer(null, null, true);
         parser = new ApacheTikaDocumentParser(true);
         objectMapper = new ObjectMapper();
     }
@@ -44,12 +47,18 @@ public class WebPageDownloaderTools implements IToolExecutor {
     public String downloadWebPage(@P("The URL of the web page to download") String url, @ToolMemoryId String toolMemoryId){
         logger.info("Downloading web page: {}, tool memory id: {}", url, toolMemoryId);
         try {
-            var document = UrlDocumentLoader.load(url, parser);            
+            var asUrl = new URI(url);
+            var urlDocumentSource = new URLSourceWithTimeout(asUrl.toURL(), 10000, 10000);
+            var document = DocumentLoader.load(urlDocumentSource, parser);            
             var text = transformer.transform(document);
             return text.text();
         } catch (Exception e) {
             logger.error("Failed to download web page: {}, tool memory id: {}", url, toolMemoryId, e);
-            return "Failed to download web page, the following error occurred: " + e.getMessage();
+            var message = e.getMessage();
+            if (e.getCause() instanceof Exception cause) {
+                message += ", " + cause.getMessage();
+            }
+            return "Failed to download web page, the following error occurred: " + message;
         }
     }
 
