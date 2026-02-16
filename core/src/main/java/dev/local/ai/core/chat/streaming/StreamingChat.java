@@ -14,6 +14,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.CompleteToolCall;
+import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
@@ -131,6 +132,12 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             }
         }
 
+        @Override
+        public void onPartialThinking(PartialThinking partialThinking) {
+            if (partialMessageListener != null) {
+                logger.debug("Partial thinking: {}", partialThinking);                
+            }
+        }
         @Override
         public void onCompleteResponse(ChatResponse response) {
             chatMemory.add(response.aiMessage());

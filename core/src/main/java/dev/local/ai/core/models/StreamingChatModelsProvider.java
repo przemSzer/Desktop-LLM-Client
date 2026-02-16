@@ -27,6 +27,7 @@ public class StreamingChatModelsProvider {
             .builder()
             .apiKey(openAIConnection.apiKey())
             .modelName(modelInfo.modelInfo().name())
+            .returnThinking(true)
             .timeout(Duration.ofMinutes(5))
             .build();
     }
@@ -39,6 +40,8 @@ public class StreamingChatModelsProvider {
             .logRequests(true)
             .logResponses(true)
             .modelName(modelInfo.modelInfo().name())
+            .think(true)
+            .returnThinking(true)
             .timeout(Duration.ofMinutes(5))
             .build();
     }
