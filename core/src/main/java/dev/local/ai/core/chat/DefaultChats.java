@@ -5,6 +5,7 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.local.ai.core.chat.streaming.StreamingChat;
+import dev.local.ai.core.tools.FilterableToolProvider;
 
 import java.time.Duration;
 
@@ -53,7 +54,7 @@ public class DefaultChats {
             .build();
             
         logger.info("OpenAI chat model created successfully with model: gpt-4o-mini");
-        return new StreamingChat(chatModel);
+        return new StreamingChat(chatModel, FilterableToolProvider.getInstance());
     }
 
     public static ILLMChat localOllamaGemma3_270m() {
@@ -77,7 +78,7 @@ public class DefaultChats {
             .modelName("gemma3:270m")
             .timeout(Duration.ofMinutes(5))
             .build();
-        return new StreamingChat(chatModel);
+        return new StreamingChat(chatModel, FilterableToolProvider.getInstance());
     }
 
     public static ILLMChat localOllamaGemma3n_Streaming() {
@@ -89,7 +90,7 @@ public class DefaultChats {
             .modelName("gemma3n:latest")
             .timeout(Duration.ofMinutes(5))
             .build();
-        return new StreamingChat(chatModel);
+        return new StreamingChat(chatModel, FilterableToolProvider.getInstance());
     }
 
     public static ILLMChat localOllamaPhi_streaming() {
@@ -101,6 +102,6 @@ public class DefaultChats {
             .modelName("phi4:latest")
             .timeout(Duration.ofMinutes(5))
             .build();
-        return new StreamingChat(chatModel);
+        return new StreamingChat(chatModel, FilterableToolProvider.getInstance());
     }
 }

@@ -2,6 +2,7 @@ package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -22,8 +23,8 @@ public class PartialMessageControl extends VBox {
         content.setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
         
         // Make content expand to fill available space
-        VBox.setVgrow(content, Priority.ALWAYS);
-        
+        HBox.setHgrow(this, Priority.SOMETIMES);
+        VBox.setVgrow(this, Priority.ALWAYS);
         getChildren().addAll(messageType, content);
     }
     

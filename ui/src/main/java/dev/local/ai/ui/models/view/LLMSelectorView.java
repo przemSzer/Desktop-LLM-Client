@@ -56,18 +56,22 @@ public class LLMSelectorView extends HBox implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        logger.info("Initializing ModelSelectorController");
-        
-        // Initialize ViewModel
-        viewModel = new LLMSelectorViewModel();
-        
-        // Setup data binding
-        setupDataBinding();
-        
-        // Setup UI event handlers
-        setupEventHandlers();
-        
-        logger.info("ModelSelectorController initialized successfully");
+        try{
+            logger.info("Initializing ModelSelectorController");
+            
+            // Initialize ViewModel
+            viewModel = new LLMSelectorViewModel();
+            
+            // Setup data binding
+            setupDataBinding();
+            
+            // Setup UI event handlers
+            setupEventHandlers();
+            
+            logger.info("ModelSelectorController initialized successfully");
+        }catch(Exception e){
+            logger.error("Error initializing ModelSelectorController", e);
+        }
     }
     
     private void setupDataBinding() {

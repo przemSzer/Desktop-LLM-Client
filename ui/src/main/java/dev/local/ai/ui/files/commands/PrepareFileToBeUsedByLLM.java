@@ -39,7 +39,7 @@ public class PrepareFileToBeUsedByLLM implements ICommand{
         
         statusChanged.statusChanged(FileStatus.PREPARING, description);
 
-        var text = analyser.extractText(file);
+        var text = analyser.extractContent(file);
         description = new DocumentDescription(description.title(), description.type(), text, file);
         
         statusChanged.statusChanged(FileStatus.VALID, description);

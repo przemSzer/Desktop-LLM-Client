@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
-import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -20,13 +20,12 @@ import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
-import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
-import dev.local.ai.core.models.StreamingChatModelsProvider;
-import dev.local.ai.core.tools.web.IToolExecutor;
-import dev.local.ai.core.tools.web.WebPageDownloaderTools;
 import dev.local.ai.core.models.LLMInfoAndConnection;
+import dev.local.ai.core.models.StreamingChatModelsProvider;
+import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.core.tools.ToolHelper;
 
 public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListener<LLMChangedEvent>{
 
@@ -36,18 +35,16 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     private IPartialMessagesListener partialMessageListener;
     private final StreamingChatModelsProvider chatModelsProvider;
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
-    private final List<ToolSpecification> toolSpecifications;
-    private List<IToolExecutor> toolExecutors;
     private final MessageToChatMessageConverter messageToChatMessageConverter;
+    private IToolProvider toolProvider;
     
-    public StreamingChat(StreamingChatModel chatModel) {
+    public StreamingChat(StreamingChatModel chatModel, IToolProvider toolProvider) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
         this.chatModelsProvider = new StreamingChatModelsProvider();
         logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
         CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
-        this.toolSpecifications = WebPageDownloaderTools.getInstance().toolSpecifications();
-        this.toolExecutors = List.of(WebPageDownloaderTools.getInstance());
+        this.toolProvider = toolProvider;                
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
     }
 
@@ -75,7 +72,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             var request = prepareChatRequest();
             this.chatModel.chat(
                     request,
-                    new StreamingResponseHandler(chatMemory, callback, partialMessageListener, this.toolExecutors)
+                    new StreamingResponseHandler(chatMemory, callback, partialMessageListener, this.toolProvider)
                 );
             
         } catch (Exception e) {
@@ -91,7 +88,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     private ChatRequest prepareChatRequest() {
         return ChatRequest.builder()
             .messages(chatMemory.messages())
-            .toolSpecifications(toolSpecifications)
+            .toolSpecifications(toolProvider.getToolSpecifications())
             .build();        
     }
 
@@ -99,7 +96,6 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
         messageToChatMessageConverter.convert(message)
             .ifPresentOrElse(chatMemory::add, () -> logger.warn("Message converter returned empty optional for message: {}", message));    
     }
-
 
     @Override
     public void onEvent(LLMChangedEvent event) {
@@ -116,13 +112,13 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
         private final IChatListener callback;
         private final ChatMemory chatMemory;
         private final IPartialMessagesListener partialMessageListener;
-        private final List<IToolExecutor> toolExecutors;
+        private final IToolProvider toolProvider;
 
-        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, List<IToolExecutor> toolExecutors) {
+        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolProvider toolProvider) {
             this.chatMemory = chatMemory;
             this.callback = callback;
             this.partialMessageListener = partialMessageListener;
-            this.toolExecutors = toolExecutors;
+            this.toolProvider = toolProvider;
         }
 
         @Override
@@ -138,6 +134,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
                 logger.debug("Partial thinking: {}", partialThinking);                
             }
         }
+
         @Override
         public void onCompleteResponse(ChatResponse response) {
             chatMemory.add(response.aiMessage());
@@ -162,18 +159,20 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             logger.debug("Processing {} tool execution requests", toolExecutionRequests.size());
             for (var toolExecutionRequest : toolExecutionRequests) {                
                 logger.debug("Processing tool execution request: {}", toolExecutionRequest);
-                for (var toolExecutor : toolExecutors) {
-                    callback.onMessageAdded(Message.toolCall(toolExecutionRequest.name(), List.of()), false);
-                    var toolExecutionResult = toolExecutor.execute(toolExecutionRequest);
-                    if (toolExecutionResult.isPresent()) {
-                        logger.info("Tool execution for executor {} was successfull", toolExecutor);
-                        chatMemory.add(toolExecutionResult.get());
-                        callback.onMessageAdded(Message.toolResult(toolExecutionResult.get().text(), List.of()), false);
-                    }else{
-                        logger.warn("No tool executor found for tool execution request: {}", toolExecutionRequest);
-                    }
-                }
+                toolProvider.getToolExecutors()
+                    .stream()
+                    .flatMap(toolExecutor -> toolExecutor.execute(toolExecutionRequest).stream())
+                    .forEach(result ->toolExecutionFinishedProperly(result, toolExecutionRequest));                
             }
+        }
+            
+        private void toolExecutionFinishedProperly(ToolExecutionResultMessage result, ToolExecutionRequest toolExecutionRequest) {
+            callback.onMessageAdded(
+                Message.toolCall(result.toolName(), ToolHelper.getArguments(toolExecutionRequest)), false
+            );
+            logger.info("Tool execution returned: {}", result);
+            chatMemory.add(result);
+            callback.onMessageAdded(Message.toolResult(result.text(), List.of()), false);
         }
 
         @Override
@@ -187,7 +186,6 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             if (error instanceof Exception errorAsException){
                 callback.onError("Failed to process message: " + error.getMessage(), errorAsException);
             }
-            //TODO: Handle other types of critical errors
             else{
                 callback.onError("Failed to process message: " + error.getMessage(), new Exception(error));
             }

@@ -11,12 +11,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
+import dev.local.ai.core.tools.ToolsProvider;
 import dev.local.ai.ui.chat.controls.MessageCell;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
-import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
+import dev.local.ai.ui.tools.ToolsSelectorView;
 
 /**
  * Controller for the Chat UI following MVVM pattern.
@@ -50,26 +51,36 @@ public class ChatController {
 
     @FXML
     private FileAttachmentControl systemMessageFileAttachments;
-    
+
+    @FXML
+    private ToolsSelectorView toolsSelectorView;
+
     // ViewModel
     private ChatViewModel chatViewModel;
     
     @FXML
     public void initialize() {
-        logger.debug("Initializing ChatController");
-        
-        // Create ViewModel with the Chat model
-        chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
-        
-        // Set up data binding
-        setupDataBinding();
-        
-        // Set up event handlers
-        setupEventHandlers();
-        
-        chatListView.setCellFactory(lv -> new MessageCell(chatViewModel));
-        
-        logger.debug("ChatController initialized.");
+        try{
+            logger.debug("Initializing ChatController");
+            
+            // Create ViewModel with the Chat model
+            chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
+            
+            // Initialize tools selector (deferred to avoid heavy deps in no-arg constructor)
+            toolsSelectorView.init(ToolsProvider.getInstance());
+            
+            // Set up data binding
+            setupDataBinding();
+            
+            // Set up event handlers
+            setupEventHandlers();
+            
+            chatListView.setCellFactory(lv -> new MessageCell(chatViewModel));
+            
+            logger.debug("ChatController initialized.");
+        }catch(Exception e){
+            logger.error("Error initializing ChatController", e);         
+        }
     }
     
     private void setupDataBinding() {

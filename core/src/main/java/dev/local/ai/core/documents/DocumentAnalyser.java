@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Base64;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
@@ -41,9 +42,13 @@ public class DocumentAnalyser {
         return null;              
     }
 
-    public String extractText(File file) {
+    public String extractContent(File file) {
         try (FileInputStream fis = new FileInputStream(file)) {
             Tika parser = new Tika();
+            var doc = analyseDocument(file);
+            if ("image".equals(doc.type().getType().toString())) {
+                return Base64.getEncoder().encodeToString(fis.readAllBytes());
+            }
             return parser.parseToString(fis);
         } catch (FileNotFoundException | TikaException e) {
             throw new RuntimeException(e);

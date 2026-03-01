@@ -42,6 +42,11 @@
             <artifactId>langchain4j-document-transformer-jsoup</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-code-execution-engine-local</artifactId>
+        </dependency>
+
         <!-- Configuration management -->
         <dependency>
             <groupId>com.typesafe</groupId>

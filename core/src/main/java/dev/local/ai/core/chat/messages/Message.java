@@ -3,6 +3,8 @@ package dev.local.ai.core.chat.messages;
 import dev.local.ai.core.documents.DocumentDescription;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public record Message(String text, List<DocumentDescription> files, MessageType type) {
     public Message(String text) {
@@ -13,8 +15,11 @@ public record Message(String text, List<DocumentDescription> files, MessageType 
         this(text, files, MessageType.USER);
     }
 
-    public static Message toolCall(String text, List<DocumentDescription> files) {
-        return new Message(text, files, MessageType.TOOL_CALL);
+    public static Message toolCall(String toolName, Map<String, String> arguments) {
+        var argumentsString = arguments.entrySet().stream()
+            .map(entry -> entry.getKey() + ": " + entry.getValue())
+            .collect(Collectors.joining(", "));
+        return new Message(toolName + " (" + argumentsString + ")", List.of(), MessageType.TOOL_CALL);
     }
 
     public static Message ai(String text, List<DocumentDescription> files) {

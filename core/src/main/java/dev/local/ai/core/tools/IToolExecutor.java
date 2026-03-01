@@ -1,4 +1,4 @@
-package dev.local.ai.core.tools.web;
+package dev.local.ai.core.tools;
 
 import java.util.Optional;
 
