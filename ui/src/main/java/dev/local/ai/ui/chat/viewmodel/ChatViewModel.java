@@ -18,6 +18,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.util.Duration;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 
@@ -59,6 +61,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final CommandManager commandManager;
 
     private final MessageConverter messageConverter;
+    private final PauseTransition textChangedDebouncer = new PauseTransition(Duration.millis(500));
 
     public ChatViewModel(ILLMChat chat, CommandManager commandManager) {
         this.chat = chat;
@@ -87,11 +90,12 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         setupPropertyBindings();
 
         logger.info("ChatViewModel initialized");
-    }
+    }    
 
-    private void setupPropertyBindings() {
+    private void setupPropertyBindings() {        
         systemMessage.addListener((obs, oldVal, newVal) -> {
-            updateSystemMessage();
+            textChangedDebouncer.setOnFinished(event -> updateSystemMessage());
+            textChangedDebouncer.playFromStart();
         });
         systemMessageAttachedFiles.addListener((obs, oldVal, newVal) -> {
             for (var file : newVal) {
