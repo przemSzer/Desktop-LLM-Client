@@ -5,7 +5,9 @@ import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.chat.streaming.IPartialMessageAware;
 import dev.local.ai.core.chat.streaming.IPartialMessagesListener;
+import dev.local.ai.core.chat.streaming.StopRequestEvent;
 import dev.local.ai.core.documents.DocumentDescription;
+import dev.local.ai.core.events.CoreEventBusProvider;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -50,6 +52,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final BooleanProperty canRedo;
     private final ListProperty<AttachedFileViewModel> attachedFiles;
     private final ListProperty<AttachedFileViewModel> systemMessageAttachedFiles;
+    private final BooleanProperty sendingMessageInProgress;
 
     // Model and command management
     private final ILLMChat chat;
@@ -71,6 +74,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         this.statusMessage = new SimpleStringProperty("Ready");
         this.canUndo = new SimpleBooleanProperty(false);
         this.canRedo = new SimpleBooleanProperty(false);
+        this.sendingMessageInProgress = new SimpleBooleanProperty(false);
 
         // Set this ViewModel as the callback for the Chat model
         chat.setCallback(this);
@@ -183,6 +187,10 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         return systemMessageAttachedFiles;
     }
 
+    public BooleanProperty sendingMessageInProgressProperty() {
+        return sendingMessageInProgress;
+    }
+
     // Commands
     public void sendMessage() {
         String message = getInputMessage().trim();
@@ -204,14 +212,18 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             statusMessage.set("Sending message...");
 
             var command = new SendUserMessageToLLMCommand(chat, message, files);
+            sendingMessageInProgress.set(true);
             var execution = commandManager.executeCommandAsync(command);
-            execution.thenAccept(result -> {
+            execution.thenAccept(result -> {                
                 if (result) {
                     logger.info("SendMessageCommand executed successfully: {}", message);
                 } else {
-                    Platform.runLater(() -> statusMessage.set("Failed to send message"));
                     logger.error("SendMessageCommand failed: {}", message);
-                }
+                    Platform.runLater(() -> {
+                        statusMessage.set("Failed to send message");
+                        sendingMessageInProgress.set(false);
+                    });
+                }                
             });
 
         } catch (Exception e) {
@@ -300,11 +312,10 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                 statusMessage.set("User message added");
             } else if (newChatMessage.getType() == MessageType.AI) {
                 statusMessage.set("AI response received");
+                sendingMessageInProgress.set(false);
             }
-            
         });
     }
-
    
 
     @Override
@@ -313,6 +324,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageType.ERROR, List.of());
             addMessage(errorMsg);
             statusMessage.set("Error occurred: " + errorMessage);
+            sendingMessageInProgress.set(false);
         });
     }
 
@@ -321,6 +333,14 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         Platform.runLater(() -> {
             chatMessages.clear();
             statusMessage.set("Chat memory cleared");
+        });
+    }
+
+    @Override
+    public void onCancel(){
+        Platform.runLater(() -> {
+            statusMessage.set("Canceled");
+            sendingMessageInProgress.set(false);
         });
     }
 
@@ -359,5 +379,9 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             logger.error("Failed to copy message to clipboard", e);
             statusMessage.set("Failed to copy message");
         }
+    }
+
+    public void stopMessage() {
+        CoreEventBusProvider.getInstance().publish(new StopRequestEvent(this.getClass().getSimpleName()));
     }
 }

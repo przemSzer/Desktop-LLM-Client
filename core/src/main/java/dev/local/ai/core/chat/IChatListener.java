@@ -21,6 +21,8 @@ public interface IChatListener {
      */
     void onError(String errorMessage, Exception exception);
     
+    void onCancel();
+
     /**
      * Called when the chat memory is cleared
      */

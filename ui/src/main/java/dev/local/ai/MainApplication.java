@@ -31,8 +31,8 @@ public class MainApplication extends Application {
             // Set up the primary stage
             primaryStage.setTitle("LLM Chat");
             primaryStage.setScene(scene);
-            primaryStage.setMinWidth(400);
-            primaryStage.setMinHeight(300);
+            primaryStage.setMinWidth(900);
+            primaryStage.setMinHeight(800);
             
             // Show the window
             primaryStage.show();
@@ -52,6 +52,7 @@ public class MainApplication extends Application {
     }
     
     public static void main(String[] args) {
+        GlobalExceptionHandler.install();
         launch(args);
     }
 } 

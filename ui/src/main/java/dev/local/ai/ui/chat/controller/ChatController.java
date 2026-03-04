@@ -5,6 +5,7 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
 import org.slf4j.Logger;
@@ -38,6 +39,12 @@ public class ChatController {
     private Button sendButton;
 
     @FXML
+    private Button stopButton;
+    
+    @FXML
+    private ProgressIndicator sendingMessageProgress;
+    
+    @FXML
     private ListView<ChatMessageViewModel> chatListView;
     
     @FXML
@@ -45,6 +52,7 @@ public class ChatController {
 
     @FXML
     private Button clearChatButton;
+    
     
     @FXML
     private FileAttachmentControl fileAttachmentControl;
@@ -83,7 +91,7 @@ public class ChatController {
         }
     }
     
-    private void setupDataBinding() {
+    private void setupDataBinding() {        
         systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
         systemMessageFileAttachments.attachedFilesProperty().bind(chatViewModel.systemMessageAttachedFilesProperty());
 
@@ -104,6 +112,9 @@ public class ChatController {
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
         fileAttachmentControl.attachedFilesProperty()
             .bind(chatViewModel.attachedFilesProperty());
+        sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
+        stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         logger.debug("Data binding setup completed");
     }
     
@@ -114,6 +125,10 @@ public class ChatController {
             chatViewModel.sendMessage();
         });
         
+        stopButton.setOnAction(event -> {
+            logger.debug("Stop button clicked");
+            chatViewModel.stopMessage();
+        });
         // Enter key handler for message input
         messageInput.setOnKeyPressed(event -> {
             if (event.getCode().toString().equals("ENTER") && event.isControlDown()) {

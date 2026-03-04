@@ -1,6 +1,7 @@
 package dev.local.ai.core.chat.streaming;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,20 +15,22 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.CompleteToolCall;
+import dev.langchain4j.model.chat.response.PartialResponse;
+import dev.langchain4j.model.chat.response.PartialResponseContext;
 import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.PartialToolCall;
+import dev.langchain4j.model.chat.response.PartialToolCallContext;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.events.CoreEventBusProvider;
-import dev.local.ai.core.events.EventListener;
-import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolHelper;
 
-public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListener<LLMChangedEvent>{
+public class StreamingChat implements ILLMChat,IPartialMessageAware{
 
     private StreamingChatModel chatModel;
     private final ChatMemory chatMemory;
@@ -37,20 +40,24 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
     private final MessageToChatMessageConverter messageToChatMessageConverter;
     private IToolProvider toolProvider;
+    private AtomicBoolean stopRequested = new AtomicBoolean(false);
     
     public StreamingChat(StreamingChatModel chatModel, IToolProvider toolProvider) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
         this.chatModelsProvider = new StreamingChatModelsProvider();
         logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
-        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
+        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
+        CoreEventBusProvider.getInstance().subscribe(StopRequestEvent.EVENT_TYPE, this::onStopRequest);
         this.toolProvider = toolProvider;                
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
     }
 
     @Override
     public String getSystemMessage() {
-        return chatMemory.messages().stream()
+        return chatMemory
+            .messages()
+            .stream()
             .filter(SystemMessage.class::isInstance)
             .map(message -> ((SystemMessage) message).text())
             .findFirst()
@@ -62,6 +69,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     public void sendMessage(Message message) {
         logger.debug("Sending message: {}", message);
         try {
+            stopRequested.set(false);
             addNewMessageToChatMemory(message);
                         
             // Notify callback about user message
@@ -97,14 +105,14 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
             .ifPresentOrElse(chatMemory::add, () -> logger.warn("Message converter returned empty optional for message: {}", message));    
     }
 
-    @Override
-    public void onEvent(LLMChangedEvent event) {
+    private void onLLMChanged(LLMChangedEvent event) {
         logger.info("LLMChangedEvent received: {}", event.getModelInfo());
-        changeModel(event.getModelInfo());
+        this.chatModel = chatModelsProvider.createStreamingChatModel(event.getModelInfo());
     }
 
-    void changeModel(LLMInfoAndConnection modelInfo) {
-        this.chatModel = chatModelsProvider.createStreamingChatModel(modelInfo);
+    private void onStopRequest(StopRequestEvent event) {
+        logger.info("StopRequestEvent received: {}", event.getEventId());
+        stopRequested.set(true);
     }
 
     private class StreamingResponseHandler implements StreamingChatResponseHandler{
@@ -122,12 +130,26 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
         }
 
         @Override
-        public void onPartialResponse(String partialResponse) {
+        public void onPartialResponse(PartialResponse partialResponse, PartialResponseContext context) {
             if (partialMessageListener != null) {
-                partialMessageListener.onPartialMessage(partialResponse);
+                partialMessageListener.onPartialMessage(partialResponse.text());
+            }
+            if (stopRequested.get()) {
+                logger.info("Stop requested, cancelling streaming");
+                context.streamingHandle().cancel();
+                callback.onCancel();
             }
         }
 
+        @Override
+        public void onPartialToolCall(PartialToolCall partialToolCall, PartialToolCallContext context) {
+            if (stopRequested.get()) {
+                logger.info("Stop requested, cancelling streaming");
+                context.streamingHandle().cancel();
+                callback.onCancel();
+            }
+        }
+        
         @Override
         public void onPartialThinking(PartialThinking partialThinking) {
             if (partialMessageListener != null) {
@@ -221,7 +243,8 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware, EventListen
     public void setSystemMessage(Message message) {
         var chatMessageMaybe = messageToChatMessageConverter.convert(message);
         if (chatMessageMaybe.isEmpty()) {
-            logger.warn("Message converter returned empty optional for message: {}", message);
+            logger.debug("Message converter returned empty optional for message: {}, so removing system message from memory", message);
+            chatMemory.messages().removeIf(m -> m instanceof SystemMessage);
             return;
         }
         var chatMessage = chatMessageMaybe.get();

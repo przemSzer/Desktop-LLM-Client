@@ -27,11 +27,17 @@ public class MessageToChatMessageConverter {
         
     }
 
-    private SystemMessage toSystemMessage(Message message) {
+    private SystemMessage toSystemMessage(Message message) {        
         if (message.files().isEmpty()){
+            if (message.text().isEmpty()){
+                return null;
+            }
             return new SystemMessage(message.text());
         }else{
             var buffer = getTextFromMessageAndFiles(message);
+            if (buffer.toString().isEmpty()){
+                return null;
+            }
             return new SystemMessage(buffer.toString());
         }
     }
