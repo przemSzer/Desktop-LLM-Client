@@ -21,7 +21,7 @@ public class AIMessageControl extends VBox {
     private Label messageType;
     
     @FXML
-    private MarkdownView markdownView;
+    private AIMessageMarkdownView markdownView;
 
     @FXML
     private VBox messageActions;
@@ -40,7 +40,7 @@ public class AIMessageControl extends VBox {
             getStyleClass().addAll(loadedContent.getStyleClass());
             setSpacing(loadedContent.getSpacing());
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
-            markdownView.setMdString(message.getContent());
+            markdownView.setMdString(message.getContent());            
         } catch (IOException e) {
             logger.error("Failed to load AIMessageControl FXML", e);
             throw new RuntimeException("Failed to load AIMessageControl FXML", e);

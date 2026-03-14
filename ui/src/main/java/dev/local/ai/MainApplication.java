@@ -9,17 +9,19 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.local.ai.ui.utils.HostServicesProvider;
+
 import java.io.IOException;
 
 public class MainApplication extends Application {
     
     private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
-
     
     @Override
     public void start(Stage primaryStage) {
         try {
             logger.info("Starting Chat Application");
+            HostServicesProvider.getInstance().setHostServices(this.getHostServices());
             Platform.setImplicitExit(true);
             // Load the FXML file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChatWindow.fxml"));
@@ -36,7 +38,6 @@ public class MainApplication extends Application {
             
             // Show the window
             primaryStage.show();
-            
             logger.info("Chat Application started successfully");
             
         } catch (IOException e) {

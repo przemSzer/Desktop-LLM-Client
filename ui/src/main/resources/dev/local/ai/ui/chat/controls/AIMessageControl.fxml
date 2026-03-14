@@ -2,7 +2,7 @@
 
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Button?>
-<?import one.jpro.platform.mdfx.MarkdownView?>
+<?import dev.local.ai.ui.chat.controls.AIMessageMarkdownView?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
@@ -21,7 +21,7 @@
           styleClass="message-type-label, ai-label" />
    
    <HBox spacing="10.0" alignment="CENTER_LEFT">
-      <MarkdownView fx:id="markdownView" 
+      <AIMessageMarkdownView fx:id="markdownView" 
                          HBox.hgrow="ALWAYS" 
                          minWidth="0.0"
                          prefWidth="0.0"
