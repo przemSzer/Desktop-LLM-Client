@@ -12,17 +12,17 @@ public class PartialMessageControl extends VBox {
     private final Label content;
     
     public PartialMessageControl() {
-        super(10); // 10px spacing between elements
+        super(8);
+        getStyleClass().addAll("message-bubble", "partial-message");
         
         messageType = new Label("LLM");
         messageType.setWrapText(true);
-        messageType.setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
+        messageType.getStyleClass().addAll("message-type-label", "partial-label");
         
         content = new Label();
         content.setWrapText(true);
-        content.setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
+        content.getStyleClass().add("partial-content");
         
-        // Make content expand to fill available space
         HBox.setHgrow(this, Priority.SOMETIMES);
         VBox.setVgrow(this, Priority.ALWAYS);
         getChildren().addAll(messageType, content);

@@ -25,8 +25,8 @@ public class MainApplication extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChatWindow.fxml"));
             Parent root = loader.load();
             
-            // Create the scene
             Scene scene = new Scene(root, 600, 400);
+            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
             
             // Set up the primary stage
             primaryStage.setTitle("LLM Chat");

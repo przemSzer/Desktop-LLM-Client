@@ -43,7 +43,11 @@ public class UserMessageControl extends VBox {
             
             if (message != null) {
                 content.setText(message.getContent());
-                configureFiles(message);
+                if (message.getAttachedFiles().isEmpty()) {
+                    this.getChildren().remove(attachmentList);
+                }else{
+                    configureFiles(message);
+                }
             }
             
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));

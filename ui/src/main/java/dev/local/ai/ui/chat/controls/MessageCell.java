@@ -2,7 +2,9 @@ package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.layout.VBox;
 
 public class MessageCell extends ListCell<ChatMessageViewModel> {
 
@@ -33,9 +35,14 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
                     setText(null);
                     break;
                 case ERROR:
-                    setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                    setGraphic(null);
-                    setText("Error: " + item.getContent());
+                    VBox errorBox = new VBox(4);
+                    errorBox.getStyleClass().addAll("message-bubble", "error-message");
+                    Label errorLabel = new Label("Error: " + item.getContent());
+                    errorLabel.setWrapText(true);
+                    errorLabel.getStyleClass().add("error-content");
+                    errorBox.getChildren().add(errorLabel);
+                    setGraphic(errorBox);
+                    setText(null);
                     break;
                 case TOOL_RESULT:
                 case TOOL_CALL:

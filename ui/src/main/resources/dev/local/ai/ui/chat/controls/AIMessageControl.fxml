@@ -9,14 +9,16 @@
 <?import javafx.geometry.Pos?>
 
 <VBox 
-      spacing="10.0" 
+      spacing="8.0" 
+      styleClass="message-bubble, ai-message"
+      stylesheets="@../../../../../../css/styles.css"
       xmlns="http://javafx.com/javafx/17" 
       xmlns:fx="http://javafx.com/fxml/1">
    
    <Label fx:id="messageType" 
           text="LLM" 
           wrapText="true" 
-          style="-fx-text-fill: green; -fx-font-weight: bold;" />
+          styleClass="message-type-label, ai-label" />
    
    <HBox spacing="10.0" alignment="CENTER_LEFT">
       <MarkdownView fx:id="markdownView" 
@@ -27,11 +29,11 @@
                          />
       
       <VBox fx:id="messageActions" 
-            alignment="CENTER" 
+            alignment="TOP_RIGHT" 
             spacing="5.0">
          <Button fx:id="copyMessageButton" 
                  text="Copy" 
-                 style="-fx-font-size: 11px;" />
+                 styleClass="btn-copy" />
       </VBox>
    </HBox>
    

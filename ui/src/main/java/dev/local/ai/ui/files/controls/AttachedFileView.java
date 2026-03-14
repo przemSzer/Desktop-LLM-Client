@@ -106,24 +106,24 @@ public class AttachedFileView extends HBox {
      * Updates the status label style based on the file status
      */
     private void updateStatusStyle(FileStatus status) {
+        statusLabel.getStyleClass().removeAll("file-status-valid", "file-status-loading", "file-status-error");
         if (status == null) {
-            statusLabel.setStyle("");
             return;
         }
         
         switch (status) {
             case VALID:
-                statusLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                statusLabel.getStyleClass().add("file-status-valid");
                 break;
             case LOADING:
             case PREPARING:
-                statusLabel.setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
+                statusLabel.getStyleClass().add("file-status-loading");
                 break;
             case ERROR:
-                statusLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                statusLabel.getStyleClass().add("file-status-error");
                 break;
             default:
-                statusLabel.setStyle("");
+                break;
         }
     }
     

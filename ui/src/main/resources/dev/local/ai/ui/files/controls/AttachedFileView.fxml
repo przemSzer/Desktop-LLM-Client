@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<HBox prefHeight="68.0" prefWidth="186.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<HBox prefHeight="68.0" prefWidth="186.0" styleClass="attached-file-row" stylesheets="@../../../../../../css/styles.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox alignment="CENTER_LEFT" spacing="2.0">
          <children>
@@ -29,7 +29,7 @@
             </Label>
          </children>
       </HBox>
-      <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeFile" styleClass="remove-button" text="✕" />
+      <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeFile" styleClass="remove-button" text="&#x2715;" />
    </children>
    
 </HBox>

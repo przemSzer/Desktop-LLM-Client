@@ -96,12 +96,16 @@ public class FileAttachmentControl extends VBox {
      * Sets up data binding between UI controls and ViewModel properties
      */
     private void setupDataBinding() {
-        // Bind list view to ViewModel's attached files
         attachedFilesListView.itemsProperty().bind(viewModel.attachedFilesProperty());
-        
-        // Bind files count label text and style to ViewModel
         filesCountLabel.textProperty().bind(viewModel.filesCountTextProperty());
-        filesCountLabel.styleProperty().bind(viewModel.filesCountStyleProperty());
+        
+        viewModel.hasFilesProperty().addListener((obs, wasFiles, hasFiles) -> {
+            if (hasFiles) {
+                filesCountLabel.getStyleClass().add("has-files");
+            } else {
+                filesCountLabel.getStyleClass().remove("has-files");
+            }
+        });
     }
     
     /**

@@ -47,15 +47,17 @@ public class MessageToChatMessageConverter {
             return new UserMessage(message.text());
         }else{            
             List<Content> contents = new ArrayList<>(message.files().size() + 1);
-            contents.add(new TextContent(message.text()));
+            StringBuffer textContent = new StringBuffer();
+            textContent.append(message.text());
             for (var file : message.files()) {
                 if (file.type().getType().toString().equals("image")) {
                     contents.add(new ImageContent(file.text(), file.type().getType()));
                 }
                 else {
-                    contents.add(new TextContent(createMessageWithFile(file)));
+                    textContent.append(createTextContentFromFile(file));                  
                 }
             }
+            contents.add(new TextContent(textContent.toString()));
             return new UserMessage(contents);
         }
     }
@@ -63,13 +65,13 @@ public class MessageToChatMessageConverter {
     private StringBuilder getTextFromMessageAndFiles(Message message) {
         var buffer = new StringBuilder(message.text());
         for (var file : message.files()) {
-            var fileContent = createMessageWithFile(file);
+            var fileContent = createTextContentFromFile(file);
             buffer.append(fileContent);
         }
         return buffer;
     }
 
-    private String createMessageWithFile(DocumentDescription file) {            
+    private String createTextContentFromFile(DocumentDescription file) {            
         var buffer = new StringBuilder();
         buffer.append("\n");
         buffer.append("<file name=\"").append(file.title()).append("\" type=\"").append(file.type().toString()).append("\">\n");
