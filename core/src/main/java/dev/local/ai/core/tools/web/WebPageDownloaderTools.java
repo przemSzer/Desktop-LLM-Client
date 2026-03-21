@@ -29,7 +29,8 @@ public class WebPageDownloaderTools implements IToolExecutor {
     private final DocumentTransformer transformer;
     private final DocumentParser parser;
     private static final String DOWNLOAD_WEB_PAGE_TOOL_NAME = "downloadWebPage";
-    
+    private int readTimeout = 30000;
+    private int connectTimeout = 10000;
 
     public WebPageDownloaderTools() {
         transformer = new HtmlToTextDocumentTransformer(null, null, true);
@@ -41,8 +42,9 @@ public class WebPageDownloaderTools implements IToolExecutor {
     public String downloadWebPage(@P("The URL of the web page to download") String url, @ToolMemoryId String toolMemoryId){
         logger.info("Downloading web page: {}, tool memory id: {}", url, toolMemoryId);
         try {
-            var asUrl = new URI(url);
-            var urlDocumentSource = new URLSourceWithTimeout(asUrl.toURL(), 10000, 10000);
+            var asUrl = new URI(url);            
+            logger.info("Downloading web page with timeout: {}, connect timeout: {}", readTimeout, connectTimeout);
+            var urlDocumentSource = new URLSourceWithTimeout(asUrl.toURL(), readTimeout, connectTimeout);
             var document = DocumentLoader.load(urlDocumentSource, parser);            
             var text = transformer.transform(document);
             return text.text();
