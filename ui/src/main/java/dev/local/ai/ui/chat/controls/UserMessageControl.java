@@ -22,7 +22,7 @@ public class UserMessageControl extends VBox {
     private Label messageType;
     
     @FXML
-    private Label content;
+    private SelectableText content;
 
     @FXML
     private Button copyMessageButton;

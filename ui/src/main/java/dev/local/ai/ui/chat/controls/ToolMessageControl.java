@@ -20,7 +20,7 @@ public class ToolMessageControl extends VBox {
     private Label messageType;
     
     @FXML
-    private Label toolContent;
+    private SelectableText toolContent;
 
     @FXML
     private VBox messageActions;

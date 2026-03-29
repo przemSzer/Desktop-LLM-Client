@@ -51,7 +51,7 @@ public class MessageToChatMessageConverter {
             textContent.append(message.text());
             for (var file : message.files()) {
                 if (file.type().getType().toString().equals("image")) {
-                    contents.add(new ImageContent(file.text(), file.type().getType()));
+                    contents.add(new ImageContent(file.text(), file.type().toString()));
                 }
                 else {
                     textContent.append(createTextContentFromFile(file));                  

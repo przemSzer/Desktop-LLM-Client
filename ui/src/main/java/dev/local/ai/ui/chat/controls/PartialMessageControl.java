@@ -9,7 +9,7 @@ import javafx.scene.layout.VBox;
 public class PartialMessageControl extends VBox {
     
     private final Label messageType;
-    private final Label content;
+    private final SelectableText content;
     
     public PartialMessageControl() {
         super(8);
@@ -19,8 +19,7 @@ public class PartialMessageControl extends VBox {
         messageType.setWrapText(true);
         messageType.getStyleClass().addAll("message-type-label", "partial-label");
         
-        content = new Label();
-        content.setWrapText(true);
+        content = new SelectableText();
         content.getStyleClass().add("partial-content");
         
         HBox.setHgrow(this, Priority.SOMETIMES);

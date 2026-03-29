@@ -7,7 +7,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import one.jpro.platform.mdfx.MarkdownView;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,10 +23,18 @@ public class AIMessageControl extends VBox {
     private AIMessageMarkdownView markdownView;
 
     @FXML
+    private SelectableText selectableContent;
+
+    @FXML
     private VBox messageActions;
 
     @FXML
     private Button copyMessageButton;
+
+    @FXML
+    private Button selectTextButton;
+
+    private boolean showingPlainText = false;
 
     private final Logger logger = LoggerFactory.getLogger(AIMessageControl.class);
     
@@ -40,15 +47,27 @@ public class AIMessageControl extends VBox {
             getStyleClass().addAll(loadedContent.getStyleClass());
             setSpacing(loadedContent.getSpacing());
             copyMessageButton.setOnAction(event -> chatViewModel.copyMessage(message));
-            markdownView.setMdString(message.getContent());            
+            markdownView.setMdString(message.getContent());
+            selectableContent.setText(message.getContent());
+
+            selectTextButton.setOnAction(event -> toggleView());
         } catch (IOException e) {
             logger.error("Failed to load AIMessageControl FXML", e);
             throw new RuntimeException("Failed to load AIMessageControl FXML", e);
         }
     }
+
+    private void toggleView() {
+        showingPlainText = !showingPlainText;
+        markdownView.setVisible(!showingPlainText);
+        markdownView.setManaged(!showingPlainText);
+        selectableContent.setVisible(showingPlainText);
+        selectableContent.setManaged(showingPlainText);
+        selectTextButton.setText(showingPlainText ? "Markdown" : "Select");
+    }
     
     public AIMessageControl() {
-        this(new ChatMessageViewModel("Hello I am *AI Assistant*", ChatMessageViewModel.MessageType.AI,List.of()), null);
+        this(new ChatMessageViewModel("Hello I am *AI Assistant*", ChatMessageViewModel.MessageType.AI, List.of()), null);
     }
     
 }

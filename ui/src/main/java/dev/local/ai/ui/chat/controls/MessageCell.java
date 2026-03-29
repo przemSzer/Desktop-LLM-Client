@@ -2,7 +2,6 @@ package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.VBox;
 
@@ -12,6 +11,7 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
 
     public MessageCell(ChatViewModel chatViewModel) {
         this.chatViewModel = chatViewModel;
+        setFocusTraversable(false);
     }
 
     @Override
@@ -37,10 +37,9 @@ public class MessageCell extends ListCell<ChatMessageViewModel> {
                 case ERROR:
                     VBox errorBox = new VBox(4);
                     errorBox.getStyleClass().addAll("message-bubble", "error-message");
-                    Label errorLabel = new Label("Error: " + item.getContent());
-                    errorLabel.setWrapText(true);
-                    errorLabel.getStyleClass().add("error-content");
-                    errorBox.getChildren().add(errorLabel);
+                    SelectableText errorText = new SelectableText("Error: " + item.getContent());
+                    errorText.getStyleClass().add("error-content");
+                    errorBox.getChildren().add(errorText);
                     setGraphic(errorBox);
                     setText(null);
                     break;
