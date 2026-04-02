@@ -1,5 +1,6 @@
 package dev.local.ai.core.models;
 
+import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
@@ -15,6 +16,8 @@ public class ModelServicesFactory {
                 return new OllamaModelService(ollamaConnection);
             case OpenAIConnection openAIConnection:
                 return new OpenAIModelService(openAIConnection);
+            case GoogleConnection googleConnection:
+                return new GoogleGeminiModelService(googleConnection);
             default:
                 throw new IllegalArgumentException("Unsupported connection type: " + connection.getClass());
         }

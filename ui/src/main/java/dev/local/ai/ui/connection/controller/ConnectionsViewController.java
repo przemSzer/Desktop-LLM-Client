@@ -114,9 +114,8 @@ public class ConnectionsViewController {
     }
     
     private void addNewConnectionFor(ConnectionProvider providerType) {
-        logger.info("Provider selected: {}. Dialog implementation pending.", providerType);
+        logger.info("Adding new connection for provider: {}", providerType);
         connectionsViewModel.newConnectionFor(providerType);
-        connectionsViewModel.setStatusMessage("Selected provider: " + providerType.getDisplayName() + " (Dialog not implemented yet)");
     }
     
     private void setupTableColumns() {

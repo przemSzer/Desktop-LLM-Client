@@ -1,10 +1,8 @@
 package dev.local.ai.ui.chat.controller;
 
-import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
@@ -13,8 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
 import dev.local.ai.core.tools.ToolsProvider;
-import dev.local.ai.ui.chat.controls.MessageCell;
+import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
+import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
@@ -28,7 +27,6 @@ public class ChatController {
     
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     
-    // UI Components
     @FXML
     private TextArea systemMessageTextArea;
 
@@ -45,14 +43,13 @@ public class ChatController {
     private ProgressIndicator sendingMessageProgress;
     
     @FXML
-    private ListView<ChatMessageViewModel> chatListView;
+    private ChatWebView chatWebView;
     
     @FXML
     private Label statusLabel;
 
     @FXML
     private Button clearChatButton;
-    
     
     @FXML
     private FileAttachmentControl fileAttachmentControl;
@@ -63,30 +60,21 @@ public class ChatController {
     @FXML
     private ToolsSelectorView toolsSelectorView;
 
-    // ViewModel
     private ChatViewModel chatViewModel;
     
     @FXML
     public void initialize() {
-        try{
+        try {
             logger.debug("Initializing ChatController");
             
-            // Create ViewModel with the Chat model
             chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
-            
-            // Initialize tools selector (deferred to avoid heavy deps in no-arg constructor)
             toolsSelectorView.init(ToolsProvider.getInstance());
             
-            // Set up data binding
             setupDataBinding();
-            
-            // Set up event handlers
             setupEventHandlers();
             
-            chatListView.setCellFactory(lv -> new MessageCell(chatViewModel));
-            
             logger.debug("ChatController initialized.");
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Error initializing ChatController", e);         
         }
     }
@@ -95,16 +83,30 @@ public class ChatController {
         systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
         systemMessageFileAttachments.attachedFilesProperty().bind(chatViewModel.systemMessageAttachedFilesProperty());
 
-        chatListView.setItems(chatViewModel.getChatMessages());
         chatViewModel.getChatMessages().addListener((ListChangeListener<ChatMessageViewModel>) change -> {
-            if (change.next() && change.wasAdded()) {
-                // Use Platform.runLater to ensure UI is updated first
-                Platform.runLater(() -> {
-                    int lastIndex = chatListView.getItems().size() - 1;
-                    if (lastIndex >= 0) {
-                        chatListView.scrollTo(lastIndex);                        
+            while (change.next()) {
+                if (change.wasReplaced()) {
+                    for (int i = change.getFrom(); i < change.getTo(); i++) {
+                        ChatMessageViewModel msg = change.getList().get(i);
+                        if (msg == null) continue;
+                        chatWebView.removePartialMessage();
+                        chatWebView.addMessage(msg);
                     }
-                });
+                } else if (change.wasAdded()) {
+                    for (ChatMessageViewModel msg : change.getAddedSubList()) {
+                        if (msg == null) continue;
+                        if (msg.getType() == MessageType.PARTIAL) {
+                            chatWebView.setPartialMessage(msg.getContent());
+                            msg.contentProperty().addListener((obs, oldVal, newVal) ->
+                                    chatWebView.setPartialMessage(newVal));
+                        } else {
+                            chatWebView.addMessage(msg);
+                        }
+                    }
+                }
+                if (change.wasRemoved() && change.getList().isEmpty()) {
+                    chatWebView.clearMessages();
+                }
             }
         });
         
@@ -119,7 +121,6 @@ public class ChatController {
     }
     
     private void setupEventHandlers() {
-        // Send button click handler
         sendButton.setOnAction(event -> {
             logger.debug("Send button clicked");
             chatViewModel.sendMessage();
@@ -129,10 +130,10 @@ public class ChatController {
             logger.debug("Stop button clicked");
             chatViewModel.stopMessage();
         });
-        // Enter key handler for message input
+
         messageInput.setOnKeyPressed(event -> {
             if (event.getCode().toString().equals("ENTER") && event.isControlDown()) {
-                event.consume(); // Prevent new line
+                event.consume();
                 chatViewModel.sendMessage();
             }
         });
@@ -144,7 +145,6 @@ public class ChatController {
         logger.debug("Event handlers setup completed");
     }
     
-    // Public method to access ViewModel if needed
     public ChatViewModel getChatViewModel() {
         return chatViewModel;
     }

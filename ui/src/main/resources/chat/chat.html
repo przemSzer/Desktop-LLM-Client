@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+/* ── Reset & base ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: #212121;
+    background: #F5F6FA;
+}
+
+body {
+    padding: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ── Message bubble (shared) ───────────────────────────── */
+.message {
+    border-radius: 10px;
+    border: 1px solid;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    position: relative;
+}
+
+/* ── Per-type colours ──────────────────────────────────── */
+.message.user    { background: #E3F2FD; border-color: #BBDEFB; }
+.message.ai      { background: #FFFFFF; border-color: #775e5e; }
+.message.tool    { background: #FFF8E1; border-color: #FFE0B2; }
+.message.partial { background: #F5F5F5; border-color: #EEEEEE; }
+.message.error   { background: #FFEBEE; border-color: #FFCDD2; }
+
+/* ── Header row (type label + copy btn) ────────────────── */
+.msg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.msg-type {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.msg-type.user    { color: #4A90D9; }
+.msg-type.ai      { color: #2E7D32; }
+.msg-type.tool    { color: #E67E22; }
+.msg-type.partial { color: #757575; font-style: italic; }
+.msg-type.error   { color: #D32F2F; }
+
+.btn-copy {
+    background: transparent;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #757575;
+    padding: 2px 8px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s, background 0.15s;
+}
+.btn-copy:hover {
+    opacity: 1;
+    background: #F0F0F0;
+    border-color: #BDBDBD;
+}
+
+/* ── Message body ──────────────────────────────────────── */
+.msg-body {
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.msg-body.user-body {
+    font-weight: bold;
+    text-align: right;
+}
+
+/* ── Markdown content styles ───────────────────────────── */
+.msg-body h1 { font-size: 1.5em; margin: 0.4em 0; }
+.msg-body h2 { font-size: 1.3em; margin: 0.4em 0; }
+.msg-body h3 { font-size: 1.15em; margin: 0.3em 0; }
+.msg-body h4, .msg-body h5, .msg-body h6 { font-size: 1em; margin: 0.3em 0; }
+
+.msg-body p { margin: 0.4em 0; }
+
+.msg-body ul, .msg-body ol {
+    margin: 0.4em 0;
+    padding-left: 1.6em;
+}
+
+.msg-body blockquote {
+    border-left: 3px solid #BDBDBD;
+    padding-left: 12px;
+    color: #616161;
+    margin: 0.4em 0;
+}
+
+.msg-body pre {
+    background: #263238;
+    color: #ECEFF1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    margin: 0.5em 0;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.msg-body code {
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    font-size: 0.92em;
+}
+
+.msg-body :not(pre) > code {
+    background: #F0F0F0;
+    border-radius: 3px;
+    padding: 1px 5px;
+}
+
+.msg-body table {
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    width: 100%;
+}
+
+.msg-body th, .msg-body td {
+    border: 1px solid #E0E0E0;
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.msg-body th {
+    background: #F5F5F5;
+    font-weight: 600;
+}
+
+.msg-body a {
+    color: #4A90D9;
+    text-decoration: none;
+}
+.msg-body a:hover { text-decoration: underline; }
+
+.msg-body img { max-width: 100%; border-radius: 4px; }
+
+/* ── Tool message collapsible ──────────────────────────── */
+.tool-toggle {
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+    color: #E67E22;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+.tool-toggle::before { content: "▸ "; }
+.tool-toggle.open::before { content: "▾ "; }
+
+.tool-body {
+    display: none;
+    margin-top: 4px;
+}
+.tool-body.open { display: block; }
+
+/* ── Partial message animation ─────────────────────────── */
+.partial .msg-body::after {
+    content: "▌";
+    animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div id="messages"></div>
+
+<script>
+const container = document.getElementById('messages');
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function createMessageElement(id, type, typeLabel, bodyHtml) {
+    const div = document.createElement('div');
+    div.className = 'message ' + type;
+    div.id = 'msg-' + id;
+
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+
+    const label = document.createElement('span');
+    label.className = 'msg-type ' + type;
+    label.textContent = typeLabel;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = function() { javaBridge.copyMessage(id); };
+
+    header.appendChild(label);
+    header.appendChild(copyBtn);
+
+    const body = document.createElement('div');
+    body.className = 'msg-body' + (type === 'user' ? ' user-body' : '');
+    body.innerHTML = bodyHtml;
+
+    div.appendChild(header);
+    div.appendChild(body);
+    return div;
+}
+
+function addMessage(id, type, typeLabel, bodyHtml) {
+    const el = createMessageElement(id, type, typeLabel, bodyHtml);
+    container.appendChild(el);
+    scrollToBottom();
+}
+
+function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
+    const div = document.createElement('div');
+    div.className = 'message tool';
+    div.id = 'msg-' + id;
+
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+
+    const label = document.createElement('span');
+    label.className = 'msg-type tool';
+    label.textContent = typeLabel;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = function() { javaBridge.copyMessage(id); };
+
+    header.appendChild(label);
+    header.appendChild(copyBtn);
+
+    const toggle = document.createElement('div');
+    toggle.className = 'tool-toggle';
+    toggle.textContent = summaryText;
+    toggle.onclick = function() {
+        toggle.classList.toggle('open');
+        bodyDiv.classList.toggle('open');
+    };
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'tool-body msg-body';
+    bodyDiv.innerHTML = bodyHtml;
+
+    div.appendChild(header);
+    div.appendChild(toggle);
+    div.appendChild(bodyDiv);
+    container.appendChild(div);
+    scrollToBottom();
+}
+
+function setPartialMessage(bodyHtml) {
+    let el = document.getElementById('msg-partial');
+    if (!el) {
+        el = createMessageElement('partial', 'partial', 'LLM', '');
+        container.appendChild(el);
+    }
+    el.querySelector('.msg-body').innerHTML = bodyHtml;
+    scrollToBottom();
+}
+
+function removePartialMessage() {
+    const el = document.getElementById('msg-partial');
+    if (el) el.remove();
+}
+
+function clearMessages() {
+    container.innerHTML = '';
+}
+
+function scrollToBottom() {
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+document.addEventListener('click', function(e) {
+    const a = e.target.closest('a');
+    if (a && a.href && !a.href.startsWith('javascript')) {
+        e.preventDefault();
+        javaBridge.openLink(a.href);
+    }
+});
+</script>
+</body>
+</html>

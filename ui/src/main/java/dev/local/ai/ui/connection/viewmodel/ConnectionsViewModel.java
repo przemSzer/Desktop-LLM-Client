@@ -18,6 +18,7 @@ import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.connection.AddNewConnectionCommand;
 import dev.local.ai.ui.connection.INewConnectionDialog;
+import dev.local.ai.ui.connection.google.GoogleConnectionDialog;
 import dev.local.ai.ui.connection.ollama.OllamaConnectionDialog;
 import dev.local.ai.ui.connection.openai.OpenAIConnectionDialog;
 
@@ -133,6 +134,8 @@ public class ConnectionsViewModel {
                 return new OpenAIConnectionDialog();                
             case ConnectionProvider.OLLAMA:
                 return new OllamaConnectionDialog();
+            case ConnectionProvider.GOOGLE:
+                return new GoogleConnectionDialog();
             default:
                 throw new IllegalArgumentException("Unknown provider type: " + providerType);
         }        

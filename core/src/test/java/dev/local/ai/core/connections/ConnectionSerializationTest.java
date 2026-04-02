@@ -73,13 +73,39 @@ public class ConnectionSerializationTest {
     }
 
     @Test
+    public void testGoogleConnectionSerialization() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        GoogleConnection original = new GoogleConnection("test-google", "Test Google Connection");
+
+        String json = mapper.writeValueAsString(original);
+        System.out.println("Serialized GoogleConnection: " + json);
+
+        assertTrue(json.contains("\"id\""));
+        assertTrue(json.contains("\"name\""));
+        assertTrue(json.contains("\"description\""));
+        assertTrue(json.contains("\"apiKey\""));
+        assertTrue(json.contains("\"type\""));
+        assertTrue(json.contains("\"google\""));
+
+        GoogleConnection deserialized = mapper.readValue(json, GoogleConnection.class);
+
+        assertEquals(original.id(), deserialized.id());
+        assertEquals(original.name(), deserialized.name());
+        assertEquals(original.description(), deserialized.description());
+        assertEquals(original.apiKey(), deserialized.apiKey());
+        assertEquals(original.providerType(), deserialized.providerType());
+    }
+
+    @Test
     public void testPolymorphicSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
         // Create a list with different connection types
         List<ModelProviderConnection> connections = List.of(
             new OllamaConnection("ollama-1", "Ollama Connection 1"),
-            new OpenAIConnection("openai-1", "OpenAI Connection 1")
+            new OpenAIConnection("openai-1", "OpenAI Connection 1"),
+            new GoogleConnection("google-1", "Google Connection 1")
         );
         
         // Serialize the list
@@ -89,14 +115,16 @@ public class ConnectionSerializationTest {
         
         assertTrue(json.contains("\"type\":\"ollama\""));
         assertTrue(json.contains("\"type\":\"openai\""));
-        
-        // Deserialize individual objects to verify they work correctly
-        List<ModelProviderConnection> deserializedOllama = mapper.readValue(json, new TypeReference<List<ModelProviderConnection>>() {});
-        deserializedOllama.forEach(connection -> {
+        assertTrue(json.contains("\"type\":\"google\""));
+
+        List<ModelProviderConnection> deserialized = mapper.readValue(json, new TypeReference<List<ModelProviderConnection>>() {});
+        deserialized.forEach(connection -> {
             if (connection instanceof OllamaConnection) {
                 assertEquals("ollama-1", connection.name());
             } else if (connection instanceof OpenAIConnection) {
                 assertEquals("openai-1", connection.name());
+            } else if (connection instanceof GoogleConnection) {
+                assertEquals("google-1", connection.name());
             } else {
                 fail("Unexpected connection type: " + connection.getClass().getName());
             }

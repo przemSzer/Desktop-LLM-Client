@@ -3,8 +3,10 @@ package dev.local.ai.core.models;
 import java.time.Duration;
 
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 
@@ -16,6 +18,8 @@ public class StreamingChatModelsProvider {
                 return ollamaChatModel(modelInfo);
             case OpenAIConnection openAIConnection:
                 return openAIChatModel(modelInfo);
+            case GoogleConnection googleConnection:
+                return googleGeminiChatModel(modelInfo);
             default:
                 throw new IllegalArgumentException("Unsupported connection type: " + modelInfo.connection().getClass());
         }    
@@ -45,5 +49,15 @@ public class StreamingChatModelsProvider {
             .timeout(Duration.ofMinutes(5))
             .build();
     }
-    
+
+    private StreamingChatModel googleGeminiChatModel(LLMInfoAndConnection modelInfo) {
+        var googleConnection = (GoogleConnection) modelInfo.connection();
+        return GoogleAiGeminiStreamingChatModel
+            .builder()
+            .apiKey(googleConnection.apiKey())
+            .modelName(modelInfo.modelInfo().id())
+            .timeout(Duration.ofMinutes(5))
+            .build();
+    }
+
 }

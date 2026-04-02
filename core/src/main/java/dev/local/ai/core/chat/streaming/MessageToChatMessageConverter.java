@@ -10,6 +10,7 @@ import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.ImageContent.DetailLevel;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.documents.DocumentDescription;
 
@@ -51,7 +52,7 @@ public class MessageToChatMessageConverter {
             textContent.append(message.text());
             for (var file : message.files()) {
                 if (file.type().getType().toString().equals("image")) {
-                    contents.add(new ImageContent(file.text(), file.type().toString()));
+                    contents.add(new ImageContent(file.text(), file.type().toString(), DetailLevel.HIGH));
                 }
                 else {
                     textContent.append(createTextContentFromFile(file));                  
