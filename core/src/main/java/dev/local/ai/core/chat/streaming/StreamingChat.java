@@ -243,8 +243,9 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
     public void setSystemMessage(Message message) {
         var chatMessageMaybe = messageToChatMessageConverter.convert(message);
         if (chatMessageMaybe.isEmpty()) {
-            logger.debug("Message converter returned empty optional for message: {}, so removing system message from memory", message);
-            chatMemory.messages().removeIf(m -> m instanceof SystemMessage);
+            logger.debug("System message will be removed because it is empty: {}", message);
+            var messagesWithoutSystemMessage = chatMemory.messages().stream().filter(m -> !(m instanceof SystemMessage)).toList();
+            chatMemory.set(messagesWithoutSystemMessage);
             return;
         }
         var chatMessage = chatMessageMaybe.get();
