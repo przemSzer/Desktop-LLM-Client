@@ -30,10 +30,21 @@ public class OllamaModelService implements AvailableModelsService {
                 .build();
             var models = ollamaModelsProvider.availableModels().content();
             logger.info("Loaded {} models from Ollama", models.size());
-            return models.stream().map(model -> new ModelInfo(model.getName(), model.getName(), "Ollama model: " + model.getDetails().getFamily())).toList();
+            return models.stream().map(m -> toModelInfo(m, ollamaModelsProvider)).toList();
         } catch (Exception e) {
             logger.error("Error loading models from Ollama", e);
             return List.of();
         }        
     }    
+
+    private ModelInfo toModelInfo(dev.langchain4j.model.ollama.OllamaModel model, OllamaModels ollamaModelsProvider) {        
+        var card = ollamaModelsProvider.modelCard(model);        
+        var modelParams = card.content().getModelInfo();
+        logger.info("Model params: {}", modelParams);
+        return new ModelInfo(
+            model.getName(), 
+            model.getName(), 
+            "Ollama model: " + model.getDetails().getFamily()
+        );
+    }
 }

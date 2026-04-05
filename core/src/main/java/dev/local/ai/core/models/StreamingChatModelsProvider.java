@@ -44,8 +44,8 @@ public class StreamingChatModelsProvider {
             .logRequests(true)
             .logResponses(true)
             .modelName(modelInfo.modelInfo().name())
-            // .think(true)
-            // .returnThinking(true)
+            .think(true)
+            .returnThinking(true)
             .timeout(Duration.ofMinutes(5))
             .build();
     }

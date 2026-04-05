@@ -1,5 +1,6 @@
 package dev.local.ai.ui.chat.controls;
 
+import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.utils.HostServicesProvider;
@@ -88,6 +89,22 @@ public class ChatWebView extends StackPane {
             String fullHtml = escapeForJs(bodyHtml);
             String summaryEscaped = escapeForJs(summary);
             runScript("addToolMessage(%d,'%s','%s','%s')", id, typeLabel, summaryEscaped, fullHtml);
+        } else if (type == MessageType.AI) {
+            String htmlEscaped = escapeForJs(bodyHtml);
+            String labelEscaped = escapeForJs(typeLabel);
+            Statistics stats = message.getStatistics();
+            if (stats != null) {
+                runScript(
+                    "addAiMessage(%d,'%s','%s',%d,%d,%d)",
+                    id,
+                    labelEscaped,
+                    htmlEscaped,
+                    stats.inputTokens(),
+                    stats.outputTokens(),
+                    stats.totalTokens());
+            } else {
+                runScript("addMessage(%d,'%s','%s','%s')", id, cssClass, labelEscaped, htmlEscaped);
+            }
         } else {
             String htmlEscaped = escapeForJs(bodyHtml);
             runScript("addMessage(%d,'%s','%s','%s')", id, cssClass, typeLabel, htmlEscaped);

@@ -18,6 +18,7 @@ import dev.langchain4j.model.chat.response.CompleteToolCall;
 import dev.langchain4j.model.chat.response.PartialResponse;
 import dev.langchain4j.model.chat.response.PartialResponseContext;
 import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.PartialThinkingContext;
 import dev.langchain4j.model.chat.response.PartialToolCall;
 import dev.langchain4j.model.chat.response.PartialToolCallContext;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
@@ -25,6 +26,7 @@ import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
@@ -121,6 +123,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
         private final ChatMemory chatMemory;
         private final IPartialMessagesListener partialMessageListener;
         private final IToolProvider toolProvider;
+        private final StringBuffer partialThinkingBuffer = new StringBuffer();
 
         public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolProvider toolProvider) {
             this.chatMemory = chatMemory;
@@ -151,16 +154,26 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
         }
         
         @Override
-        public void onPartialThinking(PartialThinking partialThinking) {
-            if (partialMessageListener != null) {
-                logger.debug("Partial thinking: {}", partialThinking);                
+        public void onPartialThinking(PartialThinking partialThinking, PartialThinkingContext context) {
+            if (stopRequested.get()) {
+                logger.info("Stop requested, cancelling streaming in partial thinking");
+                context.streamingHandle().cancel();
+                callback.onCancel();
+            }
+            if (partialMessageListener != null) {                
+                partialThinkingBuffer.append(partialThinking.text());
             }
         }
+
+
 
         @Override
         public void onCompleteResponse(ChatResponse response) {
             chatMemory.add(response.aiMessage());
-            
+            if (partialThinkingBuffer.length() > 0) {
+                logger.info("Partial thinking: {}", partialThinkingBuffer.toString());
+                partialThinkingBuffer.setLength(0);
+            }
             if (response.aiMessage().hasToolExecutionRequests()){
                 logger.info("Tool execution requests: {}", response.aiMessage().toolExecutionRequests());
                 executeTools(response.aiMessage().toolExecutionRequests());
@@ -170,7 +183,9 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
                     this
                 );
             }else{
-                var aiMessage = Message.ai(response.aiMessage().text(), List.of());
+                logger.info("AI response finished, usage: {}", response.tokenUsage());
+                var statistics = Statistics.fromTokenUsage(response.tokenUsage());
+                var aiMessage = Message.ai(response.aiMessage().text(),statistics);
                 callback.onMessageAdded(aiMessage, false);
             }
             

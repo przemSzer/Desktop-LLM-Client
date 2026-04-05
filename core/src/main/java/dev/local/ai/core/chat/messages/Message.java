@@ -6,28 +6,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public record Message(String text, List<DocumentDescription> files, MessageType type) {
+public record Message(String text, List<DocumentDescription> files, MessageType type, Statistics statistics) {
     public Message(String text) {
-        this(text, Collections.emptyList(), MessageType.USER);
+        this(text, Collections.emptyList(), MessageType.USER, null);
     }
 
     public Message(String text, List<DocumentDescription> files) {
-        this(text, files, MessageType.USER);
+        this(text, files, MessageType.USER, null);
+    }
+
+    public Message(String message, List<DocumentDescription> files, MessageType type) {
+        this(message, files, type, null);
     }
 
     public static Message toolCall(String toolName, Map<String, String> arguments) {
         var argumentsString = arguments.entrySet().stream()
             .map(entry -> entry.getKey() + ": " + entry.getValue())
             .collect(Collectors.joining(", "));
-        return new Message(toolName + " (" + argumentsString + ")", List.of(), MessageType.TOOL_CALL);
+        return new Message(toolName + " (" + argumentsString + ")", List.of(), MessageType.TOOL_CALL, new Statistics(0, 0, 0));
     }
 
-    public static Message ai(String text, List<DocumentDescription> files) {
-        return new Message(text, files, MessageType.AI);
+    public static Message ai(String text, Statistics statistics) {
+        return new Message(text, Collections.emptyList(), MessageType.AI, statistics);
     }
 
     public static Message toolResult(String text, List<DocumentDescription> files) {
-        return new Message(text, files, MessageType.TOOL_RESULT);
+        return new Message(text, files, MessageType.TOOL_RESULT, null);
     }
 
     @Override

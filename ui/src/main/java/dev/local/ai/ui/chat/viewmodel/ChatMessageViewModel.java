@@ -7,6 +7,7 @@ import javafx.beans.property.StringProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 
 /**
@@ -40,12 +41,14 @@ public class ChatMessageViewModel {
     private final ObjectProperty<MessageType> type;
     private final ObjectProperty<LocalDateTime> timestamp;
     private final ObjectProperty<List<AttachedFileViewModel>> attachedFiles;
+    private final ObjectProperty<Statistics> statistics;
     
-    public ChatMessageViewModel(String content, MessageType type, List<AttachedFileViewModel> attachedFiles) {
+    public ChatMessageViewModel(String content, MessageType type, List<AttachedFileViewModel> attachedFiles, Statistics statistics) {
         this.content = new SimpleStringProperty(content);
         this.type = new SimpleObjectProperty<>(type);
         this.timestamp = new SimpleObjectProperty<>(LocalDateTime.now());
         this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
+        this.statistics = new SimpleObjectProperty<>(statistics);
     }
     
     public ChatMessageViewModel(String content, MessageType type, LocalDateTime timestamp, List<AttachedFileViewModel> attachedFiles) {
@@ -53,6 +56,7 @@ public class ChatMessageViewModel {
         this.type = new SimpleObjectProperty<>(type);
         this.timestamp = new SimpleObjectProperty<>(timestamp);
         this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
+        this.statistics = new SimpleObjectProperty<>(null);
     }
     
     // Properties for data binding
@@ -103,6 +107,15 @@ public class ChatMessageViewModel {
     public void setAttachedFiles(List<AttachedFileViewModel> attachedFiles) {
         this.attachedFiles.set(attachedFiles);
     }
+    
+    public ObjectProperty<Statistics> statisticsProperty() {
+        return statistics;
+    }
+    
+    public Statistics getStatistics() {
+        return statistics.get();
+    }
+        
     
     @Override
     public String toString() {

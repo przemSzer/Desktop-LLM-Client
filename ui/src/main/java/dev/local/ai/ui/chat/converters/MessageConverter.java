@@ -3,6 +3,8 @@ package dev.local.ai.ui.chat.converters;
 import java.util.List;
 import java.util.Optional;
 
+import org.jspecify.annotations.NonNull;
+
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
@@ -10,7 +12,7 @@ import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
 
 public class MessageConverter {
-    public Optional<ChatMessageViewModel> convert(Message message) {
+    public Optional<@NonNull ChatMessageViewModel> convert(Message message) {
         final var messageType = getMessageType(message);
         if (messageType == null) {
             return Optional.empty();
@@ -19,10 +21,10 @@ public class MessageConverter {
         if (messageType == ChatMessageViewModel.MessageType.TOOL_RESULT || messageType == ChatMessageViewModel.MessageType.TOOL_CALL) {
             return toToolMessage(message, messageType, filesFromMessage);
         }
-        return Optional.of(new ChatMessageViewModel(message.text(), messageType, filesFromMessage));
+        return Optional.of(new ChatMessageViewModel(message.text(), messageType, filesFromMessage, message.statistics()));
     }
 
-    private Optional<ChatMessageViewModel> toToolMessage(Message message, MessageType messageType, List<AttachedFileViewModel> filesFromMessage) {
+    private Optional<@NonNull ChatMessageViewModel> toToolMessage(Message message, MessageType messageType, List<AttachedFileViewModel> filesFromMessage) {
         var text = "";
         if (message.type() == dev.local.ai.core.chat.messages.MessageType.TOOL_CALL) {
             text = "Tool call: " + message.text();
@@ -30,7 +32,7 @@ public class MessageConverter {
             text = "Tool result: " + message.text();
         }
 
-        return Optional.of(new ChatMessageViewModel(text, ChatMessageViewModel.MessageType.TOOL_RESULT, filesFromMessage));
+        return Optional.of(new ChatMessageViewModel(text, ChatMessageViewModel.MessageType.TOOL_RESULT, filesFromMessage, message.statistics()));
     }
 
     private MessageType getMessageType(Message message) {

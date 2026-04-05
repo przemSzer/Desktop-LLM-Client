@@ -325,7 +325,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     @Override
     public void onError(String errorMessage, Exception exception) {
         Platform.runLater(() -> {
-            ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageType.ERROR, List.of());
+            ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageType.ERROR, List.of(), null);
             addMessage(errorMsg);
             statusMessage.set("Error occurred: " + errorMessage);
             sendingMessageInProgress.set(false);
@@ -355,9 +355,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             var updateLast = lastMessage.getType() == MessageType.PARTIAL;
             if (updateLast) {
                 lastMessage.setContent(lastMessage.getContent() + message);
-                //chatMessages.set(chatMessages.size() - 1, lastMessage);
             } else {
-                lastMessage = new ChatMessageViewModel(message, MessageType.PARTIAL, List.of());
+                lastMessage = new ChatMessageViewModel(message, MessageType.PARTIAL, List.of(), null);
                 chatMessages.add(lastMessage);
             }
         });

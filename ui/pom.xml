@@ -66,6 +66,13 @@
             <version>0.64.8</version>
         </dependency>  
 
+        <!-- Nullness (type use on Optional type args; matches JDK Optional.of) -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
