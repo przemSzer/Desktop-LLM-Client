@@ -20,14 +20,18 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jpro.version>0.5.7</jpro.version>
         <!-- Dependency versions -->
-        <langchain4j.version>1.12.2</langchain4j.version>
-        <langchain4j-community.version>1.12.2-beta22</langchain4j-community.version>
         <typesafe-config.version>1.4.4</typesafe-config.version>
         <logback.version>1.5.18</logback.version>
         <slf4j.version>2.0.9</slf4j.version>
         <junit.version>5.10.0</junit.version>
         <mockito.version>5.18.0</mockito.version>
         <assertj.version>3.25.1</assertj.version>
+        <langchain4j.version>1.13.1</langchain4j.version>
+        <langchain4j-community.version>1.13.1-beta23</langchain4j-community.version>
+        <bytebuddy.version>1.17.5</bytebuddy.version>
+        <langchain4j-mcp.version>1.13.1-beta23</langchain4j-mcp.version>
+        <langchain4j-apache-tika.version>1.13.1-beta23</langchain4j-apache-tika.version>
+        <langchain4j-jsoup.version>1.13.1-beta23</langchain4j-jsoup.version>
     </properties>
 
     <modules>
@@ -61,18 +65,24 @@
                 <artifactId>langchain4j-google-ai-gemini</artifactId>
                 <version>${langchain4j.version}</version>
             </dependency>
-            
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-mcp</artifactId>
+                <version>${langchain4j-mcp.version}</version>
+            </dependency>
+
             <!-- apache tika documents -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-parser-apache-tika</artifactId>
-                <version>${langchain4j-community.version}</version>
+                <version>${langchain4j-apache-tika.version}</version>
             </dependency>
             <!-- document transformer jsoup -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-transformer-jsoup</artifactId>
-                <version>${langchain4j-community.version}</version>
+                <version>${langchain4j-jsoup.version}</version>
             </dependency>
             <!-- local code execution engine -->
             <dependency>
@@ -125,6 +135,24 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--
+                Pin ByteBuddy to a JDK 25-compatible version. assertj-core 3.25.1
+                otherwise drags in byte-buddy 1.14.11 which cannot read class
+                file version 69 and breaks Mockito's inline mock maker.
+            -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${bytebuddy.version}</version>
                 <scope>test</scope>
             </dependency>
 

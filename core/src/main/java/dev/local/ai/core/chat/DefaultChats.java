@@ -6,6 +6,7 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.tools.FilterableToolProvider;
+import dev.local.ai.core.tools.ToolsProviderWithMCP;
 
 import java.time.Duration;
 
@@ -103,5 +104,22 @@ public class DefaultChats {
             .timeout(Duration.ofMinutes(5))
             .build();
         return new StreamingChat(chatModel, FilterableToolProvider.getInstance());
+    }
+
+    /**
+     * Manual-testing variant: same Ollama model as {@link #localOllamaGemma3n_Streaming()}
+     * but with the MCP-enabled tool provider. Requires a local MCP server reachable
+     * at the URL configured in {@code ToolsProviderWithMCP}.
+     */
+    public static ILLMChat localOllamaGemma3n_StreamingWithMcp() {
+        logger.info("Creating local Ollama Gemma3n chat instance with MCP tools");
+        OllamaStreamingChatModel chatModel = OllamaStreamingChatModel.builder()
+            .baseUrl("http://localhost:11434")
+            .logRequests(true)
+            .logResponses(true)
+            .modelName("gemma3n:latest")
+            .timeout(Duration.ofMinutes(5))
+            .build();
+        return new StreamingChat(chatModel, new FilterableToolProvider(ToolsProviderWithMCP.getInstance()));
     }
 }

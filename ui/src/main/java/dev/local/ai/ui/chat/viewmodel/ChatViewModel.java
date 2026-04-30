@@ -315,7 +315,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             if (newChatMessage.getType() == MessageType.USER) {
                 statusMessage.set("User message added");
             } else if (newChatMessage.getType() == MessageType.AI) {
-                statusMessage.set("AI response received");
+                statusMessage.set("Messages " + chatMessages.size() + " in chat");
                 sendingMessageInProgress.set(false);
             }
         });

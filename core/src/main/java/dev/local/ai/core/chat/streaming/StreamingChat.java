@@ -46,7 +46,10 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
     
     public StreamingChat(StreamingChatModel chatModel, IToolProvider toolProvider) {
         this.chatModel = chatModel;
-        this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
+        this.chatMemory = MessageWindowChatMemory.builder()
+                        .alwaysKeepSystemMessageFirst(true)
+                        .maxMessages(1000)
+                        .build();
         this.chatModelsProvider = new StreamingChatModelsProvider();
         logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
         CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
@@ -80,6 +83,7 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
             }
             
             var request = prepareChatRequest();
+            logger.info("Sending chat request, with {} messages", request.messages().size());
             this.chatModel.chat(
                     request,
                     new StreamingResponseHandler(chatMemory, callback, partialMessageListener, this.toolProvider)
@@ -204,8 +208,9 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
         }
             
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result, ToolExecutionRequest toolExecutionRequest) {
+            logger.info("Tool execution returned: {}", result);
             callback.onMessageAdded(
-                Message.toolCall(result.toolName(), ToolHelper.getArguments(toolExecutionRequest)), false
+                Message.toolCall(result.toolName(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)), false
             );
             logger.info("Tool execution returned: {}", result);
             chatMemory.add(result);

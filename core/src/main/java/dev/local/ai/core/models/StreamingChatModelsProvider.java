@@ -2,6 +2,8 @@ package dev.local.ai.core.models;
 
 import java.time.Duration;
 
+import dev.langchain4j.http.client.HttpClientBuilder;
+import dev.langchain4j.http.client.HttpClientBuilderLoader;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
@@ -38,6 +40,9 @@ public class StreamingChatModelsProvider {
 
     private StreamingChatModel ollamaChatModel(LLMInfoAndConnection modelInfo) {
         var ollamaConnection = (OllamaConnection) modelInfo.connection();
+        var httpClientBuilder = HttpClientBuilderLoader.loadHttpClientBuilder()
+            .readTimeout(Duration.ofSeconds(20))
+            .connectTimeout(Duration.ofMinutes(5));
         return OllamaStreamingChatModel
             .builder()
             .baseUrl(ollamaConnection.baseUrl())
@@ -46,6 +51,7 @@ public class StreamingChatModelsProvider {
             .modelName(modelInfo.modelInfo().name())
             .think(true)
             .returnThinking(true)
+            .httpClientBuilder(httpClientBuilder)
             .timeout(Duration.ofMinutes(5))
             .build();
     }

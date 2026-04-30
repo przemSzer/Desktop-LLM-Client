@@ -57,7 +57,7 @@ public class FilterableToolProvider implements IToolProvider, EventListener<Tool
 
     private static class InternalInstanceHolder {
         private static final FilterableToolProvider INSTANCE =
-            new FilterableToolProvider(ToolsProvider.getInstance());
+            new FilterableToolProvider(ToolsProviderWithMCP.getInstance());
     }
 
     public static IToolProvider getInstance() {

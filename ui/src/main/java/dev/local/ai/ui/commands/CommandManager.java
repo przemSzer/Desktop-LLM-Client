@@ -26,7 +26,11 @@ public class CommandManager {
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "command-execution");
+                var thread = new Thread(r, "command-execution");
+                thread.setUncaughtExceptionHandler((t,ex)->{
+                    logger.error("Uncaught exception in command execution thread", ex);
+                });
+                return thread;
             }
         });
     }

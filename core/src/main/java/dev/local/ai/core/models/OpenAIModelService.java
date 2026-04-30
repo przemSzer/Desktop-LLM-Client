@@ -1,10 +1,12 @@
 package dev.local.ai.core.models;
 
 import dev.langchain4j.model.openai.OpenAiChatModelName;
+import dev.langchain4j.model.openai.OpenAiModelCatalog;
 import dev.local.ai.core.connections.OpenAIConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,9 +25,12 @@ public class OpenAIModelService implements AvailableModelsService {
         
     @Override
     public List<ModelInfo> loadModels() {
-        return Arrays.asList(OpenAiChatModelName.values())                     
+        OpenAiModelCatalog catalog = OpenAiModelCatalog.builder()
+            .apiKey(connection.apiKey())
+            .build();        
+        return catalog.listModels()                     
             .stream()
-            .map(model -> new ModelInfo(model.toString(), model.toString(), "OpenAI model: " + model.toString())) // Convert to ModelInfo
+            .map(model -> new ModelInfo(model.name(), model.displayName(), "OpenAI model: " + model.toString())) // Convert to ModelInfo
             .toList();
     }
 }
