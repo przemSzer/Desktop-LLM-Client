@@ -1,13 +1,13 @@
 package dev.local.ai.core.models;
 
+import dev.langchain4j.model.catalog.ModelDescription;
+import dev.langchain4j.model.catalog.ModelType;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiModelCatalog;
 import dev.local.ai.core.connections.OpenAIConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -28,9 +28,14 @@ public class OpenAIModelService implements AvailableModelsService {
         OpenAiModelCatalog catalog = OpenAiModelCatalog.builder()
             .apiKey(connection.apiKey())
             .build();        
-        return catalog.listModels()                     
+        return catalog.listModels()
             .stream()
-            .map(model -> new ModelInfo(model.name(), model.displayName(), "OpenAI model: " + model.toString())) // Convert to ModelInfo
+            .filter(m -> m.type() == ModelType.CHAT)
+            .map(this::toModelInfo)
             .toList();
+    }
+
+    private ModelInfo toModelInfo(ModelDescription model) {
+        return new ModelInfo(model.name(), model.displayName(), "OpenAI model: " + model.toString());
     }
 }

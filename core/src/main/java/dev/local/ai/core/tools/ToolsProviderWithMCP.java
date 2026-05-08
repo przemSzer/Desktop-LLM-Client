@@ -35,22 +35,25 @@ public class ToolsProviderWithMCP implements IToolProvider {
     private static final Duration MCP_TIMEOUT = Duration.ofSeconds(30);
     // --------------------------------------------------------------------
 
-    private final List<ToolDescriptor> descriptors;
-    private final McpServerToolProvider mcpServer;
+    private List<ToolDescriptor> descriptors;
+    private McpServerToolProvider mcpServer;
 
-    public ToolsProviderWithMCP() {
-        McpClient mcpClient = initializeMCPClient();
-        this.mcpServer = new McpServerToolProvider(MCP_SERVER_ID, MCP_SERVER_DISPLAY_NAME, mcpClient);
+    public ToolsProviderWithMCP() {        
+        try {
+            this.descriptors = new ArrayList<ToolDescriptor>();
+            this.descriptors.add(WebPageDownloaderTools.getInstance().toDescriptor());
+            this.descriptors.add(CommandLineTools.getInstance().toDescriptor());
+            logger.info("Initializing MCP client");
+            McpClient mcpClient = initializeMCPClient();
 
-        var combined = new ArrayList<ToolDescriptor>();
-        combined.add(WebPageDownloaderTools.getInstance().toDescriptor());
-        combined.add(CommandLineTools.getInstance().toDescriptor());
-        combined.addAll(mcpServer.getToolDescriptors());
-        this.descriptors = List.copyOf(combined);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "mcp-shutdown"));
-
-        logger.info("ToolsProviderWithMCP initialized with {} descriptors total", descriptors.size());
+            this.mcpServer = new McpServerToolProvider(MCP_SERVER_ID, MCP_SERVER_DISPLAY_NAME, mcpClient);
+            if (this.mcpServer != null) {
+                this.descriptors.addAll(this.mcpServer.getToolDescriptors());
+            }
+            logger.info("ToolsProviderWithMCP initialized with {} descriptors total", descriptors.size());
+        } catch (Exception e) {
+            logger.error("Error initializing ToolsProviderWithMCP, will use only local tools", e);
+        }
     }
 
     private McpClient initializeMCPClient() {
@@ -61,6 +64,7 @@ public class ToolsProviderWithMCP implements IToolProvider {
             .logRequests(true)
             .logResponses(true)
             .build();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "mcp-shutdown"));
 
         return new DefaultMcpClient.Builder()
             .key(MCP_SERVER_ID)
@@ -72,6 +76,7 @@ public class ToolsProviderWithMCP implements IToolProvider {
 
     private void closeQuietly() {
         try {
+            logger.info("Closing MCP server '{}'", MCP_SERVER_ID);
             mcpServer.close();
         } catch (Exception e) {
             logger.warn("Failed to close MCP server '{}': {}", MCP_SERVER_ID, e.getMessage());

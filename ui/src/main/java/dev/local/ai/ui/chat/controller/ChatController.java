@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.chat.DefaultChats;
-import dev.local.ai.core.tools.ToolsProvider;
+import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
@@ -68,7 +68,7 @@ public class ChatController {
             logger.debug("Initializing ChatController");
             
             chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
-            toolsSelectorView.init(ToolsProvider.getInstance());
+            toolsSelectorView.init(FilterableToolProvider.getInstance());
             
             setupDataBinding();
             setupEventHandlers();

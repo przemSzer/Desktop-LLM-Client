@@ -14,11 +14,12 @@
     <description>A multi-module Java project with core and UI components</description>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jpro.version>0.5.7</jpro.version>
+        <javafx.version>26.0.1</javafx.version>
         <!-- Dependency versions -->
         <typesafe-config.version>1.4.4</typesafe-config.version>
         <logback.version>1.5.18</logback.version>
@@ -167,8 +168,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <source>21</source>
-                        <target>21</target>
+                        <source>25</source>
+                        <target>25</target>
                     </configuration>
                 </plugin>
                 <plugin>
