@@ -3,6 +3,7 @@ package dev.local.ai.ui.tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.tools.IToolProvider;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.FlowPane;
@@ -19,9 +20,9 @@ public class ToolsSelectorView extends FlowPane {
         addPlaceholderButtons();
     }
 
-    public void init(IToolProvider toolProvider) {
+    public void init(IToolProvider toolProvider, CoreEventBus eventBus) {
         getChildren().clear();
-        this.viewModel = new ToolsSelectorViewModel(toolProvider);
+        this.viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
         buildToggleButtons();
         logger.info("ToolsSelectorView initialized with {} tools", viewModel.getTools().size());
     }

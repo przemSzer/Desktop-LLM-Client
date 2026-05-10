@@ -8,6 +8,9 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.local.ai.core.connections.ConnectionsStore;
+import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.storage.JsonFileStorage;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 
 /**
@@ -23,8 +26,12 @@ public class LLMSelectorDemo extends Application {
         try {
             logger.info("Starting ModelSelectorDemo");
                      
-            // Get the controller
+            // Standalone demo: use real storage + a throwaway event bus.
+            CoreEventBus eventBus = new CoreEventBus();
+            ConnectionsStore connectionsStore = new ConnectionsStore(new JsonFileStorage());
+
             LLMSelectorView view = new LLMSelectorView();
+            view.init(connectionsStore, eventBus);
             
             // Log controller initialization
             logger.info("ModelSelectorController initialized");

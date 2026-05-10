@@ -7,9 +7,12 @@ import dev.local.ai.core.chat.streaming.IPartialMessageAware;
 import dev.local.ai.core.chat.streaming.IPartialMessagesListener;
 import dev.local.ai.core.chat.streaming.StopRequestEvent;
 import dev.local.ai.core.documents.DocumentDescription;
-import dev.local.ai.core.events.CoreEventBusProvider;
+import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.models.LLMInfoAndConnection;
 import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.property.BooleanProperty;
@@ -55,17 +58,20 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final ListProperty<AttachedFileViewModel> attachedFiles;
     private final ListProperty<AttachedFileViewModel> systemMessageAttachedFiles;
     private final BooleanProperty sendingMessageInProgress;
+    private final ObjectProperty<LLMInfoAndConnection> selectedModelProperty;
 
     // Model and command management
     private final ILLMChat chat;
     private final CommandManager commandManager;
+    private final CoreEventBus eventBus;
 
     private final MessageConverter messageConverter;
     private final PauseTransition textChangedDebouncer = new PauseTransition(Duration.millis(500));
 
-    public ChatViewModel(ILLMChat chat, CommandManager commandManager) {
+    public ChatViewModel(ILLMChat chat, CommandManager commandManager, CoreEventBus eventBus) {
         this.chat = chat;
         this.commandManager = commandManager;
+        this.eventBus = eventBus;
         this.messageConverter = new MessageConverter();
         // Initialize observable properties
         this.systemMessage = new SimpleStringProperty(chat.getSystemMessage());
@@ -78,21 +84,19 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         this.canUndo = new SimpleBooleanProperty(false);
         this.canRedo = new SimpleBooleanProperty(false);
         this.sendingMessageInProgress = new SimpleBooleanProperty(false);
-
-        // Set this ViewModel as the callback for the Chat model
+        this.selectedModelProperty = new SimpleObjectProperty<>(null);
         chat.setCallback(this);
         if (chat instanceof IPartialMessageAware partialMessageAware) {
             partialMessageAware.setPartialMessageListener(this);
         }
 
-        // Bind undo/redo properties to command manager state
         setupCommandBindings();
         setupPropertyBindings();
 
         logger.info("ChatViewModel initialized");
     }    
 
-    private void setupPropertyBindings() {        
+    private void setupPropertyBindings() {                
         systemMessage.addListener((obs, oldVal, newVal) -> {
             textChangedDebouncer.setOnFinished(event -> updateSystemMessage());
             textChangedDebouncer.playFromStart();
@@ -132,6 +136,10 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         canRedo.bind(Bindings.createBooleanBinding(
                 commandManager::canRedo,
                 chatMessages));
+    }
+
+    public ObjectProperty<LLMInfoAndConnection> selectedModelProperty() {
+        return selectedModelProperty;
     }
 
     // Properties for data binding
@@ -385,6 +393,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     }
 
     public void stopMessage() {
-        CoreEventBusProvider.getInstance().publish(new StopRequestEvent(this.getClass().getSimpleName()));
+        eventBus.publish(new StopRequestEvent(this.getClass().getSimpleName()));
     }
 }

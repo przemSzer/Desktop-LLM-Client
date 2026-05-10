@@ -7,7 +7,7 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.chat.messages.MessageType;
-import dev.local.ai.core.events.CoreEventBusProvider;
+import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.LLMInfoAndConnection;
 
@@ -24,10 +24,10 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
     private final ChatMemory chatMemory;
     private IChatListener callback;
     
-    public Chat(ChatModel chatModel) {
+    public Chat(ChatModel chatModel, CoreEventBus eventBus) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.withMaxMessages(100);
-        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this);
+        eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, this);
         logger.info("Chat instance created with model: {}", chatModel.getClass().getSimpleName());
     }
 

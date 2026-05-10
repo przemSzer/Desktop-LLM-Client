@@ -4,6 +4,7 @@ import dev.local.ai.core.storage.DataStorage;
 import dev.local.ai.core.storage.StorageFactory;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,16 @@ public class ConnectionsStore {
     public List<ModelProviderConnection> readAll() {
         return storage.loadConnections();
     }
-    
+
+    public Optional<ModelProviderConnection> findById(String connectionId) {
+        if (connectionId == null) {
+            return Optional.empty();
+        }
+        return readAll().stream()
+            .filter(connection -> connectionId.equals(connection.id()))
+            .findFirst();
+    }
+
     public boolean save(ModelProviderConnection connection) {
         logger.info("Saving connection: {}", connection.name());
         return storage.saveConnection(connection);

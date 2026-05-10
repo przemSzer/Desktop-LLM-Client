@@ -28,11 +28,13 @@ public class OpenAIModelService implements AvailableModelsService {
         OpenAiModelCatalog catalog = OpenAiModelCatalog.builder()
             .apiKey(connection.apiKey())
             .build();        
-        return catalog.listModels()
+        var result = catalog.listModels()
             .stream()
-            .filter(m -> m.type() == ModelType.CHAT)
+            // .filter(m -> m.type() == ModelType.CHAT)
             .map(this::toModelInfo)
             .toList();
+        logger.info("Loaded {} models from OpenAI", result.size());
+        return result;
     }
 
     private ModelInfo toModelInfo(ModelDescription model) {

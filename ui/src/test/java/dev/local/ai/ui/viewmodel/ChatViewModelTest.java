@@ -1,6 +1,7 @@
 package dev.local.ai.ui.viewmodel;
 
 import dev.local.ai.core.chat.Chat;
+import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 
@@ -23,10 +24,13 @@ class ChatViewModelTest {
 
     @Mock(lenient = true)
     private CommandManager commandManager;
+
+    @Mock(lenient = true)
+    private CoreEventBus eventBus;
     
     @BeforeEach
     void setUp() {
-        viewModel = new ChatViewModel(mockChat, commandManager);
+        viewModel = new ChatViewModel(mockChat, commandManager, eventBus);
     }
     
     @Test

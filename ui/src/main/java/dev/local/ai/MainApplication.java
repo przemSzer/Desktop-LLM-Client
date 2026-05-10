@@ -9,6 +9,8 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.local.ai.context.AppContext;
+import dev.local.ai.context.ControllerFactory;
 import dev.local.ai.ui.utils.HostServicesProvider;
 
 import java.io.IOException;
@@ -16,15 +18,19 @@ import java.io.IOException;
 public class MainApplication extends Application {
     
     private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
+
+    private AppContext appContext;
     
     @Override
     public void start(Stage primaryStage) {
         try {
             logger.info("Starting Chat Application");
+            this.appContext = new AppContext();
             HostServicesProvider.getInstance().setHostServices(this.getHostServices());
             Platform.setImplicitExit(true);
             // Load the FXML file
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChatWindow.fxml"));
+            loader.setControllerFactory(new ControllerFactory(appContext));
             Parent root = loader.load();
             
             Scene scene = new Scene(root, 600, 400);
@@ -49,6 +55,13 @@ public class MainApplication extends Application {
     @Override
     public void stop() {
         logger.info("Chat Application stopping");
+        if (appContext != null) {
+            try {
+                appContext.close();
+            } catch (Exception e) {
+                logger.warn("Error while closing AppContext", e);
+            }
+        }
         System.exit(0);
     }
     

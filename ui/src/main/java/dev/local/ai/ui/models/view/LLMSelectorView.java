@@ -1,11 +1,12 @@
 package dev.local.ai.ui.models.view;
 
+import dev.local.ai.core.connections.ConnectionsStore;
+import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -18,13 +19,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ResourceBundle;
 
 /**
  * Controller for the Model Selector view following MVVM pattern.
  * Handles UI events and delegates to the ViewModel.
  */
-public class LLMSelectorView extends HBox implements Initializable {
+public class LLMSelectorView extends HBox {
     
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorView.class);
         
@@ -54,23 +54,23 @@ public class LLMSelectorView extends HBox implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        try{
-            logger.info("Initializing ModelSelectorController");
-            
-            // Initialize ViewModel
-            viewModel = new LLMSelectorViewModel();
-            
-            // Setup data binding
+    /**
+     * Wires the view to its ViewModel. Must be called by the parent controller
+     * after FXML loading is complete (typically from {@code initialize()} of the
+     * enclosing controller).
+     */
+    public void init(ConnectionsStore connectionsStore, CoreEventBus eventBus) {
+        try {
+            logger.info("Initializing LLMSelectorView");
+
+            this.viewModel = new LLMSelectorViewModel(connectionsStore, eventBus);
+
             setupDataBinding();
-            
-            // Setup UI event handlers
             setupEventHandlers();
-            
-            logger.info("ModelSelectorController initialized successfully");
-        }catch(Exception e){
-            logger.error("Error initializing ModelSelectorController", e);
+
+            logger.info("LLMSelectorView initialized successfully");
+        } catch (Exception e) {
+            logger.error("Error initializing LLMSelectorView", e);
         }
     }
     

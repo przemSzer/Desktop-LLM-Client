@@ -9,14 +9,17 @@ import javafx.scene.control.Label;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.local.ai.core.chat.DefaultChats;
-import dev.local.ai.core.tools.FilterableToolProvider;
+import dev.local.ai.core.connections.ConnectionsStore;
+import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
-import dev.local.ai.ui.commands.CommandManagerProvider;
+import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
+import dev.local.ai.ui.models.model.LLMInfoViewModel;
+import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 
 /**
@@ -60,16 +63,32 @@ public class ChatController {
     @FXML
     private ToolsSelectorView toolsSelectorView;
 
-    private ChatViewModel chatViewModel;
+    @FXML
+    private LLMSelectorView modelSelectorView;
+
+    private final ChatViewModel chatViewModel;
+    private final IToolProvider toolProvider;
+    private final CoreEventBus eventBus;
+    private final ConnectionsStore connectionsStore;
+
+    public ChatController(ChatViewModel chatViewModel,
+                          IToolProvider toolProvider,
+                          CoreEventBus eventBus,
+                          ConnectionsStore connectionsStore) {
+        this.chatViewModel = chatViewModel;
+        this.toolProvider = toolProvider;
+        this.eventBus = eventBus;
+        this.connectionsStore = connectionsStore;
+    }
     
     @FXML
     public void initialize() {
         try {
             logger.debug("Initializing ChatController");
             
-            chatViewModel = new ChatViewModel(DefaultChats.defaultChat(), CommandManagerProvider.get());
-            toolsSelectorView.init(FilterableToolProvider.getInstance());
-            
+            toolsSelectorView.init(toolProvider, eventBus);
+            modelSelectorView.init(connectionsStore, eventBus);
+
             setupDataBinding();
             setupEventHandlers();
             
@@ -117,6 +136,22 @@ public class ChatController {
         sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
         stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        var selectedModel = chatViewModel.selectedModelProperty().get();
+        if (selectedModel != null) {
+            modelSelectorView
+                .getViewModel()
+                .setSelectedModel(new LLMInfoViewModel(selectedModel.modelInfo()));
+            modelSelectorView
+                .getViewModel()
+                .setSelectedConnection(new ConnectionViewModel(selectedModel.connection().providerType(), selectedModel.connection().name(), selectedModel.connection().description(), selectedModel.connection().id()));
+        }
+        chatViewModel.selectedModelProperty()
+            .map(llm -> new LLMInfoViewModel(llm.modelInfo()))
+            .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedModel(newVal));        
+
+        chatViewModel.selectedModelProperty()
+            .map(llm -> new ConnectionViewModel(llm.connection().providerType(), llm.connection().name(), llm.connection().description(), llm.connection().id()))
+            .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedConnection(newVal));        
         logger.debug("Data binding setup completed");
     }
     

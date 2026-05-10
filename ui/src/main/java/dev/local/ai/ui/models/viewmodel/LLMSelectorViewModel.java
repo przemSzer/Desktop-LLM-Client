@@ -4,7 +4,6 @@ import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.core.models.LLMInfoAndConnection;
@@ -40,21 +39,20 @@ public class LLMSelectorViewModel {
 
     private final CoreEventBus coreEventBus;
     
-    public LLMSelectorViewModel() {
+    public LLMSelectorViewModel(ConnectionsStore connectionsStore, CoreEventBus coreEventBus) {
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.selectedConnection = new SimpleObjectProperty<>();
         this.availableModels = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.selectedModel = new SimpleObjectProperty<>();
         this.statusMessage = new SimpleStringProperty("Ready");
         this.isLoadingModels = new SimpleBooleanProperty(false);
-        
-        // Initialize dependencies  
-        this.connectionsStore = new ConnectionsStore();
-        this.coreEventBus = CoreEventBusProvider.getInstance();        
-        // Load connections and setup listeners
+
+        this.connectionsStore = connectionsStore;
+        this.coreEventBus = coreEventBus;
+
         loadConnections();
         setupPropertyListeners();
-        
+
         logger.info("ModelSelectorViewModel initialized");
     }
     
@@ -152,7 +150,9 @@ public class LLMSelectorViewModel {
                     
                     // Auto-select first model if available
                     if (!modelViewModels.isEmpty()) {
-                        selectedModel.set(modelViewModels.get(0));
+                        if (modelViewModels.contains(this.selectedModel.get())){
+                            selectedModel.set(this.selectedModel.get());
+                        }
                     }
                 });
             })
@@ -167,10 +167,7 @@ public class LLMSelectorViewModel {
     }
     
     private ModelProviderConnection findConnectionById(String connectionId) {
-        return connectionsStore.readAll().stream()
-            .filter(conn -> conn.id().equals(connectionId))
-            .findFirst()
-            .orElse(null);
+        return connectionsStore.findById(connectionId).orElse(null);
     }
     
     // Property getters

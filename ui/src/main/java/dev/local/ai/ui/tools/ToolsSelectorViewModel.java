@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsSelectionChangedEvent;
 import javafx.collections.FXCollections;
@@ -20,10 +19,6 @@ public class ToolsSelectorViewModel {
     private final ObservableList<ToolItemViewModel> tools;
     private final CoreEventBus eventBus;
     private final IToolProvider toolProvider;
-
-    public ToolsSelectorViewModel(IToolProvider toolProvider) {
-        this(toolProvider, CoreEventBusProvider.getInstance());
-    }
 
     public ToolsSelectorViewModel(IToolProvider toolProvider, CoreEventBus eventBus) {
         this.eventBus = eventBus;

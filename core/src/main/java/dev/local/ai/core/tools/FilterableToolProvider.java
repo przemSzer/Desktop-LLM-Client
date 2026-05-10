@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.core.events.CoreEventBusProvider;
 import dev.local.ai.core.events.EventListener;
 
 /**
@@ -26,10 +25,6 @@ public class FilterableToolProvider implements IToolProvider, EventListener<Tool
 
     private final IToolProvider delegate;
     private volatile Set<String> enabledToolIds;
-
-    public FilterableToolProvider(IToolProvider delegate) {
-        this(delegate, CoreEventBusProvider.getInstance());
-    }
 
     public FilterableToolProvider(IToolProvider delegate, CoreEventBus eventBus) {
         this.delegate = delegate;
@@ -53,14 +48,5 @@ public class FilterableToolProvider implements IToolProvider, EventListener<Tool
         return delegate.getToolDescriptors().stream()
             .filter(descriptor -> enabledToolIds.contains(descriptor.id()))
             .toList();
-    }
-
-    private static class InternalInstanceHolder {
-        private static final FilterableToolProvider INSTANCE =
-            new FilterableToolProvider(ToolsProviderWithMCP.getInstance());
-    }
-
-    public static IToolProvider getInstance() {
-        return InternalInstanceHolder.INSTANCE;
     }
 }

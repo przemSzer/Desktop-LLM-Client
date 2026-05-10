@@ -27,7 +27,7 @@ import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.chat.messages.Statistics;
-import dev.local.ai.core.events.CoreEventBusProvider;
+import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolHelper;
@@ -44,17 +44,20 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
     private IToolProvider toolProvider;
     private AtomicBoolean stopRequested = new AtomicBoolean(false);
     
-    public StreamingChat(StreamingChatModel chatModel, IToolProvider toolProvider) {
+    public StreamingChat(StreamingChatModel chatModel,
+                         IToolProvider toolProvider,
+                         CoreEventBus eventBus,
+                         StreamingChatModelsProvider chatModelsProvider) {
         this.chatModel = chatModel;
         this.chatMemory = MessageWindowChatMemory.builder()
                         .alwaysKeepSystemMessageFirst(true)
                         .maxMessages(1000)
                         .build();
-        this.chatModelsProvider = new StreamingChatModelsProvider();
+        this.chatModelsProvider = chatModelsProvider;
         logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
-        CoreEventBusProvider.getInstance().subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
-        CoreEventBusProvider.getInstance().subscribe(StopRequestEvent.EVENT_TYPE, this::onStopRequest);
-        this.toolProvider = toolProvider;                
+        eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
+        eventBus.subscribe(StopRequestEvent.EVENT_TYPE, this::onStopRequest);
+        this.toolProvider = toolProvider;
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
     }
 
