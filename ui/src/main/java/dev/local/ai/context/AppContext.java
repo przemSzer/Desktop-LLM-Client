@@ -1,5 +1,8 @@
 package dev.local.ai.context;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,9 +16,7 @@ import dev.local.ai.core.storage.SettingsStorage;
 import dev.local.ai.core.storage.models.LastSelectedModel;
 import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
-import dev.local.ai.core.tools.ToolsProvider;
-import dev.local.ai.core.tools.local.CommandLineTools;
-import dev.local.ai.core.tools.web.WebPageDownloaderTools;
+import dev.local.ai.core.tools.ToolsProviderWithMCP;
 import dev.local.ai.ui.commands.CommandManager;
 
 public final class AppContext implements AutoCloseable {
@@ -30,13 +31,14 @@ public final class AppContext implements AutoCloseable {
     public final StreamingChatModelsProvider modelsProvider;
     public final LastSelectedModel lastSelectedModel;
 
-    public final WebPageDownloaderTools webPageDownloaderTools;
-    public final CommandLineTools commandLineTools;
     public final IToolProvider toolProvider;
 
     public final CommandManager commandManager;
 
+    private final List<AutoCloseable> closeables;
+
     public AppContext() {
+        this.closeables = new ArrayList<>();
         logger.info("Initializing AppContext");
 
         this.eventBus = new CoreEventBus();
@@ -47,10 +49,9 @@ public final class AppContext implements AutoCloseable {
         this.modelsProvider = new StreamingChatModelsProvider();
         this.lastSelectedModel = new LastSelectedModel(eventBus, settingsStorage, connectionsStore);
 
-        this.webPageDownloaderTools = new WebPageDownloaderTools();
-        this.commandLineTools = new CommandLineTools();
+        ToolsProviderWithMCP baseTools = new ToolsProviderWithMCP();
+        this.closeables.add(baseTools);
 
-        IToolProvider baseTools = new ToolsProvider();
         this.toolProvider = new FilterableToolProvider(baseTools, eventBus);
 
         this.commandManager = new CommandManager();
@@ -61,6 +62,13 @@ public final class AppContext implements AutoCloseable {
     @Override
     public void close() {
         logger.info("Shutting down AppContext");
+        for (var closeable : closeables) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                logger.error("Error while closing closeable", e);
+            }
+        }
         eventBus.shutdown();
     }
 }

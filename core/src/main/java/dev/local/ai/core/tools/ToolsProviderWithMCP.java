@@ -15,25 +15,15 @@ import dev.local.ai.core.tools.local.CommandLineTools;
 import dev.local.ai.core.tools.mcp.McpServerToolProvider;
 import dev.local.ai.core.tools.web.WebPageDownloaderTools;
 
-/**
- * Manual-testing IToolProvider that combines the built-in tools (web download,
- * command line) with one MCP server reached over Streamable HTTP.
- *
- * <p><b>Not for production use.</b> The MCP client is constructed eagerly in
- * the singleton initializer, with no graceful failure handling beyond a
- * shutdown hook. Replace with the {@code McpRegistry} from sequencing step 3
- * before any UI work depends on it.
- */
-public class ToolsProviderWithMCP implements IToolProvider {
+
+public class ToolsProviderWithMCP implements IToolProvider, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(ToolsProviderWithMCP.class);
 
-    // --- Edit these to point at a different MCP server -------------------
     private static final String MCP_SERVER_ID = "local-mcp";
     private static final String MCP_SERVER_DISPLAY_NAME = "Local MCP";
     private static final String MCP_SERVER_URL = "http://localhost:8088/mcp";
     private static final Duration MCP_TIMEOUT = Duration.ofSeconds(30);
-    // --------------------------------------------------------------------
 
     private List<ToolDescriptor> descriptors;
     private McpServerToolProvider mcpServer;
@@ -64,7 +54,6 @@ public class ToolsProviderWithMCP implements IToolProvider {
             .logRequests(true)
             .logResponses(true)
             .build();
-        Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "mcp-shutdown"));
 
         return new DefaultMcpClient.Builder()
             .key(MCP_SERVER_ID)
@@ -74,21 +63,17 @@ public class ToolsProviderWithMCP implements IToolProvider {
             .build();
     }
 
-    private void closeQuietly() {
+    @Override
+    public void close() {
+        if (mcpServer == null) {
+            return;
+        }
         try {
             logger.info("Closing MCP server '{}'", MCP_SERVER_ID);
             mcpServer.close();
         } catch (Exception e) {
             logger.warn("Failed to close MCP server '{}': {}", MCP_SERVER_ID, e.getMessage());
         }
-    }
-
-    private static class InternalInstanceHolder {
-        private static final ToolsProviderWithMCP INSTANCE = new ToolsProviderWithMCP();
-    }
-
-    public static IToolProvider getInstance() {
-        return InternalInstanceHolder.INSTANCE;
     }
 
     @Override

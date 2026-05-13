@@ -10,20 +10,9 @@ import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.ui.chat.controller.ChatController;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import dev.local.ai.ui.connection.controller.ConnectionsViewController;
 import javafx.util.Callback;
 
-/**
- * JavaFX controller factory that wires FXML controllers with their dependencies
- * from the {@link AppContext}.
- *
- * <p>Set on every {@code FXMLLoader} via
- * {@code loader.setControllerFactory(controllerFactory)}.
- *
- * <p>For controllers with an explicit mapping below, dependencies are
- * constructor-injected. Anything not mapped falls back to the JavaFX default
- * (no-arg constructor via reflection), so legacy controllers keep working
- * during migration.
- */
 public final class ControllerFactory implements Callback<Class<?>, Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(ControllerFactory.class);
@@ -40,7 +29,10 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
             if (type == ChatController.class) {
                 ChatViewModel viewModel = new ChatViewModel(buildChat(), app.commandManager, app.eventBus);
                 viewModel.selectedModelProperty().set(app.lastSelectedModel.get().orElse(null));
-                return new ChatController(viewModel, app.toolProvider, app.eventBus, app.connectionsStore);
+                return new ChatController(viewModel, app.toolProvider, app.eventBus, app.connectionsStore, app.commandManager);
+            }
+            if (type == ConnectionsViewController.class) {
+                return new ConnectionsViewController(app.commandManager);
             }
 
             logger.debug("No explicit mapping for controller {}, using default constructor", type.getName());

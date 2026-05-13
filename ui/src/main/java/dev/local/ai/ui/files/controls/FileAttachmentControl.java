@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
+import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 
 public class FileAttachmentControl extends VBox {
@@ -35,15 +36,9 @@ public class FileAttachmentControl extends VBox {
     private Label filesCountLabel;
     
     private final Logger logger = LoggerFactory.getLogger(FileAttachmentControl.class);
-    private final FileAttachmentViewModel viewModel;
+    private FileAttachmentViewModel viewModel;
     
-    public FileAttachmentControl() {
-        this(new FileAttachmentViewModel());
-    }
-    
-    public FileAttachmentControl(FileAttachmentViewModel viewModel) {
-        this.viewModel = viewModel;
-        
+    public FileAttachmentControl() {        
         FXMLLoader loader = new FXMLLoader(getClass().getResource("FileAttachmentControl.fxml"));
         loader.setController(this);
         try {
@@ -51,14 +46,18 @@ public class FileAttachmentControl extends VBox {
             getChildren().addAll(loadedContent.getChildren());
             getStyleClass().addAll(loadedContent.getStyleClass());
             setSpacing(loadedContent.getSpacing());
-            
-            initializeControls();
+                    
         } catch (IOException e) {
             logger.error("Failed to load FileAttachmentControl FXML", e);
             throw new RuntimeException("Failed to load FileAttachmentControl FXML", e);
         }
     }
-    
+
+    public void init(CommandManager commandManager) {
+        this.viewModel = new FileAttachmentViewModel(commandManager);
+        initializeControls();
+    }
+
     private void initializeControls() {
         // Set up data binding to ViewModel
         setupDataBinding();

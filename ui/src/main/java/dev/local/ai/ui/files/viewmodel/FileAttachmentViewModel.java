@@ -22,14 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.documents.DocumentDescription;
 import dev.local.ai.ui.commands.CommandManager;
-import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.files.commands.PrepareFileToBeUsedByLLM;
 
-/**
- * ViewModel for the FileAttachmentControl following MVVM pattern.
- * Manages the observable data and commands for file attachment functionality.
- * This ViewModel is GUI-agnostic and contains no JavaFX UI dependencies.
- */
 public class FileAttachmentViewModel {
 
     private static final Logger logger = LoggerFactory.getLogger(FileAttachmentViewModel.class);
@@ -45,8 +39,8 @@ public class FileAttachmentViewModel {
     // File selection callback - allows ViewModel to request file selection from UI
     private Supplier<File> fileSelectionCallback;
 
-    public FileAttachmentViewModel() {
-        this.commandManager = CommandManagerProvider.get();
+    public FileAttachmentViewModel(CommandManager commandManager) {
+        this.commandManager = commandManager;
         // Initialize observable properties
         this.attachedFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.filesCountText = new SimpleStringProperty("No files attached");

@@ -5,23 +5,15 @@ import java.util.List;
 import dev.local.ai.core.tools.local.CommandLineTools;
 import dev.local.ai.core.tools.web.WebPageDownloaderTools;
 
-public class ToolsProvider implements IToolProvider {
+public class DefaultToolsProvider implements IToolProvider {
 
     private final List<ToolDescriptor> descriptors;
 
-    public ToolsProvider() {
+    public DefaultToolsProvider() {
         this.descriptors = List.of(
             WebPageDownloaderTools.getInstance().toDescriptor(),
             CommandLineTools.getInstance().toDescriptor()
         );
-    }
-
-    private static class InternalInstanceHolder {
-        private static final ToolsProvider INSTANCE = new ToolsProvider();
-    }
-
-    public static IToolProvider getInstance() {
-        return InternalInstanceHolder.INSTANCE;
     }
 
     @Override

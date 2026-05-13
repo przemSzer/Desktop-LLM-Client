@@ -16,6 +16,7 @@ import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
@@ -70,15 +71,18 @@ public class ChatController {
     private final IToolProvider toolProvider;
     private final CoreEventBus eventBus;
     private final ConnectionsStore connectionsStore;
+    private final CommandManager commandManager;
 
     public ChatController(ChatViewModel chatViewModel,
                           IToolProvider toolProvider,
                           CoreEventBus eventBus,
-                          ConnectionsStore connectionsStore) {
+                          ConnectionsStore connectionsStore,
+                          CommandManager commandManager) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
         this.connectionsStore = connectionsStore;
+        this.commandManager = commandManager;
     }
     
     @FXML
@@ -88,7 +92,8 @@ public class ChatController {
             
             toolsSelectorView.init(toolProvider, eventBus);
             modelSelectorView.init(connectionsStore, eventBus);
-
+            fileAttachmentControl.init(commandManager);
+            systemMessageFileAttachments.init(commandManager);
             setupDataBinding();
             setupEventHandlers();
             
