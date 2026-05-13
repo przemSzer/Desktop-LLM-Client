@@ -22,6 +22,7 @@ import dev.local.ai.ui.files.controls.FileAttachmentControl;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorView;
+import javafx.util.Callback;
 
 /**
  * Controller for the Chat UI following MVVM pattern.
@@ -72,17 +73,20 @@ public class ChatController {
     private final CoreEventBus eventBus;
     private final ConnectionsStore connectionsStore;
     private final CommandManager commandManager;
+    private final Callback<Class<?>, Object> controllerFactory;
 
     public ChatController(ChatViewModel chatViewModel,
                           IToolProvider toolProvider,
                           CoreEventBus eventBus,
                           ConnectionsStore connectionsStore,
-                          CommandManager commandManager) {
+                          CommandManager commandManager,
+                          Callback<Class<?>, Object> controllerFactory) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
         this.connectionsStore = connectionsStore;
         this.commandManager = commandManager;
+        this.controllerFactory = controllerFactory;
     }
     
     @FXML
@@ -91,7 +95,7 @@ public class ChatController {
             logger.debug("Initializing ChatController");
             
             toolsSelectorView.init(toolProvider, eventBus);
-            modelSelectorView.init(connectionsStore, eventBus);
+            modelSelectorView.init(connectionsStore, eventBus, controllerFactory);
             fileAttachmentControl.init(commandManager);
             systemMessageFileAttachments.init(commandManager);
             setupDataBinding();

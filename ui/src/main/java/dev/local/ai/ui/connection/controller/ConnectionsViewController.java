@@ -17,13 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.connections.ConnectionProvider;
+import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.connection.viewmodel.ConnectionsViewModel;
 
-/**
- * Controller for the Connections UI following MVVM pattern.
- * Handles only UI events and delegates business logic to ViewModel.
- */
 public class ConnectionsViewController {
     
     private static final Logger logger = LoggerFactory.getLogger(ConnectionsViewController.class);
@@ -60,12 +57,18 @@ public class ConnectionsViewController {
     
     // ViewModel
     private ConnectionsViewModel connectionsViewModel;
+
+    private final CommandManager commandManager;
     
+    public ConnectionsViewController(CommandManager commandManager) {
+        this.commandManager = commandManager;
+    }
+
     @FXML
     public void initialize() {
         logger.debug("Initializing ConnectionsController");
         
-        connectionsViewModel = new ConnectionsViewModel();        
+        connectionsViewModel = new ConnectionsViewModel(commandManager);        
         setupDataBinding();
         setupEventHandlers();        
         setupTableColumns();

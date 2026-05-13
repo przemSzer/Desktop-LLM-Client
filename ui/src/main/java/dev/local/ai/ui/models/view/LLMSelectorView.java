@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ public class LLMSelectorView extends HBox {
     private Button manageConnectionsButton;
             
     private LLMSelectorViewModel viewModel;
+    private Callback<Class<?>, Object> controllerFactory;
     
     public LLMSelectorView() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ModelSelectorView.fxml"));
@@ -54,16 +56,14 @@ public class LLMSelectorView extends HBox {
         }
     }
 
-    /**
-     * Wires the view to its ViewModel. Must be called by the parent controller
-     * after FXML loading is complete (typically from {@code initialize()} of the
-     * enclosing controller).
-     */
-    public void init(ConnectionsStore connectionsStore, CoreEventBus eventBus) {
+    public void init(ConnectionsStore connectionsStore,
+                     CoreEventBus eventBus,
+                     Callback<Class<?>, Object> controllerFactory) {
         try {
             logger.info("Initializing LLMSelectorView");
 
             this.viewModel = new LLMSelectorViewModel(connectionsStore, eventBus);
+            this.controllerFactory = controllerFactory;
 
             setupDataBinding();
             setupEventHandlers();
@@ -200,6 +200,9 @@ public class LLMSelectorView extends HBox {
             }
             
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            if (controllerFactory != null) {
+                loader.setControllerFactory(controllerFactory);
+            }
             Parent root = loader.load();
             
             Stage dialogStage = new Stage();

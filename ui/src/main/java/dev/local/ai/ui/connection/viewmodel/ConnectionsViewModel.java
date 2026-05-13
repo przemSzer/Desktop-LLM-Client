@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ConnectionProvider;
 import dev.local.ai.ui.commands.CommandManager;
-import dev.local.ai.ui.commands.CommandManagerProvider;
 import dev.local.ai.ui.connection.AddNewConnectionCommand;
 import dev.local.ai.ui.connection.INewConnectionDialog;
 import dev.local.ai.ui.connection.google.GoogleConnectionDialog;
@@ -34,9 +33,9 @@ public class ConnectionsViewModel {
     private final StringProperty statusMessage;
     private final ObjectProperty<ConnectionViewModel> selectedConnection;
     private ConnectionsStore connectionsStore;
-    private CommandManager commandManager;
+    private final CommandManager commandManager;
 
-    public ConnectionsViewModel() {
+    public ConnectionsViewModel(CommandManager commandManager) {
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.statusMessage = new SimpleStringProperty("Ready");
         this.selectedConnection = new SimpleObjectProperty<>();
@@ -45,7 +44,7 @@ public class ConnectionsViewModel {
         reloadAllConnections();
 
         logger.info("ConnectionsViewModel initialized");
-        this.commandManager = CommandManagerProvider.get();
+        this.commandManager = commandManager;
     }
 
     private void reloadAllConnections() {
