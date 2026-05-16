@@ -35,6 +35,12 @@
     -fx-background-color: -fx-bg-primary;
 }
 
+.conversation-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-primary;
+}
+
 /* ============================================================
    Chat ListView
    ============================================================ */

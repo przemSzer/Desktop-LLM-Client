@@ -33,11 +33,7 @@ public class ClearChatCommand implements ICommand {
             if (supportsUndo()) {
                 previousMessages = null;
             }
-            var systemMessage = chat.getSystemMessage();
-            chat.clearMemory();
-            if (systemMessage != null && !systemMessage.isEmpty()) {
-                chat.setSystemMessage(systemMessage);
-            }
+            chat.emptyNonSystemMessages();
             logger.info("ClearChatCommand executed successfully");
             return true;
             
@@ -75,7 +71,7 @@ public class ClearChatCommand implements ICommand {
     
     @Override
     public String getDescription() {
-        return "Clear chat memory";
+        return "Empty current conversation";
     }
     
     @Override

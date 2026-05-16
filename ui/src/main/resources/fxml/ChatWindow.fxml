@@ -8,8 +8,10 @@
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitMenuButton?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TitledPane?>
@@ -53,7 +55,8 @@
         <items>
           <AnchorPane minHeight="100.0" minWidth="100.0" prefHeight="477.0" prefWidth="883.0">
                <children>
-                  <ChatWebView fx:id="chatWebView" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0" />
+                  <Label fx:id="conversationTitleLabel" styleClass="conversation-title" text="New conversation" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0" />
+                  <ChatWebView fx:id="chatWebView" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="40.0" />
                </children>
             </AnchorPane>
           <AnchorPane minHeight="260.0" prefHeight="306.0" prefWidth="878.0" SplitPane.resizableWithParent="false">
@@ -100,7 +103,11 @@
                         </Label>
                           
                         <HBox alignment="CENTER" spacing="10" styleClass="bottom-toolbar" GridPane.hgrow="NEVER" GridPane.rowIndex="4" GridPane.vgrow="NEVER">
-                           <Button fx:id="clearChatButton" styleClass="btn-secondary" text="Clear Chat" />
+                           <SplitMenuButton fx:id="newConversationSplitMenuButton" mnemonicParsing="false" styleClass="btn-secondary" text="New conversation">
+                             <items>
+                               <MenuItem fx:id="emptyCurrentConversationMenuItem" mnemonicParsing="false" text="Empty current conversation" />
+                             </items>
+                           </SplitMenuButton>
                            <LLMSelectorView fx:id="modelSelectorView" />
                         </HBox>
                      </children>

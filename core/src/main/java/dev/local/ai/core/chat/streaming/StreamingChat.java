@@ -1,5 +1,6 @@
 package dev.local.ai.core.chat.streaming;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,11 +28,12 @@ import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolHelper;
 
-public class StreamingChat implements ILLMChat,IPartialMessageAware{
+public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoCloseable {
 
     private StreamingChatModel chatModel;
     private final ChatMemory chatMemory;
@@ -42,7 +44,12 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
     private final MessageToChatMessageConverter messageToChatMessageConverter;
     private IToolProvider toolProvider;
     private AtomicBoolean stopRequested = new AtomicBoolean(false);
-    
+
+    private final CoreEventBus eventBus;
+    private final EventListener<LLMChangedEvent> llmChangedListener = this::onLLMChanged;
+    private final EventListener<StopRequestEvent> stopRequestListener = this::onStopRequest;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
     //TODO: chatModel in fact should be initial chatModel, 
     // but it also should be gathered from chatModelsProvider
     public StreamingChat(StreamingChatModel initialChatModel,
@@ -53,11 +60,21 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
         this.chatModel = initialChatModel;
         this.chatMemory = chatMemory;
         this.chatModelsProvider = chatModelsProvider;
+        this.eventBus = eventBus;
         logger.info("StreamingChat instance created with model: {}", initialChatModel.getClass().getSimpleName());
-        eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
-        eventBus.subscribe(StopRequestEvent.EVENT_TYPE, this::onStopRequest);
+        eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
+        eventBus.subscribe(StopRequestEvent.EVENT_TYPE, stopRequestListener);
         this.toolProvider = toolProvider;
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
+    }
+
+    @Override
+    public void close() {
+        if (closed.compareAndSet(false, true)) {
+            eventBus.unsubscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
+            eventBus.unsubscribe(StopRequestEvent.EVENT_TYPE, stopRequestListener);
+            logger.info("StreamingChat closed and unsubscribed from CoreEventBus");            
+        }
     }
 
     @Override
@@ -244,6 +261,18 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
         }
         
         logger.info("Chat memory cleared");
+    }
+
+    @Override
+    public void emptyNonSystemMessages() {
+        var systemMessages = chatMemory.messages().stream()
+                .filter(SystemMessage.class::isInstance)
+                .toList();
+        chatMemory.set(new ArrayList<>(systemMessages));
+        if (callback != null) {
+            callback.onMemoryCleared();
+        }
+        logger.info("Non-system chat messages removed; system message retained where present");
     }
 
     @Override

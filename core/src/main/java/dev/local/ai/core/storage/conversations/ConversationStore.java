@@ -46,6 +46,13 @@ public class ConversationStore {
                 .max(Comparator.comparing(ConversationSummary::updatedAt));
     }
 
+    public Optional<ConversationSummary> findSummary(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(cache.get(id));
+    }
+
     public String createConversation() {
         String id = UUID.randomUUID().toString();
         Path conversationDir = chatsDirectory.resolve(id);

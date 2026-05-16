@@ -1,14 +1,18 @@
 package dev.local.ai.ui.chat.viewmodel;
 
+import dev.langchain4j.memory.ChatMemory;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.messages.Message;
 import dev.local.ai.core.chat.streaming.IPartialMessageAware;
 import dev.local.ai.core.chat.streaming.IPartialMessagesListener;
+import dev.local.ai.core.chat.streaming.MessageToChatMessageConverter;
 import dev.local.ai.core.chat.streaming.StopRequestEvent;
 import dev.local.ai.core.documents.DocumentDescription;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.LLMInfoAndConnection;
+import dev.local.ai.core.storage.conversations.ConversationStore;
+import dev.local.ai.core.storage.conversations.ConversationSummary;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
@@ -28,6 +32,7 @@ import javafx.beans.binding.Bindings;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +42,8 @@ import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
 import dev.local.ai.ui.chat.converters.MessageConverter;
+import dev.local.ai.ui.chat.session.ChatSession;
+import dev.local.ai.ui.chat.session.ConversationSessionFactory;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.command.ClearChatCommand;
 
@@ -59,22 +66,30 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final ListProperty<AttachedFileViewModel> systemMessageAttachedFiles;
     private final BooleanProperty sendingMessageInProgress;
     private final ObjectProperty<LLMInfoAndConnection> selectedModelProperty;
+    private final StringProperty currentConversationId;
+    private final StringProperty currentConversationTitle;
 
-    // Model and command management
-    private final ILLMChat chat;
+    private ChatSession session;
+    private final ConversationSessionFactory sessionFactory;
+    private final ConversationStore conversationStore;
     private final CommandManager commandManager;
     private final CoreEventBus eventBus;
 
     private final MessageConverter messageConverter;
     private final PauseTransition textChangedDebouncer = new PauseTransition(Duration.millis(500));
 
-    public ChatViewModel(ILLMChat chat, CommandManager commandManager, CoreEventBus eventBus) {
-        this.chat = chat;
+    public ChatViewModel(ChatSession session,
+                         ConversationSessionFactory sessionFactory,
+                         ConversationStore conversationStore,
+                         CommandManager commandManager,
+                         CoreEventBus eventBus) {
+        this.session = session;
+        this.sessionFactory = sessionFactory;
+        this.conversationStore = conversationStore;
         this.commandManager = commandManager;
         this.eventBus = eventBus;
         this.messageConverter = new MessageConverter();
-        // Initialize observable properties
-        this.systemMessage = new SimpleStringProperty(chat.getSystemMessage());
+        this.systemMessage = new SimpleStringProperty(session.chat().getSystemMessage());
 
         this.chatMessages = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.inputMessage = new SimpleStringProperty("");
@@ -85,16 +100,86 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         this.canRedo = new SimpleBooleanProperty(false);
         this.sendingMessageInProgress = new SimpleBooleanProperty(false);
         this.selectedModelProperty = new SimpleObjectProperty<>(null);
-        chat.setCallback(this);
-        if (chat instanceof IPartialMessageAware partialMessageAware) {
-            partialMessageAware.setPartialMessageListener(this);
-        }
+        this.currentConversationId = new SimpleStringProperty(session.conversationId());
+        this.currentConversationTitle = new SimpleStringProperty("New conversation");
+        attachToSession(session);
+        rehydrateFromChatMemory(session.chatMemory());
 
         setupCommandBindings();
         setupPropertyBindings();
 
-        logger.info("ChatViewModel initialized");
-    }    
+        refreshConversationTitleFromStore();
+
+        logger.info("ChatViewModel initialized for conversation {}", session.conversationId());
+    }
+
+    private void attachToSession(ChatSession session) {
+        var chat = session.chat();
+        chat.setCallback(this);
+        if (chat instanceof IPartialMessageAware partialMessageAware) {
+            partialMessageAware.setPartialMessageListener(this);
+        }
+    }
+
+    private ILLMChat currentChat() {
+        return session.chat();
+    }
+
+    private void rehydrateFromChatMemory(ChatMemory chatMemory) {
+        var converter = new MessageConverter();
+        for (var chatMessage : chatMemory.messages()) {
+            var coreMessage = MessageToChatMessageConverter.toCoreMessage(chatMessage);
+            if (coreMessage == null) {
+                continue;
+            }
+            converter.convert(coreMessage).ifPresent(vm -> chatMessages.add(vm));
+        }
+        if (!chatMemory.messages().isEmpty()) {
+            logger.info("Restored {} messages from conversation {}",
+                    chatMemory.messages().size(), session.conversationId());
+        }
+    }
+
+    /**
+     * Switches to a different conversation: closes the current
+     * {@link ChatSession} (which unsubscribes the previous {@code StreamingChat}
+     * from the event bus), opens a fresh session for {@code conversationId} and
+     * rehydrates {@link #chatMessages} from the new memory.
+     *
+     * No-op if a streaming response is currently in progress.
+     */
+    public void loadConversation(String conversationId) {
+        if (sendingMessageInProgress.get()) {
+            logger.warn("Refusing to switch conversation while a message is in progress");
+            Platform.runLater(() ->
+                    statusMessage.set("Cannot switch conversation while message is in progress"));
+            return;
+        }
+        if (session != null && Objects.equals(session.conversationId(), conversationId)) {
+            logger.debug("Conversation {} is already active; nothing to load", conversationId);
+            return;
+        }
+        ChatSession newSession = sessionFactory.openConversation(conversationId);
+        ChatSession previous = session;
+        session = newSession;
+        attachToSession(newSession);
+        Platform.runLater(() -> {
+            chatMessages.clear();
+            rehydrateFromChatMemory(newSession.chatMemory());
+            systemMessage.set(newSession.chat().getSystemMessage());
+            systemMessageAttachedFiles.clear();
+            attachedFiles.clear();
+            inputMessage.set("");
+            currentConversationId.set(newSession.conversationId());
+            refreshConversationTitleFromStore();
+            statusMessage.set("Loaded conversation");
+        });
+        if (previous != null) {
+            previous.close();
+        }
+        logger.info("Switched to conversation {}", conversationId);
+    }
+    
 
     private void setupPropertyBindings() {                
         systemMessage.addListener((obs, oldVal, newVal) -> {
@@ -124,7 +209,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                 files,
                 dev.local.ai.core.chat.messages.MessageType.SYSTEM
             );
-        chat.setSystemMessage(newSystemMessage);
+        currentChat().setSystemMessage(newSystemMessage);
     }
 
     private void setupCommandBindings() {
@@ -140,6 +225,37 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     public ObjectProperty<LLMInfoAndConnection> selectedModelProperty() {
         return selectedModelProperty;
+    }
+
+    public StringProperty currentConversationIdProperty() {
+        return currentConversationId;
+    }
+
+    public String getCurrentConversationId() {
+        return currentConversationId.get();
+    }
+
+    public StringProperty currentConversationTitleProperty() {
+        return currentConversationTitle;
+    }
+
+    public String getCurrentConversationTitle() {
+        return currentConversationTitle.get();
+    }
+
+    private void refreshConversationTitleFromStore() {
+        String id = session != null ? session.conversationId() : getCurrentConversationId();
+        Optional<ConversationSummary> summary = conversationStore.findSummary(id);
+        String title = summary.map(this::titleForSummary).orElse("New conversation");
+        currentConversationTitle.set(title);
+    }
+
+    private String titleForSummary(ConversationSummary summary) {
+        String title = summary.title();
+        if (title == null || title.isBlank()) {
+            return "New conversation";
+        }
+        return title;
     }
 
     // Properties for data binding
@@ -223,7 +339,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             // Update status
             statusMessage.set("Sending message...");
 
-            var command = new SendUserMessageToLLMCommand(chat, message, files);
+            var command = new SendUserMessageToLLMCommand(currentChat(), message, files);
             sendingMessageInProgress.set(true);
             var execution = commandManager.executeCommandAsync(command);
             execution.thenAccept(result -> {                
@@ -275,11 +391,11 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             statusMessage.set("Clearing chat...");
 
             // Create and execute the clear chat command
-            ClearChatCommand command = new ClearChatCommand(chat);
+            ClearChatCommand command = new ClearChatCommand(currentChat());
             boolean success = commandManager.executeCommand(command);
 
             if (success) {
-                statusMessage.set("Chat cleared");
+                statusMessage.set("Conversation emptied");
                 logger.info("ClearChatCommand executed successfully");
             } else {
                 statusMessage.set("Failed to clear chat");
@@ -298,7 +414,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     }
 
     public int getMessageCount() {
-        return chat.getMessageCount();
+        return currentChat().getMessageCount();
     }
 
     // ChatCallback implementation
@@ -322,6 +438,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             
             if (newChatMessage.getType() == MessageType.USER) {
                 statusMessage.set("User message added");
+                refreshConversationTitleFromStore();
             } else if (newChatMessage.getType() == MessageType.AI) {
                 statusMessage.set("Messages " + chatMessages.size() + " in chat");
                 sendingMessageInProgress.set(false);
@@ -374,6 +491,9 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
      * Shuts down the ViewModel and command manager
      */
     public void shutdown() {
+        if (session != null) {
+            session.close();
+        }
         commandManager.shutdown();
         logger.info("ChatViewModel shutdown");
     }

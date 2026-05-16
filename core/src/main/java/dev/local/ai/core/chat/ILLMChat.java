@@ -23,6 +23,15 @@ public interface ILLMChat {
 
     void clearMemory() ;
 
+    /**
+     * Removes all non-system messages from memory while keeping the conversation id
+     * and on-disk conversation directory. Used instead of {@link #clearMemory()}
+     * when the conversation folder must be preserved (file-backed store).
+     */
+    default void emptyNonSystemMessages() {
+        clearMemory();
+    }
+
     int getMessageCount() ;
 
     void setCallback(IChatListener callback) ;

@@ -3,7 +3,9 @@ package dev.local.ai.ui.chat.controller;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
 import org.slf4j.Logger;
@@ -11,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.events.CoreEventBus;
+import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.ui.chat.command.NewConversationCommand;
 import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
@@ -51,10 +55,16 @@ public class ChatController {
     private ChatWebView chatWebView;
     
     @FXML
+    private Label conversationTitleLabel;
+
+    @FXML
     private Label statusLabel;
 
     @FXML
-    private Button clearChatButton;
+    private SplitMenuButton newConversationSplitMenuButton;
+
+    @FXML
+    private MenuItem emptyCurrentConversationMenuItem;
     
     @FXML
     private FileAttachmentControl fileAttachmentControl;
@@ -73,6 +83,7 @@ public class ChatController {
     private final CoreEventBus eventBus;
     private final ConnectionsStore connectionsStore;
     private final CommandManager commandManager;
+    private final ConversationStore conversationStore;
     private final Callback<Class<?>, Object> controllerFactory;
 
     public ChatController(ChatViewModel chatViewModel,
@@ -80,12 +91,14 @@ public class ChatController {
                           CoreEventBus eventBus,
                           ConnectionsStore connectionsStore,
                           CommandManager commandManager,
+                          ConversationStore conversationStore,
                           Callback<Class<?>, Object> controllerFactory) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
         this.connectionsStore = connectionsStore;
         this.commandManager = commandManager;
+        this.conversationStore = conversationStore;
         this.controllerFactory = controllerFactory;
     }
     
@@ -141,11 +154,14 @@ public class ChatController {
         
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
+        conversationTitleLabel.textProperty().bind(chatViewModel.currentConversationTitleProperty());
         fileAttachmentControl.attachedFilesProperty()
             .bind(chatViewModel.attachedFilesProperty());
         sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
         stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        newConversationSplitMenuButton.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        emptyCurrentConversationMenuItem.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         var selectedModel = chatViewModel.selectedModelProperty().get();
         if (selectedModel != null) {
             modelSelectorView
@@ -195,9 +211,10 @@ public class ChatController {
             }
         });
 
-        clearChatButton.setOnAction(event -> {
-            chatViewModel.clearChat();
-        });
+        var newConversationCommand = new NewConversationCommand(conversationStore, chatViewModel);
+        newConversationSplitMenuButton.setOnAction(event -> newConversationCommand.execute());
+
+        emptyCurrentConversationMenuItem.setOnAction(event -> chatViewModel.clearChat());
         
         logger.debug("Event handlers setup completed");
     }

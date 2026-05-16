@@ -19,6 +19,7 @@ import dev.local.ai.core.storage.models.LastSelectedModel;
 import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsProviderWithMCP;
+import dev.local.ai.ui.chat.session.ConversationSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 
 import java.nio.file.Path;
@@ -42,6 +43,8 @@ public final class AppContext implements AutoCloseable {
 
     public final ConversationStore conversationStore;
     public final JsonFileChatMemoryStore chatMemoryStore;
+
+    public final ConversationSessionFactory conversationSessionFactory;
 
     private final List<AutoCloseable> closeables;
 
@@ -68,6 +71,10 @@ public final class AppContext implements AutoCloseable {
         this.toolProvider = new FilterableToolProvider(baseTools, eventBus);
 
         this.commandManager = new CommandManager();
+
+        this.conversationSessionFactory = new ConversationSessionFactory(
+            chatMemoryStore, lastSelectedModel, modelsProvider, toolProvider, eventBus
+        );
 
         logger.info("AppContext initialized");
     }
