@@ -100,6 +100,7 @@ public class ChatController {
             systemMessageFileAttachments.init(commandManager);
             setupDataBinding();
             setupEventHandlers();
+            renderExistingMessages();
             
             logger.debug("ChatController initialized.");
         } catch (Exception e) {
@@ -164,6 +165,18 @@ public class ChatController {
         logger.debug("Data binding setup completed");
     }
     
+    private void renderExistingMessages() {
+        //TODO: architecture - it should be moved to a view model, which 
+        //should check this and trigger rerender of the chat web view
+        //maybe  in lazy way...
+        if (!chatViewModel.getChatMessages().isEmpty()) {
+            logger.debug("Rendered {} existing messages from restored conversation", chatViewModel.getChatMessages().size());
+        }
+        for (ChatMessageViewModel msg : chatViewModel.getChatMessages()) {
+            chatWebView.addMessage(msg);
+        }
+    }
+
     private void setupEventHandlers() {
         sendButton.setOnAction(event -> {
             logger.debug("Send button clicked");

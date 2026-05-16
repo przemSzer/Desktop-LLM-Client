@@ -4,14 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.message.ImageContent.DetailLevel;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.documents.DocumentDescription;
 
 public class MessageToChatMessageConverter {
@@ -82,5 +85,19 @@ public class MessageToChatMessageConverter {
         return buffer.toString();
     }
 
-
+    public static Message toCoreMessage(ChatMessage chatMessage) {
+        if (chatMessage instanceof UserMessage userMsg) {
+            return new Message(userMsg.singleText(), List.of(), MessageType.USER);
+        }
+        if (chatMessage instanceof AiMessage aiMsg) {
+            return Message.ai(aiMsg.text(), null);
+        }
+        if (chatMessage instanceof ToolExecutionResultMessage toolResult) {
+            return Message.toolResult(toolResult.text(), List.of());
+        }
+        if (chatMessage instanceof SystemMessage) {
+            return null;
+        }
+        return null;
+    }
 }

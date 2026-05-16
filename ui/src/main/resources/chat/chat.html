@@ -295,7 +295,7 @@ function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalT
     div.appendChild(statsToggle);
     div.appendChild(statsBody);
     container.appendChild(div);
-    scrollToBottom();
+    //scrollToBottom();
 }
 
 function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
@@ -344,7 +344,7 @@ function setPartialMessage(bodyHtml) {
         container.appendChild(el);
     }
     el.querySelector('.msg-body').innerHTML = bodyHtml;
-    scrollToBottom();
+    //scrollToBottom();
 }
 
 function removePartialMessage() {

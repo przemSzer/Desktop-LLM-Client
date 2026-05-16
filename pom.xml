@@ -91,6 +91,16 @@
                 <artifactId>langchain4j-community-code-execution-engine-local</artifactId>
                 <version>${langchain4j-community.version}</version>
             </dependency>
+        <!-- 
+            Jackson-datatype-jsr310 is a necessary 
+            dependency as long as the project stays on Jackson 2.x (which is dictated by LangChain4j). Once Jackson 3.x becomes mainstream and LangChain4j adopts it, the separate module will no longer be needed. 
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>2.21.1</version>
+            </dependency>
+
         <!-- Configuration management -->
             <dependency>
                 <groupId>com.typesafe</groupId>

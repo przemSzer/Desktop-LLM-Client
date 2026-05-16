@@ -13,11 +13,16 @@ import dev.local.ai.core.storage.DataStorage;
 import dev.local.ai.core.storage.JsonFileStorage;
 import dev.local.ai.core.storage.JsonSettingsStorage;
 import dev.local.ai.core.storage.SettingsStorage;
+import dev.local.ai.core.storage.conversations.ConversationStore;
+import dev.local.ai.core.storage.conversations.JsonFileChatMemoryStore;
 import dev.local.ai.core.storage.models.LastSelectedModel;
 import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsProviderWithMCP;
 import dev.local.ai.ui.commands.CommandManager;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public final class AppContext implements AutoCloseable {
 
@@ -35,6 +40,9 @@ public final class AppContext implements AutoCloseable {
 
     public final CommandManager commandManager;
 
+    public final ConversationStore conversationStore;
+    public final JsonFileChatMemoryStore chatMemoryStore;
+
     private final List<AutoCloseable> closeables;
 
     public AppContext() {
@@ -44,6 +52,11 @@ public final class AppContext implements AutoCloseable {
         this.eventBus = new CoreEventBus();
         this.settingsStorage = new JsonSettingsStorage();
         this.dataStorage = new JsonFileStorage();
+
+        Path chatsDir = Paths.get(System.getProperty("user.home"), ".local-ai", "chats");
+        this.conversationStore = new ConversationStore(chatsDir);
+        this.chatMemoryStore = new JsonFileChatMemoryStore(chatsDir);
+        this.chatMemoryStore.setConversationStore(conversationStore);
 
         this.connectionsStore = new ConnectionsStore(dataStorage);
         this.modelsProvider = new StreamingChatModelsProvider();

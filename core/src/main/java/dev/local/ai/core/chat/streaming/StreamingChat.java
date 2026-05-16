@@ -10,7 +10,6 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -44,17 +43,17 @@ public class StreamingChat implements ILLMChat,IPartialMessageAware{
     private IToolProvider toolProvider;
     private AtomicBoolean stopRequested = new AtomicBoolean(false);
     
-    public StreamingChat(StreamingChatModel chatModel,
+    //TODO: chatModel in fact should be initial chatModel, 
+    // but it also should be gathered from chatModelsProvider
+    public StreamingChat(StreamingChatModel initialChatModel,
+                         ChatMemory chatMemory,
                          IToolProvider toolProvider,
                          CoreEventBus eventBus,
                          StreamingChatModelsProvider chatModelsProvider) {
-        this.chatModel = chatModel;
-        this.chatMemory = MessageWindowChatMemory.builder()
-                        .alwaysKeepSystemMessageFirst(true)
-                        .maxMessages(1000)
-                        .build();
+        this.chatModel = initialChatModel;
+        this.chatMemory = chatMemory;
         this.chatModelsProvider = chatModelsProvider;
-        logger.info("StreamingChat instance created with model: {}", chatModel.getClass().getSimpleName());
+        logger.info("StreamingChat instance created with model: {}", initialChatModel.getClass().getSimpleName());
         eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, this::onLLMChanged);
         eventBus.subscribe(StopRequestEvent.EVENT_TYPE, this::onStopRequest);
         this.toolProvider = toolProvider;
