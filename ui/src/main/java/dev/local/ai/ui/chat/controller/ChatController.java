@@ -2,12 +2,17 @@ package dev.local.ai.ui.chat.controller;
 
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Label;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,11 +27,15 @@ import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
+import dev.local.ai.ui.chat.conversations.ConversationsViewController;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 import javafx.util.Callback;
+
+import java.io.IOException;
+import java.net.URL;
 
 /**
  * Controller for the Chat UI following MVVM pattern.
@@ -62,6 +71,9 @@ public class ChatController {
 
     @FXML
     private SplitMenuButton newConversationSplitMenuButton;
+
+    @FXML
+    private Button openConversationsButton;
 
     @FXML
     private MenuItem emptyCurrentConversationMenuItem;
@@ -161,6 +173,7 @@ public class ChatController {
         stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         newConversationSplitMenuButton.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        openConversationsButton.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         emptyCurrentConversationMenuItem.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         var selectedModel = chatViewModel.selectedModelProperty().get();
         if (selectedModel != null) {
@@ -215,8 +228,46 @@ public class ChatController {
         newConversationSplitMenuButton.setOnAction(event -> newConversationCommand.execute());
 
         emptyCurrentConversationMenuItem.setOnAction(event -> chatViewModel.clearChat());
+
+        openConversationsButton.setOnAction(event -> showConversationsDialog());
         
         logger.debug("Event handlers setup completed");
+    }
+
+    private void showConversationsDialog() {
+        try {
+            URL fxmlUrl = getClass().getResource("/fxml/ConversationsView.fxml");
+            if (fxmlUrl == null) {
+                logger.error("ConversationsView.fxml not found on classpath");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            ConversationsViewController conversationsController =
+                    new ConversationsViewController(conversationStore, chatViewModel);
+            loader.setController(conversationsController);
+
+            Parent root = loader.load();
+
+            Stage dialogStage = new Stage();
+            conversationsController.setDialogStage(dialogStage);
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.initOwner(openConversationsButton.getScene().getWindow());
+            dialogStage.setTitle("Conversations");
+            dialogStage.setScene(new Scene(root));
+            dialogStage.setMinWidth(720);
+            dialogStage.setMinHeight(440);
+
+            try {
+                dialogStage.showAndWait();
+            } finally {
+                conversationsController.dispose();
+            }
+
+            logger.info("Conversations dialog closed");
+        } catch (IOException e) {
+            logger.error("Failed to open Conversations dialog", e);
+        }
     }
     
     public ChatViewModel getChatViewModel() {

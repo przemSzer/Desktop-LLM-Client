@@ -30,6 +30,14 @@ class ConversationStoreTest {
     }
 
     @Test
+    void getConversationSummariesReflectsCreates() {
+        store.createConversation();
+
+        assertThat(store.getConversationSummaries()).hasSize(1);
+        assertThat(store.listConversations()).hasSize(1);
+    }
+
+    @Test
     void shouldReturnEmptyListWhenNoConversationsExist() {
         assertThat(store.listConversations()).isEmpty();
     }

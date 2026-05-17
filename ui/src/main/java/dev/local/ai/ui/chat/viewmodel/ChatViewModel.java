@@ -12,6 +12,7 @@ import dev.local.ai.core.documents.DocumentDescription;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.storage.conversations.ConversationStore;
+import dev.local.ai.core.storage.conversations.ConversationSummariesListener;
 import dev.local.ai.core.storage.conversations.ConversationSummary;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
@@ -78,6 +79,9 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final MessageConverter messageConverter;
     private final PauseTransition textChangedDebouncer = new PauseTransition(Duration.millis(500));
 
+    private final ConversationSummariesListener conversationSummariesListener =
+            summaries -> Platform.runLater(this::refreshConversationTitleFromStore);
+
     public ChatViewModel(ChatSession session,
                          ConversationSessionFactory sessionFactory,
                          ConversationStore conversationStore,
@@ -109,6 +113,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         setupPropertyBindings();
 
         refreshConversationTitleFromStore();
+
+        conversationStore.addConversationSummariesListener(conversationSummariesListener);
 
         logger.info("ChatViewModel initialized for conversation {}", session.conversationId());
     }
