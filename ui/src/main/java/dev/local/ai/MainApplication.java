@@ -42,7 +42,6 @@ public class MainApplication extends Application {
             primaryStage.setMinWidth(900);
             primaryStage.setMinHeight(800);
             
-            // Show the window
             primaryStage.show();
             logger.info("Chat Application started successfully");
             

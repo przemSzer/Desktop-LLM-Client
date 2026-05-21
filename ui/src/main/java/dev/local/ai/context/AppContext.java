@@ -1,5 +1,7 @@
 package dev.local.ai.context;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +23,8 @@ import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsProviderWithMCP;
 import dev.local.ai.ui.chat.session.ConversationSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import dev.local.ai.ui.files.dialogs.FileSelector;
+import dev.local.ai.ui.files.dialogs.OpenFilesDialog;
 
 public final class AppContext implements AutoCloseable {
 
@@ -47,6 +48,8 @@ public final class AppContext implements AutoCloseable {
     public final ConversationSessionFactory conversationSessionFactory;
 
     private final List<AutoCloseable> closeables;
+
+    public final FileSelector fileSelector;
 
     public AppContext() {
         this.closeables = new ArrayList<>();
@@ -75,6 +78,8 @@ public final class AppContext implements AutoCloseable {
         this.conversationSessionFactory = new ConversationSessionFactory(
             chatMemoryStore, lastSelectedModel, modelsProvider, toolProvider, eventBus
         );
+
+        this.fileSelector = new OpenFilesDialog();
 
         logger.info("AppContext initialized");
     }

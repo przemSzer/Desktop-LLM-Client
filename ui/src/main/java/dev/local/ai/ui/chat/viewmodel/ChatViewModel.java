@@ -133,6 +133,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     private void rehydrateFromChatMemory(ChatMemory chatMemory) {
         var converter = new MessageConverter();
+        //TODO: conversion can be done outside ui thread
         for (var chatMessage : chatMemory.messages()) {
             var coreMessage = MessageToChatMessageConverter.toCoreMessage(chatMessage);
             if (coreMessage == null) {
@@ -145,15 +146,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                     chatMemory.messages().size(), session.conversationId());
         }
     }
-
-    /**
-     * Switches to a different conversation: closes the current
-     * {@link ChatSession} (which unsubscribes the previous {@code StreamingChat}
-     * from the event bus), opens a fresh session for {@code conversationId} and
-     * rehydrates {@link #chatMessages} from the new memory.
-     *
-     * No-op if a streaming response is currently in progress.
-     */
+    
     public void loadConversation(String conversationId) {
         if (sendingMessageInProgress.get()) {
             logger.warn("Refusing to switch conversation while a message is in progress");

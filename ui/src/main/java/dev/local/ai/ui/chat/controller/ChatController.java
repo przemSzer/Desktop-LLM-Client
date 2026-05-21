@@ -29,6 +29,8 @@ import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.chat.conversations.ConversationsViewController;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
+import dev.local.ai.ui.files.dialogs.FileSelector;
+import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorView;
@@ -97,6 +99,7 @@ public class ChatController {
     private final CommandManager commandManager;
     private final ConversationStore conversationStore;
     private final Callback<Class<?>, Object> controllerFactory;
+    private final FileSelector fileSelectionCallback;
 
     public ChatController(ChatViewModel chatViewModel,
                           IToolProvider toolProvider,
@@ -104,7 +107,8 @@ public class ChatController {
                           ConnectionsStore connectionsStore,
                           CommandManager commandManager,
                           ConversationStore conversationStore,
-                          Callback<Class<?>, Object> controllerFactory) {
+                          Callback<Class<?>, Object> controllerFactory,
+                          FileSelector fileSelectionCallback) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
@@ -112,6 +116,7 @@ public class ChatController {
         this.commandManager = commandManager;
         this.conversationStore = conversationStore;
         this.controllerFactory = controllerFactory;
+        this.fileSelectionCallback = fileSelectionCallback;
     }
     
     @FXML
@@ -121,8 +126,8 @@ public class ChatController {
             
             toolsSelectorView.init(toolProvider, eventBus);
             modelSelectorView.init(connectionsStore, eventBus, controllerFactory);
-            fileAttachmentControl.init(commandManager);
-            systemMessageFileAttachments.init(commandManager);
+            fileAttachmentControl.init(new FileAttachmentViewModel(commandManager, fileSelectionCallback));
+            systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelectionCallback));
             setupDataBinding();
             setupEventHandlers();
             renderExistingMessages();

@@ -7,18 +7,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
-import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 
 public class FileAttachmentControl extends VBox {
@@ -53,17 +48,14 @@ public class FileAttachmentControl extends VBox {
         }
     }
 
-    public void init(CommandManager commandManager) {
-        this.viewModel = new FileAttachmentViewModel(commandManager);
+    public void init(FileAttachmentViewModel viewModel) {
+        this.viewModel = viewModel;
         initializeControls();
     }
 
     private void initializeControls() {
         // Set up data binding to ViewModel
         setupDataBinding();
-        
-        // Set up file selection callback in ViewModel
-        setupFileSelectionCallback();
         
         // Set up cell factory to use AttachedFileView control
         attachedFilesListView.setCellFactory(listView -> new javafx.scene.control.ListCell<AttachedFileViewModel>() {
@@ -106,50 +98,14 @@ public class FileAttachmentControl extends VBox {
             }
         });
     }
-    
-    /**
-     * Sets up the file selection callback in the ViewModel
-     */
-    private void setupFileSelectionCallback() {
-        viewModel.setFileSelectionCallback(() -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select File to Attach");
-            
-            // Get the current stage from the scene
-            Stage stage = (Stage) getScene().getWindow();
-            File selectedFile = fileChooser.showOpenDialog(stage);
-            
-            if (selectedFile != null) {
-                // Create AttachedFileViewModel with LOADING status initially
-                return selectedFile;
-            }
-            
-            return null;
-        });
-    }
-    
+        
     /**
      * Sets up event handlers for UI controls
      */
     private void setupEventHandlers() {
-        // Add file button action
-        addFileButton.setOnAction(event -> addFile());
-        
-        // Clear files button action
-        clearFilesButton.setOnAction(event -> clearFiles());
+        addFileButton.setOnAction(event -> viewModel.selectAndAddFiles());        
+        clearFilesButton.setOnAction(event -> viewModel.clearAllFiles());
     }
-    
-    private void addFile() {
-        // Delegate file selection and addition to ViewModel
-        viewModel.selectAndAddFile();
-    }
-    
-    private void clearFiles() {
-        // Delegate to ViewModel
-        viewModel.clearAllFiles();
-    }
-    
-    // Public API methods - delegate to ViewModel
     
     /**
      * Gets the list of attached file ViewModels
