@@ -34,7 +34,8 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
                 viewModel.selectedModelProperty().set(app.lastSelectedModel.get().orElse(null));
 
                 return new ChatController(viewModel, app.toolProvider, app.eventBus,
-                    app.connectionsStore, app.commandManager, app.conversationStore, this, app.fileSelector);
+                    app.connectionsStore, app.commandManager, app.conversationStore, this,
+                    app.fileSelector, app.mainStageProvider);
             }
             if (type == ConnectionsViewController.class) {
                 return new ConnectionsViewController(app.commandManager);

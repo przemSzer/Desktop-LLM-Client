@@ -34,6 +34,7 @@ import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorView;
+import dev.local.ai.ui.utils.MainStageProvider;
 import javafx.util.Callback;
 
 import java.io.IOException;
@@ -99,7 +100,8 @@ public class ChatController {
     private final CommandManager commandManager;
     private final ConversationStore conversationStore;
     private final Callback<Class<?>, Object> controllerFactory;
-    private final FileSelector fileSelectionCallback;
+    private final FileSelector fileSelector;
+    private final MainStageProvider mainStageProvider;
 
     public ChatController(ChatViewModel chatViewModel,
                           IToolProvider toolProvider,
@@ -108,7 +110,8 @@ public class ChatController {
                           CommandManager commandManager,
                           ConversationStore conversationStore,
                           Callback<Class<?>, Object> controllerFactory,
-                          FileSelector fileSelectionCallback) {
+                          FileSelector fileSelector,
+                          MainStageProvider mainStageProvider) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
@@ -116,7 +119,8 @@ public class ChatController {
         this.commandManager = commandManager;
         this.conversationStore = conversationStore;
         this.controllerFactory = controllerFactory;
-        this.fileSelectionCallback = fileSelectionCallback;
+        this.fileSelector = fileSelector;
+        this.mainStageProvider = mainStageProvider;
     }
     
     @FXML
@@ -125,9 +129,9 @@ public class ChatController {
             logger.debug("Initializing ChatController");
             
             toolsSelectorView.init(toolProvider, eventBus);
-            modelSelectorView.init(connectionsStore, eventBus, controllerFactory);
-            fileAttachmentControl.init(new FileAttachmentViewModel(commandManager, fileSelectionCallback));
-            systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelectionCallback));
+            modelSelectorView.init(connectionsStore, eventBus, controllerFactory, mainStageProvider);
+            fileAttachmentControl.init(new FileAttachmentViewModel(commandManager, fileSelector));
+            systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelector));
             setupDataBinding();
             setupEventHandlers();
             renderExistingMessages();
@@ -257,7 +261,7 @@ public class ChatController {
             Stage dialogStage = new Stage();
             conversationsController.setDialogStage(dialogStage);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.initOwner(openConversationsButton.getScene().getWindow());
+            dialogStage.initOwner(mainStageProvider.getMainWindow());
             dialogStage.setTitle("Conversations");
             dialogStage.setScene(new Scene(root));
             dialogStage.setMinWidth(720);

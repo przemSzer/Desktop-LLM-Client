@@ -41,7 +41,8 @@ public class MainApplication extends Application {
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(900);
             primaryStage.setMinHeight(800);
-            
+
+            appContext.mainStageProvider.setMainStage(primaryStage);
             primaryStage.show();
             logger.info("Chat Application started successfully");
             

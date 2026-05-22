@@ -5,6 +5,7 @@ import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
+import dev.local.ai.ui.utils.MainStageProvider;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -43,6 +44,7 @@ public class LLMSelectorView extends HBox {
             
     private LLMSelectorViewModel viewModel;
     private Callback<Class<?>, Object> controllerFactory;
+    private MainStageProvider mainStageProvider;
     
     public LLMSelectorView() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ModelSelectorView.fxml"));
@@ -58,12 +60,14 @@ public class LLMSelectorView extends HBox {
 
     public void init(ConnectionsStore connectionsStore,
                      CoreEventBus eventBus,
-                     Callback<Class<?>, Object> controllerFactory) {
+                     Callback<Class<?>, Object> controllerFactory,
+                     MainStageProvider mainStageProvider) {
         try {
             logger.info("Initializing LLMSelectorView");
 
             this.viewModel = new LLMSelectorViewModel(connectionsStore, eventBus);
             this.controllerFactory = controllerFactory;
+            this.mainStageProvider = mainStageProvider;
 
             setupDataBinding();
             setupEventHandlers();
@@ -207,7 +211,7 @@ public class LLMSelectorView extends HBox {
             
             Stage dialogStage = new Stage();
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.initOwner(manageConnectionsButton.getScene().getWindow());
+            dialogStage.initOwner(mainStageProvider.getMainWindow());
             dialogStage.setTitle("Manage Connections");
             dialogStage.setScene(new Scene(root));
             dialogStage.setMinWidth(600);

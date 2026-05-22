@@ -25,6 +25,7 @@ import dev.local.ai.ui.chat.session.ConversationSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.dialogs.FileSelector;
 import dev.local.ai.ui.files.dialogs.OpenFilesDialog;
+import dev.local.ai.ui.utils.MainStageProvider;
 
 public final class AppContext implements AutoCloseable {
 
@@ -49,6 +50,7 @@ public final class AppContext implements AutoCloseable {
 
     private final List<AutoCloseable> closeables;
 
+    public final MainStageProvider mainStageProvider;
     public final FileSelector fileSelector;
 
     public AppContext() {
@@ -79,7 +81,8 @@ public final class AppContext implements AutoCloseable {
             chatMemoryStore, lastSelectedModel, modelsProvider, toolProvider, eventBus
         );
 
-        this.fileSelector = new OpenFilesDialog();
+        this.mainStageProvider = new MainStageProvider();
+        this.fileSelector = new OpenFilesDialog(mainStageProvider);
 
         logger.info("AppContext initialized");
     }
