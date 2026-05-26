@@ -29,7 +29,7 @@
             </Label>
          </children>
       </HBox>
-      <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeFile" styleClass="remove-button" text="&#x2715;" />
+      <Button fx:id="removeButton" mnemonicParsing="false" onAction="#removeFile" styleClass="button-icon, flat" text="&#x2715;" />
    </children>
    
 </HBox>

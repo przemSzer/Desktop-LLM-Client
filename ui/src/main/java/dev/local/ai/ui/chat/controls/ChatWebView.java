@@ -43,6 +43,9 @@ public class ChatWebView extends StackPane {
     public ChatWebView() {
         webView = new WebView();
         webView.setContextMenuEnabled(false);
+        // Paint the WebView's outer container dark so a white flash
+        // doesn't appear while the HTML is still loading.
+        webView.setStyle("-fx-background-color: #2E3440;");
         engine = webView.getEngine();
 
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
@@ -125,6 +128,10 @@ public class ChatWebView extends StackPane {
         messageIndex.clear();
         idCounter.set(0);
         runScript("clearMessages()");
+    }
+
+    public void setDarkMode(boolean enabled) {
+        runScript("setDarkMode(%s)", enabled);
     }
 
     // ── helpers ──────────────────────────────────────────────

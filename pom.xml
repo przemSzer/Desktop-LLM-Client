@@ -33,6 +33,7 @@
         <langchain4j-mcp.version>1.13.1-beta23</langchain4j-mcp.version>
         <langchain4j-apache-tika.version>1.13.1-beta23</langchain4j-apache-tika.version>
         <langchain4j-jsoup.version>1.13.1-beta23</langchain4j-jsoup.version>
+        <atlantafx.version>2.1.0</atlantafx.version>
     </properties>
 
     <modules>
@@ -126,7 +127,15 @@
                 <groupId>one.jpro.platform</groupId>
                 <artifactId>jpro-mdfx</artifactId>
                 <version>${jpro.version}</version>
-            </dependency>            
+            </dependency>
+
+            <!-- AtlantaFX – modern JavaFX CSS theme (PrimerLight/Dark, Nord, Cupertino, Dracula). -->
+            <dependency>
+                <groupId>io.github.mkpaz</groupId>
+                <artifactId>atlantafx-base</artifactId>
+                <version>${atlantafx.version}</version>
+            </dependency>
+            
 
             <!-- Testing dependencies -->           
             <dependency>

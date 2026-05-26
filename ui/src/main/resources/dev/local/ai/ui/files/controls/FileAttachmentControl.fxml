@@ -13,8 +13,8 @@
    xmlns:fx="http://javafx.com/fxml/1">
    
    <HBox alignment="CENTER_LEFT" spacing="10.0">
-      <Button fx:id="addFileButton" styleClass="btn-secondary" text="Add File" />
-      <Button fx:id="clearFilesButton" styleClass="btn-secondary" text="Clear All" />
+      <Button fx:id="addFileButton" text="Add File" />
+      <Button fx:id="clearFilesButton" text="Clear All" />
       <Label fx:id="filesCountLabel" styleClass="file-count-label" text="No files attached" />
       <opaqueInsets>
          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

@@ -15,9 +15,9 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="10.0">
             <children>
-                <Button fx:id="openButton" mnemonicParsing="false" styleClass="btn-primary" text="Open" />
-                <Button fx:id="renameButton" mnemonicParsing="false" styleClass="btn-secondary" text="Rename" />
-                <Button fx:id="deleteButton" mnemonicParsing="false" styleClass="btn-danger" text="Delete" />
+                <Button fx:id="openButton" mnemonicParsing="false" styleClass="accent" text="Open" />
+                <Button fx:id="renameButton" mnemonicParsing="false" text="Rename" />
+                <Button fx:id="deleteButton" mnemonicParsing="false" styleClass="danger" text="Delete" />
             </children>
         </HBox>
         <Separator prefWidth="200.0" />

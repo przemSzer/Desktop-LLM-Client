@@ -6,7 +6,7 @@
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.layout.HBox?>
 
-<fx:root type="HBox" styleClass="model-selector" stylesheets="@../../../../../../css/styles.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root type="HBox" stylesheets="@../../../../../../css/styles.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>   
       <ComboBox fx:id="connectionComboBox" promptText="Select a connection..." HBox.hgrow="ALWAYS" />
       <HBox spacing="10.0" HBox.hgrow="ALWAYS">
@@ -15,7 +15,7 @@
             <ComboBox fx:id="modelComboBox" promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS" />
          </children>
       </HBox>
-      <Button fx:id="manageConnectionsButton" styleClass="btn-secondary" text="Connections..." />
+      <Button fx:id="manageConnectionsButton" text="Connections..." />
    </children>
    <padding>
       <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />

@@ -1,8 +1,110 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="UTF-8">
 <style>
+/* ── Theme tokens ──────────────────────────────────────────
+   Light is the default; html.dark overrides via custom props.
+   The class lives on <html> (not <body>) so the dark variables
+   also apply to the <html> element itself – otherwise html's
+   background would always read :root's light value and show
+   through the body in scrollbar gutters / edge areas.
+   Toggle from Java with setDarkMode(true/false).
+   ────────────────────────────────────────────────────────── */
+:root {
+    --color-bg:            #F5F6FA;
+    --color-fg:            #212121;
+    --color-fg-muted:      #616161;
+    --color-fg-subtle:     #9E9E9E;
+    --color-border:        #E0E0E0;
+    --color-border-muted:  #EEEEEE;
+
+    --color-user-bg:       #E3F2FD;
+    --color-user-border:   #BBDEFB;
+    --color-user-fg:       #4A90D9;
+
+    --color-ai-bg:         #FFFFFF;
+    --color-ai-border:     #E0E0E0;
+    --color-ai-fg:         #2E7D32;
+
+    --color-tool-bg:       #FFF8E1;
+    --color-tool-border:   #FFE0B2;
+    --color-tool-fg:       #E67E22;
+
+    --color-partial-bg:    #F5F5F5;
+    --color-partial-border:#EEEEEE;
+    --color-partial-fg:    #757575;
+
+    --color-error-bg:      #FFEBEE;
+    --color-error-border:  #FFCDD2;
+    --color-error-fg:      #D32F2F;
+
+    --color-code-bg:       #F0F0F0;
+    --color-pre-bg:        #263238;
+    --color-pre-fg:        #ECEFF1;
+
+    --color-table-border:  #E0E0E0;
+    --color-table-head-bg: #F5F5F5;
+
+    --color-link:          #4A90D9;
+    --color-quote-border:  #BDBDBD;
+
+    --color-btn-border:        #E0E0E0;
+    --color-btn-fg:            #757575;
+    --color-btn-hover-bg:      #F0F0F0;
+    --color-btn-hover-border:  #BDBDBD;
+
+    --shadow-bubble: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Dark palette – tuned to harmonise with AtlantaFX NordDark
+   so the WebView blends into the dark JavaFX shell. */
+html.dark {
+    --color-bg:            #2E3440;
+    --color-fg:            #ECEFF4;
+    --color-fg-muted:      #D8DEE9;
+    --color-fg-subtle:     #8390A1;
+    --color-border:        #434C5E;
+    --color-border-muted:  #3B4252;
+
+    --color-user-bg:       #3B4756;
+    --color-user-border:   #4C566A;
+    --color-user-fg:       #88C0D0;
+
+    --color-ai-bg:         #3B4252;
+    --color-ai-border:     #434C5E;
+    --color-ai-fg:         #A3BE8C;
+
+    --color-tool-bg:       #3F3A2C;
+    --color-tool-border:   #5E5736;
+    --color-tool-fg:       #EBCB8B;
+
+    --color-partial-bg:    #353B47;
+    --color-partial-border:#3B4252;
+    --color-partial-fg:    #8390A1;
+
+    --color-error-bg:      #3F2E32;
+    --color-error-border:  #5C3B40;
+    --color-error-fg:      #BF616A;
+
+    --color-code-bg:       #434C5E;
+    --color-pre-bg:        #1F242E;
+    --color-pre-fg:        #ECEFF4;
+
+    --color-table-border:  #434C5E;
+    --color-table-head-bg: #3B4252;
+
+    --color-link:          #88C0D0;
+    --color-quote-border:  #4C566A;
+
+    --color-btn-border:        #434C5E;
+    --color-btn-fg:            #8390A1;
+    --color-btn-hover-bg:      #434C5E;
+    --color-btn-hover-border:  #4C566A;
+
+    --shadow-bubble: 0 1px 4px rgba(0,0,0,0.35);
+}
+
 /* ── Reset & base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -10,8 +112,8 @@ html, body {
     height: 100%;
     font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
-    color: #212121;
-    background: #F5F6FA;
+    color: var(--color-fg);
+    background: var(--color-bg);
 }
 
 body {
@@ -26,16 +128,16 @@ body {
     border: 1px solid;
     padding: 12px 16px;
     margin-bottom: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-bubble);
     position: relative;
 }
 
 /* ── Per-type colours ──────────────────────────────────── */
-.message.user    { background: #E3F2FD; border-color: #BBDEFB; }
-.message.ai      { background: #FFFFFF; border-color: #775e5e; }
-.message.tool    { background: #FFF8E1; border-color: #FFE0B2; }
-.message.partial { background: #F5F5F5; border-color: #EEEEEE; }
-.message.error   { background: #FFEBEE; border-color: #FFCDD2; }
+.message.user    { background: var(--color-user-bg);    border-color: var(--color-user-border); }
+.message.ai      { background: var(--color-ai-bg);      border-color: var(--color-ai-border); }
+.message.tool    { background: var(--color-tool-bg);    border-color: var(--color-tool-border); }
+.message.partial { background: var(--color-partial-bg); border-color: var(--color-partial-border); }
+.message.error   { background: var(--color-error-bg);   border-color: var(--color-error-border); }
 
 /* ── Header row (type label + copy btn) ────────────────── */
 .msg-header {
@@ -50,18 +152,18 @@ body {
     font-size: 12px;
 }
 
-.msg-type.user    { color: #4A90D9; }
-.msg-type.ai      { color: #2E7D32; }
-.msg-type.tool    { color: #E67E22; }
-.msg-type.partial { color: #757575; font-style: italic; }
-.msg-type.error   { color: #D32F2F; }
+.msg-type.user    { color: var(--color-user-fg); }
+.msg-type.ai      { color: var(--color-ai-fg); }
+.msg-type.tool    { color: var(--color-tool-fg); }
+.msg-type.partial { color: var(--color-partial-fg); font-style: italic; }
+.msg-type.error   { color: var(--color-error-fg); }
 
 .btn-copy {
     background: transparent;
-    border: 1px solid #E0E0E0;
+    border: 1px solid var(--color-btn-border);
     border-radius: 4px;
     font-size: 11px;
-    color: #757575;
+    color: var(--color-btn-fg);
     padding: 2px 8px;
     cursor: pointer;
     opacity: 0.5;
@@ -69,8 +171,8 @@ body {
 }
 .btn-copy:hover {
     opacity: 1;
-    background: #F0F0F0;
-    border-color: #BDBDBD;
+    background: var(--color-btn-hover-bg);
+    border-color: var(--color-btn-hover-border);
 }
 
 /* ── Message body ──────────────────────────────────────── */
@@ -99,15 +201,15 @@ body {
 }
 
 .msg-body blockquote {
-    border-left: 3px solid #BDBDBD;
+    border-left: 3px solid var(--color-quote-border);
     padding-left: 12px;
-    color: #616161;
+    color: var(--color-fg-muted);
     margin: 0.4em 0;
 }
 
 .msg-body pre {
-    background: #263238;
-    color: #ECEFF1;
+    background: var(--color-pre-bg);
+    color: var(--color-pre-fg);
     border-radius: 6px;
     padding: 10px 12px;
     overflow-x: auto;
@@ -122,7 +224,7 @@ body {
 }
 
 .msg-body :not(pre) > code {
-    background: #F0F0F0;
+    background: var(--color-code-bg);
     border-radius: 3px;
     padding: 1px 5px;
 }
@@ -134,18 +236,18 @@ body {
 }
 
 .msg-body th, .msg-body td {
-    border: 1px solid #E0E0E0;
+    border: 1px solid var(--color-table-border);
     padding: 6px 10px;
     text-align: left;
 }
 
 .msg-body th {
-    background: #F5F5F5;
+    background: var(--color-table-head-bg);
     font-weight: 600;
 }
 
 .msg-body a {
-    color: #4A90D9;
+    color: var(--color-link);
     text-decoration: none;
 }
 .msg-body a:hover { text-decoration: underline; }
@@ -157,10 +259,10 @@ body {
     cursor: pointer;
     user-select: none;
     font-size: 12px;
-    color: #616161;
+    color: var(--color-fg-muted);
     margin-top: 8px;
     padding-top: 6px;
-    border-top: 1px solid #E8E8E8;
+    border-top: 1px solid var(--color-border-muted);
     font-weight: 600;
 }
 .stats-toggle::before { content: "▸ "; }
@@ -169,20 +271,20 @@ body {
 .stats-body {
     display: none;
     font-size: 12px;
-    color: #616161;
+    color: var(--color-fg-muted);
     margin-top: 6px;
     line-height: 1.5;
 }
 .stats-body.open { display: block; }
 .stats-body .stats-row { margin: 2px 0; }
-.stats-body .stats-label { color: #9E9E9E; margin-right: 6px; }
+.stats-body .stats-label { color: var(--color-fg-subtle); margin-right: 6px; }
 
 /* ── Tool message collapsible ──────────────────────────── */
 .tool-toggle {
     cursor: pointer;
     user-select: none;
     font-size: 12px;
-    color: #E67E22;
+    color: var(--color-tool-fg);
     font-weight: bold;
     margin-bottom: 4px;
 }
@@ -354,6 +456,10 @@ function removePartialMessage() {
 
 function clearMessages() {
     container.innerHTML = '';
+}
+
+function setDarkMode(enabled) {
+    document.documentElement.classList.toggle('dark', !!enabled);
 }
 
 function scrollToBottom() {

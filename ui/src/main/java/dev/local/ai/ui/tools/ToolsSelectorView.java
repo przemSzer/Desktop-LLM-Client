@@ -28,20 +28,16 @@ public class ToolsSelectorView extends FlowPane {
     }
 
     private void addPlaceholderButtons() {
-        var b1 = new ToggleButton("Download web page");
-        var b2 = new ToggleButton("Execute local commands");
-        var b3 = new ToggleButton("Execute code");
-        var b4 = new ToggleButton("Search the web");
-        for (ToggleButton b : new ToggleButton[]{b1, b2, b3, b4}) {
-            b.getStyleClass().add("tool-toggle");
-        }
-        getChildren().addAll(b1, b2, b3, b4);
+        getChildren().addAll(
+                new ToggleButton("Download web page"),
+                new ToggleButton("Execute local commands"),
+                new ToggleButton("Execute code"),
+                new ToggleButton("Search the web"));
     }
 
     private void buildToggleButtons() {
         for (ToolItemViewModel tool : viewModel.getTools()) {
             ToggleButton button = new ToggleButton(tool.getDisplayName());
-            button.getStyleClass().add("tool-toggle");
             button.selectedProperty().bindBidirectional(tool.enabledProperty());
             getChildren().add(button);
         }

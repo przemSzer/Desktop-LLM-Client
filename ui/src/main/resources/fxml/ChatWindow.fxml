@@ -22,7 +22,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="10" styleClass="root-container" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
+<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="10" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
@@ -36,7 +36,7 @@
                      <children>
                         <VBox layoutX="10.0" layoutY="20.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="10.0">
                            <children>
-                              <TextArea fx:id="systemMessageTextArea" minHeight="50.0" minWidth="100.0" promptText="Enter system message here" styleClass="input-area" />
+                              <TextArea fx:id="systemMessageTextArea" minHeight="50.0" minWidth="100.0" promptText="Enter system message here" />
                               <Separator prefWidth="200.0">
                                  <VBox.margin>
                                     <Insets bottom="5.0" top="5.0" />
@@ -76,12 +76,12 @@
                           
                         <!-- Input area -->
                         <HBox fx:id="promptHBox" alignment="CENTER_LEFT" nodeOrientation="LEFT_TO_RIGHT" spacing="10" GridPane.vgrow="ALWAYS">
-                           <TextArea fx:id="messageInput" minWidth="25.0" prefHeight="124.0" prefWidth="805.0" styleClass="input-area" HBox.hgrow="ALWAYS" />
+                           <TextArea fx:id="messageInput" minWidth="25.0" prefHeight="124.0" prefWidth="805.0" HBox.hgrow="ALWAYS" />
                            <VBox alignment="CENTER" spacing="5.0">
                               <children>
                                  <ProgressIndicator fx:id="sendingMessageProgress" prefHeight="36.0" prefWidth="50.0" visible="false" />
-                                 <Button fx:id="stopButton" mnemonicParsing="false" styleClass="btn-danger" text="Stop" visible="false" />
-                                 <Button fx:id="sendButton" styleClass="btn-primary" text="Send" />
+                                 <Button fx:id="stopButton" mnemonicParsing="false" styleClass="danger" text="Stop" visible="false" />
+                                 <Button fx:id="sendButton" styleClass="accent" text="Send" />
                               </children>
                            </VBox>
                         </HBox>
@@ -102,9 +102,9 @@
                            </GridPane.margin>
                         </Label>
                           
-                        <HBox alignment="CENTER" spacing="10" styleClass="bottom-toolbar" GridPane.hgrow="NEVER" GridPane.rowIndex="4" GridPane.vgrow="NEVER">
-                           <Button fx:id="openConversationsButton" mnemonicParsing="false" styleClass="btn-secondary" text="Open conversations…" />
-                           <SplitMenuButton fx:id="newConversationSplitMenuButton" mnemonicParsing="false" styleClass="btn-secondary" text="New conversation">
+                        <HBox alignment="CENTER" spacing="10" GridPane.hgrow="NEVER" GridPane.rowIndex="4" GridPane.vgrow="NEVER">
+                           <Button fx:id="openConversationsButton" mnemonicParsing="false" text="Open conversations…" />
+                           <SplitMenuButton fx:id="newConversationSplitMenuButton" mnemonicParsing="false" text="New conversation">
                              <items>
                                <MenuItem fx:id="emptyCurrentConversationMenuItem" mnemonicParsing="false" text="Empty current conversation" />
                              </items>

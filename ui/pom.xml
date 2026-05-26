@@ -64,7 +64,14 @@
             <groupId>com.vladsch.flexmark</groupId>
             <artifactId>flexmark-ext-gfm-tasklist</artifactId>
             <version>0.64.8</version>
-        </dependency>  
+        </dependency>
+
+        <!-- AtlantaFX theme (Primer light/dark, Nord, Cupertino, Dracula) -->
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+        </dependency>
+
 
         <!-- Nullness (type use on Optional type args; matches JDK Optional.of) -->
         <dependency>
