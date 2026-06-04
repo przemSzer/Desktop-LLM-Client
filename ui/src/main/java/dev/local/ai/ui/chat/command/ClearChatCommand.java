@@ -76,6 +76,6 @@ public class ClearChatCommand implements ICommand {
     
     @Override
     public boolean supportsUndo() {
-        return true; // Clearing can potentially be undone
+        return false; // Clearing can potentially be undone
     }
 }

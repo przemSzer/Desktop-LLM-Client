@@ -105,12 +105,10 @@ public class LLMSelectorView extends HBox {
         logger.debug("Data binding setup complete");
     }
     
-    private void setupCellFactories() {
-        // Connection ComboBox cell factory
-        connectionComboBox.setCellFactory(listView -> new ListCell<ConnectionViewModel>() {
-            @Override
-            protected void updateItem(ConnectionViewModel item, boolean empty) {
-                super.updateItem(item, empty);
+    private static class ConnectionCell extends ListCell<ConnectionViewModel> {
+        @Override
+        protected void updateItem(ConnectionViewModel item, boolean empty) {
+            super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
@@ -118,14 +116,13 @@ public class LLMSelectorView extends HBox {
                     setText(item.getName());
                     // Note: Icon display would require ImageView wrapper
                 }
-            }
-        });
-        
-        // Connection ComboBox button cell factory
-        connectionComboBox.setButtonCell(new ListCell<ConnectionViewModel>() {
-            @Override
-            protected void updateItem(ConnectionViewModel item, boolean empty) {
-                super.updateItem(item, empty);
+        }
+    }
+
+    private static class ConectionButtonCell extends ListCell<ConnectionViewModel> {
+        @Override
+        protected void updateItem(ConnectionViewModel item, boolean empty) {
+            super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
@@ -133,32 +130,38 @@ public class LLMSelectorView extends HBox {
                     setText(item.getName());
                     // Note: Icon display would require ImageView wrapper
                 }
+        }
+    }
+
+    private static class ModelCell extends ListCell<LLMInfoViewModel> {
+        @Override
+        protected void updateItem(LLMInfoViewModel item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(item.getName());
             }
-        });
+        }
+    }
+
+    private static class ModelButtonCell extends ListCell<LLMInfoViewModel> {
+        @Override
+        protected void updateItem(LLMInfoViewModel item, boolean empty) {
+            super.updateItem(item, empty);            
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+    private void setupCellFactories() {        
+        connectionComboBox.setCellFactory(listView -> new ConnectionCell());    
+        connectionComboBox.setButtonCell(new ConectionButtonCell());
         
-        modelComboBox.setCellFactory(listView -> new ListCell<LLMInfoViewModel>() {
-            @Override
-            protected void updateItem(LLMInfoViewModel item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getName());
-                }
-            }
-        });
-                
-        modelComboBox.setButtonCell(new ListCell<LLMInfoViewModel>() {
-            @Override
-            protected void updateItem(LLMInfoViewModel item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getName());
-                }
-            }
-        });
+        modelComboBox.setCellFactory(listView -> new ModelCell());                
+        modelComboBox.setButtonCell(new ModelButtonCell());
     }
     
     private void setupEventHandlers() {
