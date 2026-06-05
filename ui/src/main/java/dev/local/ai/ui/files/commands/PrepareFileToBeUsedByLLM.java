@@ -27,23 +27,29 @@ public class PrepareFileToBeUsedByLLM implements ICommand{
 
     @Override
     public boolean execute() {
-        var analyser = new DocumentAnalyser();
-        var description = analyser.analyseDocument(file);
-        if (description == null) {
+        try{
+            var analyser = new DocumentAnalyser();
+            var description = analyser.analyseDocument(file);
+            if (description == null) {
+                statusChanged.statusChanged(FileStatus.ERROR, null);
+                logger.error("Failed to analyse file: {}", file.getName());
+                return false;
+            }
+
+            statusChanged.statusChanged(FileStatus.TYPE_DETECTED, description);
+            
+            statusChanged.statusChanged(FileStatus.PREPARING, description);
+
+            var text = analyser.extractContent(file);
+            description = new DocumentDescription(description.title(), description.type(), text, file);
+            
+            statusChanged.statusChanged(FileStatus.VALID, description);
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to prepare file: {}", file.getName(), e);
             statusChanged.statusChanged(FileStatus.ERROR, null);
-            logger.error("Failed to analyse file: {}", file.getName());
             return false;
         }
-
-        statusChanged.statusChanged(FileStatus.TYPE_DETECTED, description);
-        
-        statusChanged.statusChanged(FileStatus.PREPARING, description);
-
-        var text = analyser.extractContent(file);
-        description = new DocumentDescription(description.title(), description.type(), text, file);
-        
-        statusChanged.statusChanged(FileStatus.VALID, description);
-        return true;
     }
 
     @Override

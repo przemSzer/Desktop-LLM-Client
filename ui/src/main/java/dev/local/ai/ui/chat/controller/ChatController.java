@@ -1,24 +1,29 @@
 package dev.local.ai.ui.chat.controller;
 
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
-import javafx.scene.Parent;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,17 +40,18 @@ import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
-import dev.local.ai.ui.chat.conversations.ConversationsViewController;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
 import dev.local.ai.ui.files.dialogs.FileSelector;
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
+import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
+import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 import dev.local.ai.ui.utils.MainStageProvider;
 import javafx.util.Callback;
 
-import java.io.IOException;
 import java.net.URL;
 
 public class ChatController {
@@ -89,28 +95,29 @@ public class ChatController {
     private Label statusLabel;
 
     @FXML
-    private SplitMenuButton newConversationSplitMenuButton;
+    private FlowPane attachmentChips;
 
     @FXML
-    private Button openConversationsButton;
+    private Button attachButton;
 
     @FXML
-    private MenuItem emptyCurrentConversationMenuItem;
+    private ToggleButton toolsButton;
 
     @FXML
-    private FileAttachmentControl fileAttachmentControl;
+    private Button modelButton;
 
-    @FXML
-    private ToolsSelectorView toolsSelectorView;
-
-    @FXML
-    private LLMSelectorView modelSelectorView;
+    private final ToolsSelectorView toolsSelectorView = new ToolsSelectorView();
+    private final LLMSelectorView modelSelectorView = new LLMSelectorView();
 
     private TextArea systemMessageTextArea;
     private FileAttachmentControl systemMessageFileAttachments;
     private PopOver systemMessagePopover;
+    private PopOver toolsPopover;
+    private PopOver modelPopover;
     private TextField titleEditField;
     private boolean titleBound;
+
+    private FileAttachmentViewModel composerFiles;
 
     private final ChatViewModel chatViewModel;
     private final IToolProvider toolProvider;
@@ -149,12 +156,17 @@ public class ChatController {
 
             toolsSelectorView.init(toolProvider, eventBus);
             modelSelectorView.init(connectionsStore, eventBus, controllerFactory, mainStageProvider);
-            fileAttachmentControl.init(new FileAttachmentViewModel(commandManager, fileSelector));
+
+            composerFiles = new FileAttachmentViewModel(commandManager, fileSelector);
 
             setupSystemMessagePopover();
+            setupToolsPopover();
+            setupModelPopover();
             setupHeader();
+            setupComposer();
             setupDataBinding();
             setupEventHandlers();
+            setupShortcuts();
             renderExistingMessages();
 
             logger.debug("ChatController initialized.");
@@ -163,7 +175,6 @@ public class ChatController {
         }
     }
 
-    //TODO: we can move this to a separate control
     private void setupSystemMessagePopover() {
         systemMessageTextArea = new TextArea();
         systemMessageTextArea.setPromptText("Enter system message here");
@@ -179,29 +190,87 @@ public class ChatController {
         content.setPrefWidth(420);
         content.getStyleClass().add("system-popover-content");
 
-        systemMessagePopover = new PopOver(content);
-        systemMessagePopover.setArrowLocation(PopOver.ArrowLocation.TOP_RIGHT);
-        systemMessagePopover.setDetachable(false);
-        systemMessagePopover.setHeaderAlwaysVisible(false);
+        systemMessagePopover = createPopover(content, PopOver.ArrowLocation.TOP_RIGHT);
+
+        systemMessageButton.setOnAction(event -> togglePopover(systemMessagePopover, systemMessageButton));
+    }
+
+    private void setupToolsPopover() {
+        VBox content = new VBox(toolsSelectorView);
+        content.setPadding(new Insets(12));
+        content.setPrefWidth(360);
+        content.getStyleClass().add("system-popover-content");
+
+        toolsPopover = createPopover(content, PopOver.ArrowLocation.BOTTOM_LEFT);
+        toolsButton.setOnAction(event -> togglePopover(toolsPopover, toolsButton));
+        toolsPopover.showingProperty().addListener((obs, wasShowing, isShowing) ->
+                toolsButton.setSelected(isShowing));
+
+        Label badge = new Label();
+        badge.getStyleClass().add("tools-badge");
+        IntegerBinding enabledCount = enabledToolCount();
+        badge.textProperty().bind(enabledCount.asString());
+        badge.visibleProperty().bind(enabledCount.greaterThan(0));
+        badge.managedProperty().bind(badge.visibleProperty());
+        toolsButton.setGraphic(badge);
+        toolsButton.setContentDisplay(ContentDisplay.RIGHT);
+    }
+
+    private IntegerBinding enabledToolCount() {
+        var tools = toolsSelectorView.getViewModel().getTools();
+        Observable[] dependencies = tools.stream()
+                .map(ToolItemViewModel::enabledProperty)
+                .toArray(Observable[]::new);
+        return Bindings.createIntegerBinding(
+                () -> (int) tools.stream().filter(ToolItemViewModel::isEnabled).count(),
+                dependencies);
+    }
+
+    private void setupModelPopover() {
+        VBox content = new VBox(modelSelectorView);
+        content.setPadding(new Insets(12));
+        content.setPrefWidth(420);
+        content.getStyleClass().add("system-popover-content");
+
+        modelPopover = createPopover(content, PopOver.ArrowLocation.BOTTOM_RIGHT);
+        modelButton.setOnAction(event -> togglePopover(modelPopover, modelButton));
+
+        var modelViewModel = modelSelectorView.getViewModel();
+        modelButton.textProperty().bind(Bindings.createStringBinding(() -> {
+            ConnectionViewModel connection = modelViewModel.getSelectedConnection();
+            LLMInfoViewModel model = modelViewModel.getSelectedModel();
+            String provider = connection != null ? connection.getName() : "No connection";
+            String name = model != null ? model.getName() : "Select model";
+            return provider + " · " + name + " ▾";
+        }, modelViewModel.selectedConnectionProperty(), modelViewModel.selectedModelProperty()));
+    }
+
+    private PopOver createPopover(Node content, PopOver.ArrowLocation arrowLocation) {
+        PopOver popover = new PopOver(content);
+        popover.setArrowLocation(arrowLocation);
+        popover.setDetachable(false);
+        popover.setHeaderAlwaysVisible(false);
 
         URL stylesheet = getClass().getResource("/css/styles.css");
         if (stylesheet != null) {
             String css = stylesheet.toExternalForm();
-            systemMessagePopover.setOnShown(shown -> {
-                if (content.getScene() != null && content.getScene().getRoot() != null
-                        && !content.getScene().getRoot().getStylesheets().contains(css)) {
-                    content.getScene().getRoot().getStylesheets().add(css);
+            popover.setOnShown(shown -> {
+                Scene scene = content.getScene();
+                if (scene != null && scene.getRoot() != null
+                        && !scene.getRoot().getStylesheets().contains(css)) {
+                    scene.getRoot().getStylesheets().add(css);
                 }
             });
         }
+        return popover;
+    }
 
-        systemMessageButton.setOnAction(event -> {
-            if (systemMessagePopover.isShowing()) {
-                systemMessagePopover.hide();
-            } else {
-                systemMessagePopover.show(systemMessageButton);
-            }
-        });
+    private void togglePopover(PopOver popover, Node owner) {
+        if (popover.isShowing()) {
+            popover.hide();
+        } else {
+            popover.show(owner);
+        }
     }
 
     private void setupHeader() {
@@ -220,6 +289,69 @@ public class ChatController {
         updateSystemMessageIndicator();
         chatViewModel.systemMessageProperty().addListener((obs, oldVal, newVal) ->
                 updateSystemMessageIndicator());
+    }
+
+    private void setupComposer() {
+        attachButton.setOnAction(event -> composerFiles.selectAndAddFiles());
+        chatViewModel.attachedFilesProperty().addListener(
+                (ListChangeListener<AttachedFileViewModel>) change -> rebuildAttachmentChips());
+        rebuildAttachmentChips();
+    }
+
+    private void rebuildAttachmentChips() {
+        attachmentChips.getChildren().clear();
+        for (AttachedFileViewModel file : chatViewModel.attachedFilesProperty()) {
+            attachmentChips.getChildren().add(createChip(file));
+        }
+        boolean hasFiles = !chatViewModel.attachedFilesProperty().isEmpty();
+        attachmentChips.setVisible(hasFiles);
+        attachmentChips.setManaged(hasFiles);
+    }
+
+    private Node createChip(AttachedFileViewModel file) {
+        Label fileName = new Label(file.getFileName());
+        fileName.getStyleClass().add("chip-name");
+
+        Button removeButton = new Button("✕");
+        removeButton.getStyleClass().addAll("flat", "chip-remove");
+        removeButton.setOnAction(event -> composerFiles.removeFile(file));
+
+        HBox chip = new HBox(4, buildStatusNode(file.getStatus()), fileName, removeButton);
+        chip.setAlignment(Pos.CENTER_LEFT);
+        chip.getStyleClass().add("file-chip");
+
+        file.statusProperty().addListener((obs, oldStatus, newStatus) ->
+                chip.getChildren().set(0, buildStatusNode(newStatus)));
+        return chip;
+    }
+
+    private Node buildStatusNode(FileStatus status) {
+        if (status == FileStatus.VALID) {
+            return chipStatusLabel("✓", "chip-status-valid", status);
+        }
+        if (status == FileStatus.ERROR) {
+            return chipStatusLabel("✕", "chip-status-error", status);
+        }
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.setPrefSize(12, 12);
+        spinner.setMinSize(12, 12);
+        spinner.setMaxSize(12, 12);
+        spinner.getStyleClass().add("chip-spinner");
+        installChipStatusTooltip(spinner, status);
+        return spinner;
+    }
+
+    private Label chipStatusLabel(String glyph, String styleClass, FileStatus status) {
+        Label label = new Label(glyph);
+        label.getStyleClass().addAll("chip-status", styleClass);
+        installChipStatusTooltip(label, status);
+        return label;
+    }
+
+    private void installChipStatusTooltip(Node node, FileStatus status) {
+        if (status != null) {
+            Tooltip.install(node, new Tooltip(status.getDisplayName()));
+        }
     }
 
     private void bindConversationTitle() {
@@ -333,14 +465,14 @@ public class ChatController {
 
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
-        fileAttachmentControl.attachedFilesProperty()
-                .bind(chatViewModel.attachedFilesProperty());
+        composerFiles.attachedFilesProperty().bind(chatViewModel.attachedFilesProperty());
         sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
+        sendButton.managedProperty().bind(sendButton.visibleProperty());
         stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        stopButton.managedProperty().bind(stopButton.visibleProperty());
         sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
-        newConversationSplitMenuButton.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
-        openConversationsButton.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
-        emptyCurrentConversationMenuItem.disableProperty().bind(chatViewModel.sendingMessageInProgressProperty());
+        sendingMessageProgress.managedProperty().bind(sendingMessageProgress.visibleProperty());
+
         var selectedModel = chatViewModel.selectedModelProperty().get();
         if (selectedModel != null) {
             modelSelectorView
@@ -389,57 +521,51 @@ public class ChatController {
             chatViewModel.stopMessage();
         });
 
-        messageInput.setOnKeyPressed(event -> {
-            if (event.getCode().toString().equals("ENTER") && event.isControlDown()) {
+        logger.debug("Event handlers setup completed");
+    }
+
+    private void setupShortcuts() {
+        messageInput.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER
+                    && !event.isShiftDown() && !event.isControlDown() && !event.isAltDown()) {
                 event.consume();
                 chatViewModel.sendMessage();
             }
         });
 
-        var newConversationCommand = new NewConversationCommand(conversationStore, chatViewModel);
-        newConversationSplitMenuButton.setOnAction(event -> newConversationCommand.execute());
-
-        emptyCurrentConversationMenuItem.setOnAction(event -> chatViewModel.clearChat());
-
-        openConversationsButton.setOnAction(event -> showConversationsDialog());
-
-        logger.debug("Event handlers setup completed");
+        chatHeader.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                installSceneShortcuts(newScene);
+            }
+        });
     }
 
-    private void showConversationsDialog() {
-        try {
-            URL fxmlUrl = getClass().getResource("/fxml/ConversationsView.fxml");
-            if (fxmlUrl == null) {
-                logger.error("ConversationsView.fxml not found on classpath");
-                return;
+    private void installSceneShortcuts(Scene scene) {
+        scene.getAccelerators().putIfAbsent(
+                new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN),
+                chatViewModel::clearChat);
+        scene.getAccelerators().putIfAbsent(
+                new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN),
+                () -> new NewConversationCommand(conversationStore, chatViewModel).execute());
+        scene.getAccelerators().putIfAbsent(
+                new KeyCodeCombination(KeyCode.K, KeyCombination.CONTROL_DOWN),
+                () -> messageInput.requestFocus());
+
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE && hideOpenPopover()) {
+                event.consume();
             }
+        });
+    }
 
-            FXMLLoader loader = new FXMLLoader(fxmlUrl);
-            ConversationsViewController conversationsController =
-                    new ConversationsViewController(conversationStore, chatViewModel);
-            loader.setController(conversationsController);
-
-            Parent root = loader.load();
-
-            Stage dialogStage = new Stage();
-            conversationsController.setDialogStage(dialogStage);
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.initOwner(mainStageProvider.getMainWindow());
-            dialogStage.setTitle("Conversations");
-            dialogStage.setScene(new Scene(root));
-            dialogStage.setMinWidth(720);
-            dialogStage.setMinHeight(440);
-
-            try {
-                dialogStage.showAndWait();
-            } finally {
-                conversationsController.dispose();
+    private boolean hideOpenPopover() {
+        for (PopOver popover : new PopOver[]{systemMessagePopover, toolsPopover, modelPopover}) {
+            if (popover != null && popover.isShowing()) {
+                popover.hide();
+                return true;
             }
-
-            logger.info("Conversations dialog closed");
-        } catch (IOException e) {
-            logger.error("Failed to open Conversations dialog", e);
         }
+        return false;
     }
 
     public ChatViewModel getChatViewModel() {

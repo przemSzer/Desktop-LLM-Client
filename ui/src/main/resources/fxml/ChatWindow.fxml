@@ -1,98 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import dev.local.ai.ui.chat.controls.ChatWebView?>
-<?import dev.local.ai.ui.files.controls.FileAttachmentControl?>
-<?import dev.local.ai.ui.models.view.LLMSelectorView?>
-<?import dev.local.ai.ui.tools.ToolsSelectorView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.SplitMenuButton?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="10" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
+<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
   <children>
-    <SplitPane dividerPositions="0.637125748502994" orientation="VERTICAL" VBox.vgrow="ALWAYS">
-      <items>
-        <VBox spacing="0" VBox.vgrow="ALWAYS">
+    <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="8" styleClass="chat-header">
+      <Label fx:id="conversationTitleLabel" maxWidth="Infinity" styleClass="conversation-title" text="New conversation" HBox.hgrow="ALWAYS" />
+      <Button fx:id="undoButton" mnemonicParsing="false" styleClass="flat" text="↩" />
+      <Button fx:id="redoButton" mnemonicParsing="false" styleClass="flat" text="↪" />
+      <HBox alignment="CENTER" spacing="2">
+        <ToggleButton fx:id="systemMessageButton" mnemonicParsing="false" text="System ▾" />
+        <Label fx:id="systemMessageIndicator" styleClass="system-message-indicator" text="•" visible="false" managed="false" />
+      </HBox>
+    </HBox>
+    <AnchorPane VBox.vgrow="ALWAYS">
+      <children>
+        <ChatWebView fx:id="chatWebView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      </children>
+    </AnchorPane>
+    <VBox spacing="4">
+      <padding>
+        <Insets bottom="10.0" left="12.0" right="12.0" top="8.0" />
+      </padding>
+      <children>
+        <VBox fx:id="composerCard" styleClass="composer-card">
           <children>
-            <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="8" styleClass="chat-header">
-              <Label fx:id="conversationTitleLabel" maxWidth="Infinity" styleClass="conversation-title" text="New conversation" HBox.hgrow="ALWAYS" />
-              <Button fx:id="undoButton" mnemonicParsing="false" text="↩" />
-              <Button fx:id="redoButton" mnemonicParsing="false" text="↪" />
-              <HBox alignment="CENTER" spacing="2">
-                <ToggleButton fx:id="systemMessageButton" mnemonicParsing="false" text="System ▾" />
-                <!--this is barely visible and used maybe some icon would be better? -->
-                <Label fx:id="systemMessageIndicator" styleClass="system-message-indicator" text="•" visible="false" managed="false" />
-              </HBox>
-            </HBox>
-            <AnchorPane VBox.vgrow="ALWAYS">
+            <FlowPane fx:id="attachmentChips" hgap="6.0" managed="false" styleClass="composer-chips" vgap="6.0" visible="false" />
+            <TextArea fx:id="messageInput" prefRowCount="3" promptText="Send a message…" styleClass="composer-input" wrapText="true" VBox.vgrow="ALWAYS" />
+            <HBox fx:id="actionRow" alignment="CENTER_LEFT" spacing="8.0" styleClass="composer-actions">
               <children>
-                <ChatWebView fx:id="chatWebView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                <Button fx:id="attachButton" mnemonicParsing="false" styleClass="flat, composer-icon-button" text="+" />
+                <ToggleButton fx:id="toolsButton" mnemonicParsing="false" text="Tools ▾" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button fx:id="modelButton" mnemonicParsing="false" styleClass="flat" text="Model ▾" />
+                <ProgressIndicator fx:id="sendingMessageProgress" managed="false" prefHeight="24.0" prefWidth="24.0" visible="false" />
+                <Button fx:id="stopButton" mnemonicParsing="false" managed="false" styleClass="danger, composer-send-button" text="■" visible="false" />
+                <Button fx:id="sendButton" mnemonicParsing="false" styleClass="accent, composer-send-button" text="↑" />
               </children>
-            </AnchorPane>
+            </HBox>
           </children>
         </VBox>
-        <AnchorPane minHeight="260.0" prefHeight="306.0" SplitPane.resizableWithParent="false">
-          <children>
-            <GridPane prefHeight="150.0" prefWidth="795.0" vgap="5.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="5.0">
-              <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-              </columnConstraints>
-              <rowConstraints>
-                <RowConstraints maxHeight="138.0" minHeight="10.0" prefHeight="108.0" vgrow="SOMETIMES" />
-                <RowConstraints maxHeight="100.0" minHeight="7.0" prefHeight="23.0" vgrow="NEVER" />
-                <RowConstraints maxHeight="142.0" minHeight="60.0" prefHeight="80.0" vgrow="ALWAYS" />
-                <RowConstraints maxHeight="60.0" minHeight="10.0" prefHeight="20.0" vgrow="NEVER" />
-                <RowConstraints fillHeight="false" maxHeight="50.0" minHeight="10.0" prefHeight="40.0" vgrow="NEVER" />
-              </rowConstraints>
-              <children>
-                <HBox fx:id="promptHBox" alignment="CENTER_LEFT" spacing="10" GridPane.vgrow="ALWAYS">
-                  <TextArea fx:id="messageInput" minWidth="25.0" prefHeight="124.0" prefWidth="805.0" HBox.hgrow="ALWAYS" />
-                  <VBox alignment="CENTER" spacing="5.0">
-                    <ProgressIndicator fx:id="sendingMessageProgress" prefHeight="36.0" prefWidth="50.0" visible="false" />
-                    <Button fx:id="stopButton" mnemonicParsing="false" styleClass="danger" text="Stop" visible="false" />
-                    <Button fx:id="sendButton" styleClass="accent" text="Send" />
-                  </VBox>
-                </HBox>
-                <Separator prefHeight="10.0" GridPane.hgrow="NEVER" GridPane.rowIndex="1" GridPane.vgrow="NEVER" />
-                <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" GridPane.vgrow="SOMETIMES">
-                  <GridPane.margin>
-                    <Insets bottom="5.0" />
-                  </GridPane.margin>
-                  <FileAttachmentControl fx:id="fileAttachmentControl" minHeight="50.0" prefHeight="51.0" prefWidth="594.0" HBox.hgrow="ALWAYS" />
-                  <ToolsSelectorView fx:id="toolsSelectorView" HBox.hgrow="NEVER" />
-                </HBox>
-                <Label fx:id="statusLabel" styleClass="status-label" text="Ready" GridPane.hgrow="NEVER" GridPane.rowIndex="3" GridPane.vgrow="NEVER">
-                  <GridPane.margin>
-                    <Insets top="2.0" />
-                  </GridPane.margin>
-                </Label>
-                <HBox alignment="CENTER" spacing="10" GridPane.hgrow="NEVER" GridPane.rowIndex="4" GridPane.vgrow="NEVER">
-                  <Button fx:id="openConversationsButton" mnemonicParsing="false" text="Open conversations…" />
-                  <SplitMenuButton fx:id="newConversationSplitMenuButton" mnemonicParsing="false" text="New conversation">
-                    <items>
-                      <MenuItem fx:id="emptyCurrentConversationMenuItem" mnemonicParsing="false" text="Empty current conversation" />
-                    </items>
-                  </SplitMenuButton>
-                  <LLMSelectorView fx:id="modelSelectorView" />
-                </HBox>
-              </children>
-            </GridPane>
-          </children>
-        </AnchorPane>
-      </items>
-    </SplitPane>
+        <Label fx:id="statusLabel" styleClass="status-label" text="Ready" />
+      </children>
+    </VBox>
   </children>
 </VBox>

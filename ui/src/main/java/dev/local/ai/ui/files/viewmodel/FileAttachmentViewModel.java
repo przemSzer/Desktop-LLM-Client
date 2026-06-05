@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,6 +184,8 @@ public class FileAttachmentViewModel {
 
         var fileAlreadyAttached = attachedFiles.get()
             .stream()
+            .filter(Objects::nonNull)
+            .filter(f -> f.getDescription() != null)
             .anyMatch(f -> f.getDescription().file().equals(fileViewModel.getDescription().file()));
         if (fileAlreadyAttached) {
             logger.info("File already attached: {}", fileViewModel.getDescription().file().getName());
