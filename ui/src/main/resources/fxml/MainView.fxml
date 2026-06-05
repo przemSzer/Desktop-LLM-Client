@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import dev.local.ai.ui.sidebar.SidebarView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.main.MainController">
+  <padding>
+    <Insets bottom="10" left="10" right="10" top="10" />
+  </padding>
+
+  <children>
+    <SplitPane fx:id="contentSplitPane" dividerPositions="0.22" VBox.vgrow="ALWAYS">
+      <items>
+        <SidebarView fx:id="sidebarView" SplitPane.resizableWithParent="false" />
+        <fx:include fx:id="chatWindow" source="ChatWindow.fxml" />
+      </items>
+    </SplitPane>
+  </children>
+</VBox>

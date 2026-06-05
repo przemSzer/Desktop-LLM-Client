@@ -3,16 +3,23 @@ package dev.local.ai.ui.chat.controller;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +28,7 @@ import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.ui.chat.command.NewConversationCommand;
+import dev.local.ai.ui.chat.command.RenameConversationCommand;
 import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
@@ -40,34 +48,42 @@ import javafx.util.Callback;
 import java.io.IOException;
 import java.net.URL;
 
-/**
- * Controller for the Chat UI following MVVM pattern.
- * Handles only UI events and delegates business logic to ViewModel.
- */
 public class ChatController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
-    
+
     @FXML
-    private TextArea systemMessageTextArea;
+    private HBox chatHeader;
 
     @FXML
     private TextArea messageInput;
-    
+
     @FXML
     private Button sendButton;
 
     @FXML
     private Button stopButton;
-    
+
     @FXML
     private ProgressIndicator sendingMessageProgress;
-    
+
     @FXML
     private ChatWebView chatWebView;
-    
+
     @FXML
     private Label conversationTitleLabel;
+
+    @FXML
+    private Button undoButton;
+
+    @FXML
+    private Button redoButton;
+
+    @FXML
+    private ToggleButton systemMessageButton;
+
+    @FXML
+    private Label systemMessageIndicator;
 
     @FXML
     private Label statusLabel;
@@ -80,18 +96,21 @@ public class ChatController {
 
     @FXML
     private MenuItem emptyCurrentConversationMenuItem;
-    
-    @FXML
-    private FileAttachmentControl fileAttachmentControl;
 
     @FXML
-    private FileAttachmentControl systemMessageFileAttachments;
+    private FileAttachmentControl fileAttachmentControl;
 
     @FXML
     private ToolsSelectorView toolsSelectorView;
 
     @FXML
     private LLMSelectorView modelSelectorView;
+
+    private TextArea systemMessageTextArea;
+    private FileAttachmentControl systemMessageFileAttachments;
+    private PopOver systemMessagePopover;
+    private TextField titleEditField;
+    private boolean titleBound;
 
     private final ChatViewModel chatViewModel;
     private final IToolProvider toolProvider;
@@ -122,29 +141,168 @@ public class ChatController {
         this.fileSelector = fileSelector;
         this.mainStageProvider = mainStageProvider;
     }
-    
+
     @FXML
     public void initialize() {
         try {
             logger.debug("Initializing ChatController");
-            
+
             toolsSelectorView.init(toolProvider, eventBus);
             modelSelectorView.init(connectionsStore, eventBus, controllerFactory, mainStageProvider);
             fileAttachmentControl.init(new FileAttachmentViewModel(commandManager, fileSelector));
-            systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelector));
+
+            setupSystemMessagePopover();
+            setupHeader();
             setupDataBinding();
             setupEventHandlers();
             renderExistingMessages();
-            
+
             logger.debug("ChatController initialized.");
         } catch (Exception e) {
-            logger.error("Error initializing ChatController", e);         
+            logger.error("Error initializing ChatController", e);
         }
     }
-    
-    private void setupDataBinding() {        
+
+    //TODO: we can move this to a separate control
+    private void setupSystemMessagePopover() {
+        systemMessageTextArea = new TextArea();
+        systemMessageTextArea.setPromptText("Enter system message here");
+        systemMessageTextArea.setMinHeight(120);
+        systemMessageTextArea.setPrefRowCount(6);
+        systemMessageTextArea.setWrapText(true);
+
+        systemMessageFileAttachments = new FileAttachmentControl();
+        systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelector));
+
+        VBox content = new VBox(8, systemMessageTextArea, systemMessageFileAttachments);
+        content.setPadding(new Insets(12));
+        content.setPrefWidth(420);
+        content.getStyleClass().add("system-popover-content");
+
+        systemMessagePopover = new PopOver(content);
+        systemMessagePopover.setArrowLocation(PopOver.ArrowLocation.TOP_RIGHT);
+        systemMessagePopover.setDetachable(false);
+        systemMessagePopover.setHeaderAlwaysVisible(false);
+
+        URL stylesheet = getClass().getResource("/css/styles.css");
+        if (stylesheet != null) {
+            String css = stylesheet.toExternalForm();
+            systemMessagePopover.setOnShown(shown -> {
+                if (content.getScene() != null && content.getScene().getRoot() != null
+                        && !content.getScene().getRoot().getStylesheets().contains(css)) {
+                    content.getScene().getRoot().getStylesheets().add(css);
+                }
+            });
+        }
+
+        systemMessageButton.setOnAction(event -> {
+            if (systemMessagePopover.isShowing()) {
+                systemMessagePopover.hide();
+            } else {
+                systemMessagePopover.show(systemMessageButton);
+            }
+        });
+    }
+
+    private void setupHeader() {
+        bindConversationTitle();
+        conversationTitleLabel.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                startTitleEdit();
+            }
+        });
+
+        undoButton.setOnAction(event -> commandManager.undo());
+        redoButton.setOnAction(event -> commandManager.redo());
+        undoButton.disableProperty().bind(chatViewModel.canUndoProperty().not());
+        redoButton.disableProperty().bind(chatViewModel.canRedoProperty().not());
+
+        updateSystemMessageIndicator();
+        chatViewModel.systemMessageProperty().addListener((obs, oldVal, newVal) ->
+                updateSystemMessageIndicator());
+    }
+
+    private void bindConversationTitle() {
+        if (!titleBound) {
+            conversationTitleLabel.textProperty().bind(chatViewModel.currentConversationTitleProperty());
+            titleBound = true;
+        }
+    }
+
+    private void unbindConversationTitle() {
+        if (titleBound) {
+            conversationTitleLabel.textProperty().unbind();
+            titleBound = false;
+        }
+    }
+
+    private void startTitleEdit() {
+        if (titleEditField != null) {
+            return;
+        }
+        unbindConversationTitle();
+        titleEditField = new TextField(chatViewModel.getCurrentConversationTitle());
+        titleEditField.getStyleClass().add("conversation-title");
+        HBox.setHgrow(titleEditField, javafx.scene.layout.Priority.ALWAYS);
+        int index = chatHeader.getChildren().indexOf(conversationTitleLabel);
+        chatHeader.getChildren().set(index, titleEditField);
+        conversationTitleLabel.setVisible(false);
+        conversationTitleLabel.setManaged(false);
+        titleEditField.requestFocus();
+        titleEditField.selectAll();
+
+        titleEditField.setOnAction(event -> commitTitleEdit());
+        titleEditField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                commitTitleEdit();
+            }
+        });
+        titleEditField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                cancelTitleEdit();
+                event.consume();
+            }
+        });
+    }
+
+    private void commitTitleEdit() {
+        if (titleEditField == null) {
+            return;
+        }
+        String newTitle = titleEditField.getText();
+        String conversationId = chatViewModel.getCurrentConversationId();
+        commandManager.executeCommand(
+                new RenameConversationCommand(conversationStore, chatViewModel, conversationId, newTitle));
+        finishTitleEdit();
+    }
+
+    private void cancelTitleEdit() {
+        finishTitleEdit();
+    }
+
+    private void finishTitleEdit() {
+        if (titleEditField == null) {
+            return;
+        }
+        int index = chatHeader.getChildren().indexOf(titleEditField);
+        chatHeader.getChildren().set(index, conversationTitleLabel);
+        conversationTitleLabel.setVisible(true);
+        conversationTitleLabel.setManaged(true);
+        titleEditField = null;
+        bindConversationTitle();
+    }
+
+    private void updateSystemMessageIndicator() {
+        boolean hasSystemMessage = chatViewModel.getSystemMessage() != null
+                && !chatViewModel.getSystemMessage().isBlank();
+        systemMessageIndicator.setVisible(hasSystemMessage);
+        systemMessageIndicator.setManaged(hasSystemMessage);
+    }
+
+    private void setupDataBinding() {
         systemMessageTextArea.textProperty().bindBidirectional(chatViewModel.systemMessageProperty());
-        systemMessageFileAttachments.attachedFilesProperty().bind(chatViewModel.systemMessageAttachedFilesProperty());
+        systemMessageFileAttachments.attachedFilesProperty()
+                .bind(chatViewModel.systemMessageAttachedFilesProperty());
 
         chatViewModel.getChatMessages().addListener((ListChangeListener<ChatMessageViewModel>) change -> {
             while (change.next()) {
@@ -172,12 +330,11 @@ public class ChatController {
                 }
             }
         });
-        
+
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
         statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
-        conversationTitleLabel.textProperty().bind(chatViewModel.currentConversationTitleProperty());
         fileAttachmentControl.attachedFilesProperty()
-            .bind(chatViewModel.attachedFilesProperty());
+                .bind(chatViewModel.attachedFilesProperty());
         sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
         stopButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         sendingMessageProgress.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty());
@@ -187,28 +344,34 @@ public class ChatController {
         var selectedModel = chatViewModel.selectedModelProperty().get();
         if (selectedModel != null) {
             modelSelectorView
-                .getViewModel()
-                .setSelectedModel(new LLMInfoViewModel(selectedModel.modelInfo()));
+                    .getViewModel()
+                    .setSelectedModel(new LLMInfoViewModel(selectedModel.modelInfo()));
             modelSelectorView
-                .getViewModel()
-                .setSelectedConnection(new ConnectionViewModel(selectedModel.connection().providerType(), selectedModel.connection().name(), selectedModel.connection().description(), selectedModel.connection().id()));
+                    .getViewModel()
+                    .setSelectedConnection(new ConnectionViewModel(
+                            selectedModel.connection().providerType(),
+                            selectedModel.connection().name(),
+                            selectedModel.connection().description(),
+                            selectedModel.connection().id()));
         }
         chatViewModel.selectedModelProperty()
-            .map(llm -> new LLMInfoViewModel(llm.modelInfo()))
-            .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedModel(newVal));        
+                .map(llm -> new LLMInfoViewModel(llm.modelInfo()))
+                .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedModel(newVal));
 
         chatViewModel.selectedModelProperty()
-            .map(llm -> new ConnectionViewModel(llm.connection().providerType(), llm.connection().name(), llm.connection().description(), llm.connection().id()))
-            .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedConnection(newVal));        
+                .map(llm -> new ConnectionViewModel(
+                        llm.connection().providerType(),
+                        llm.connection().name(),
+                        llm.connection().description(),
+                        llm.connection().id()))
+                .addListener((obs, oldVal, newVal) -> modelSelectorView.getViewModel().setSelectedConnection(newVal));
         logger.debug("Data binding setup completed");
     }
-    
+
     private void renderExistingMessages() {
-        //TODO: architecture - it should be moved to a view model, which 
-        //should check this and trigger rerender of the chat web view
-        //maybe  in lazy way...
         if (!chatViewModel.getChatMessages().isEmpty()) {
-            logger.debug("Rendered {} existing messages from restored conversation", chatViewModel.getChatMessages().size());
+            logger.debug("Rendered {} existing messages from restored conversation",
+                    chatViewModel.getChatMessages().size());
         }
         for (ChatMessageViewModel msg : chatViewModel.getChatMessages()) {
             chatWebView.addMessage(msg);
@@ -220,7 +383,7 @@ public class ChatController {
             logger.debug("Send button clicked");
             chatViewModel.sendMessage();
         });
-        
+
         stopButton.setOnAction(event -> {
             logger.debug("Stop button clicked");
             chatViewModel.stopMessage();
@@ -239,7 +402,7 @@ public class ChatController {
         emptyCurrentConversationMenuItem.setOnAction(event -> chatViewModel.clearChat());
 
         openConversationsButton.setOnAction(event -> showConversationsDialog());
-        
+
         logger.debug("Event handlers setup completed");
     }
 
@@ -278,8 +441,8 @@ public class ChatController {
             logger.error("Failed to open Conversations dialog", e);
         }
     }
-    
+
     public ChatViewModel getChatViewModel() {
         return chatViewModel;
     }
-} 
+}

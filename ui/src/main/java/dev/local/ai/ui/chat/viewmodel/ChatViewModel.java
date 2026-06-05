@@ -242,6 +242,10 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         return currentConversationTitle.get();
     }
 
+    public void refreshConversationTitle() {
+        refreshConversationTitleFromStore();
+    }
+
     private void refreshConversationTitleFromStore() {
         String id = session != null ? session.conversationId() : getCurrentConversationId();
         Optional<ConversationSummary> summary = conversationStore.findSummary(id);

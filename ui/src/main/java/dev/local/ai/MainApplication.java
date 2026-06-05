@@ -30,7 +30,7 @@ public class MainApplication extends Application {
             this.appContext = new AppContext();
             HostServicesProvider.getInstance().setHostServices(this.getHostServices());
             Platform.setImplicitExit(true);
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/ChatWindow.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/MainView.fxml"));
             loader.setControllerFactory(new ControllerFactory(appContext));
             Parent root = loader.load();
             

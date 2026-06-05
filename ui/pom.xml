@@ -72,6 +72,10 @@
             <artifactId>atlantafx-base</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+        </dependency>
 
         <!-- Nullness (type use on Optional type args; matches JDK Optional.of) -->
         <dependency>

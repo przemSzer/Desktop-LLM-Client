@@ -52,3 +52,88 @@
     -fx-border-radius: 6;
     -fx-spacing: 8;
 }
+
+.sidebar {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-toolbar {
+    -fx-padding: 0 0 4 0;
+}
+
+.sidebar-footer {
+    -fx-padding: 8 0 0 0;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1 0 0 0;
+}
+
+.sidebar.collapsed #newChatButton {
+    -fx-padding: 8 4 8 4;
+}
+
+.sidebar-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.sidebar-list .list-cell {
+    -fx-background-color: transparent;
+}
+
+.sidebar-group-header {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-subtle;
+    -fx-padding: 8 4 4 4;
+}
+
+.conversation-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 6 4 6 4;
+}
+
+.sidebar-list .list-cell.conversation-cell-selected,
+.sidebar-list .list-cell:filled:selected {
+    -fx-background-color: -color-accent-subtle;
+}
+
+.conversation-cell-selected {
+    -fx-background-color: -color-accent-subtle;
+    -fx-background-radius: 6;
+}
+
+.conversation-cell-title {
+    -fx-font-size: 13px;
+    -fx-text-fill: -color-fg-default;
+}
+
+.conversation-cell-time {
+    -fx-font-size: 11px;
+    -fx-text-fill: -color-fg-muted;
+}
+
+.chat-header {
+    -fx-padding: 6 8 6 8;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+}
+
+.system-message-indicator {
+    -fx-text-fill: -color-accent-emphasis;
+    -fx-font-size: 14px;
+}
+
+.popover > .border {
+    -fx-fill: -color-bg-default;
+    -fx-stroke: -color-border-muted;
+}
+
+.system-popover-content {
+    -fx-background-color: -color-bg-default;
+    -fx-background-radius: 6;
+}
