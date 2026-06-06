@@ -25,6 +25,8 @@ import dev.local.ai.ui.chat.session.ConversationSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.dialogs.FileSelector;
 import dev.local.ai.ui.files.dialogs.OpenFilesDialog;
+import dev.local.ai.ui.notifications.NotificationService;
+import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.utils.MainStageProvider;
 
 public final class AppContext implements AutoCloseable {
@@ -52,6 +54,9 @@ public final class AppContext implements AutoCloseable {
 
     public final MainStageProvider mainStageProvider;
     public final FileSelector fileSelector;
+
+    public final ThemeManager themeManager;
+    public final NotificationService notificationService;
 
     public AppContext() {
         this.closeables = new ArrayList<>();
@@ -83,6 +88,11 @@ public final class AppContext implements AutoCloseable {
 
         this.mainStageProvider = new MainStageProvider();
         this.fileSelector = new OpenFilesDialog(mainStageProvider);
+
+        this.themeManager = new ThemeManager(settingsStorage);
+        this.notificationService = new NotificationService(eventBus, mainStageProvider);
+        this.notificationService.start();
+        this.closeables.add(notificationService);
 
         logger.info("AppContext initialized");
     }

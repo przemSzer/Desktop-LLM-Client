@@ -1,6 +1,6 @@
 package dev.local.ai;
 
-import atlantafx.base.theme.NordDark;
+import fr.brouillard.oss.cssfx.CSSFX;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -26,8 +26,11 @@ public class MainApplication extends Application {
     public void start(Stage primaryStage) {
         try {
             logger.info("Starting Chat Application");
-            Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
             this.appContext = new AppContext();
+            appContext.themeManager.applyUserAgentStylesheet();
+            if (Boolean.getBoolean("ui.dev")) {
+                CSSFX.start();
+            }
             HostServicesProvider.getInstance().setHostServices(this.getHostServices());
             Platform.setImplicitExit(true);
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/MainView.fxml"));

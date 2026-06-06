@@ -232,24 +232,46 @@
 
 /* ============================================================
    Composer action buttons (attach / send / stop)
-   These intentionally render a text glyph, so we avoid AtlantaFX
-   .button-icon / .button-circle which force graphic-only display.
+   Icon graphics come from Ikonli (Feather pack).
    ============================================================ */
 .composer-icon-button {
-    -fx-font-size: 16px;
     -fx-min-width: 30px;
     -fx-min-height: 30px;
     -fx-padding: 2 8 2 8;
 }
 
 .composer-send-button {
-    -fx-content-display: text-only;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
     -fx-min-width: 34px;
     -fx-min-height: 34px;
     -fx-pref-width: 34px;
     -fx-pref-height: 34px;
     -fx-background-radius: 17;
     -fx-padding: 0;
+}
+
+/* ============================================================
+   Ikonli FontIcon coloring – inherit semantic text tokens so
+   icons follow the active AtlantaFX theme.
+   ============================================================ */
+.ikonli-font-icon {
+    -fx-icon-color: -color-fg-default;
+}
+
+.button:hover .ikonli-font-icon,
+.toggle-button:hover .ikonli-font-icon {
+    -fx-icon-color: -color-fg-default;
+}
+
+.button.accent .ikonli-font-icon,
+.button.danger .ikonli-font-icon {
+    -fx-icon-color: -color-fg-emphasis;
+}
+
+/* ============================================================
+   Theme switcher popover
+   ============================================================ */
+.theme-popover-heading {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-subtle;
 }

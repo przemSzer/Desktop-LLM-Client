@@ -5,17 +5,24 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <fx:root type="VBox" prefWidth="280" minWidth="48" maxWidth="400" spacing="8" styleClass="sidebar" stylesheets="@../../../../../../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox fx:id="toolbar" alignment="CENTER_LEFT" spacing="8" styleClass="sidebar-toolbar">
-         <Button fx:id="collapseButton" mnemonicParsing="false" text="≡" />
+         <Button fx:id="collapseButton" mnemonicParsing="false" styleClass="flat">
+            <graphic><FontIcon iconLiteral="fth-sidebar" iconSize="18" /></graphic>
+         </Button>
       </HBox>
-      <Button fx:id="newChatButton" maxWidth="Infinity" mnemonicParsing="false" styleClass="accent" text="+ New Chat" />
+      <Button fx:id="newChatButton" maxWidth="Infinity" mnemonicParsing="false" styleClass="accent" text="New Chat">
+         <graphic><FontIcon iconLiteral="fth-edit-3" iconSize="16" /></graphic>
+      </Button>
       <ListView fx:id="conversationList" styleClass="sidebar-list" VBox.vgrow="ALWAYS" />
       <VBox fx:id="footer" spacing="4" styleClass="sidebar-footer">
          <HBox fx:id="footerPlaceholder" alignment="CENTER_LEFT" spacing="8">
-            <Button fx:id="settingsButton" mnemonicParsing="false" text="⚙" />
+            <Button fx:id="settingsButton" mnemonicParsing="false" styleClass="flat">
+               <graphic><FontIcon iconLiteral="fth-settings" iconSize="16" /></graphic>
+            </Button>
          </HBox>
       </VBox>
    </children>

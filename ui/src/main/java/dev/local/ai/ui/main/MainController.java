@@ -8,6 +8,7 @@ import dev.local.ai.ui.chat.controller.ChatController;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.sidebar.SidebarView;
 import dev.local.ai.ui.sidebar.SidebarViewModel;
+import dev.local.ai.ui.theme.ThemeManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
@@ -30,14 +31,17 @@ public final class MainController {
     private final ChatViewModel chatViewModel;
     private final ConversationStore conversationStore;
     private final SettingsStorage settingsStorage;
+    private final ThemeManager themeManager;
     private boolean syncingSidebarSelection;
 
     public MainController(ChatViewModel chatViewModel,
                           ConversationStore conversationStore,
-                          SettingsStorage settingsStorage) {
+                          SettingsStorage settingsStorage,
+                          ThemeManager themeManager) {
         this.chatViewModel = chatViewModel;
         this.conversationStore = conversationStore;
         this.settingsStorage = settingsStorage;
+        this.themeManager = themeManager;
     }
 
     @FXML
@@ -45,7 +49,7 @@ public final class MainController {
         logger.debug("Initializing MainController");
 
         SidebarViewModel sidebarViewModel = new SidebarViewModel(conversationStore);
-        sidebarView.init(sidebarViewModel, conversationStore, settingsStorage);
+        sidebarView.init(sidebarViewModel, conversationStore, settingsStorage, themeManager);
         sidebarView.newChatDisabledProperty().bind(chatViewModel.sendingMessageInProgressProperty());
         sidebarView.setOnNewChat(() ->
                 new NewConversationCommand(conversationStore, chatViewModel).execute());

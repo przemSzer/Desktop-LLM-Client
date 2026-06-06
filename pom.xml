@@ -35,6 +35,8 @@
         <langchain4j-jsoup.version>1.13.1-beta23</langchain4j-jsoup.version>
         <atlantafx.version>2.1.0</atlantafx.version>
         <controlsfx.version>11.2.2</controlsfx.version>
+        <ikonli.version>12.3.1</ikonli.version>
+        <cssfx.version>11.5.1</cssfx.version>
     </properties>
 
     <modules>
@@ -141,6 +143,26 @@
                 <groupId>org.controlsfx</groupId>
                 <artifactId>controlsfx</artifactId>
                 <version>${controlsfx.version}</version>
+            </dependency>
+
+            <!-- Ikonli – icon packs for JavaFX (Feather set used across the UI). -->
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-javafx</artifactId>
+                <version>${ikonli.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-feather-pack</artifactId>
+                <version>${ikonli.version}</version>
+            </dependency>
+
+            <!-- CSSFX – live CSS hot-reload, dev-only. -->
+            <dependency>
+                <groupId>fr.brouillard.oss</groupId>
+                <artifactId>cssfx</artifactId>
+                <version>${cssfx.version}</version>
             </dependency>
 
             <!-- Testing dependencies -->           

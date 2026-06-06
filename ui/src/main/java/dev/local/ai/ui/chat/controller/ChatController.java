@@ -47,6 +47,7 @@ import dev.local.ai.ui.files.viewmodel.FileAttachmentViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
+import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 import dev.local.ai.ui.utils.MainStageProvider;
@@ -128,6 +129,7 @@ public class ChatController {
     private final Callback<Class<?>, Object> controllerFactory;
     private final FileSelector fileSelector;
     private final MainStageProvider mainStageProvider;
+    private final ThemeManager themeManager;
 
     public ChatController(ChatViewModel chatViewModel,
                           IToolProvider toolProvider,
@@ -137,7 +139,8 @@ public class ChatController {
                           ConversationStore conversationStore,
                           Callback<Class<?>, Object> controllerFactory,
                           FileSelector fileSelector,
-                          MainStageProvider mainStageProvider) {
+                          MainStageProvider mainStageProvider,
+                          ThemeManager themeManager) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
         this.eventBus = eventBus;
@@ -147,6 +150,7 @@ public class ChatController {
         this.controllerFactory = controllerFactory;
         this.fileSelector = fileSelector;
         this.mainStageProvider = mainStageProvider;
+        this.themeManager = themeManager;
     }
 
     @FXML
@@ -168,6 +172,8 @@ public class ChatController {
             setupEventHandlers();
             setupShortcuts();
             renderExistingMessages();
+
+            themeManager.setDarkModeConsumer(isDark -> chatWebView.setDarkMode(Boolean.TRUE.equals(isDark)));
 
             logger.debug("ChatController initialized.");
         } catch (Exception e) {
@@ -197,7 +203,7 @@ public class ChatController {
 
     private void setupToolsPopover() {
         VBox content = new VBox(toolsSelectorView);
-        content.setPadding(new Insets(12));
+        content.setPadding(new Insets(30));
         content.setPrefWidth(360);
         content.getStyleClass().add("system-popover-content");
 

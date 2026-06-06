@@ -27,12 +27,12 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
         try {
             if (type == MainController.class) {
                 return new MainController(chatViewModel(), app.conversationStore,
-                        app.settingsStorage);
+                        app.settingsStorage, app.themeManager);
             }
             if (type == ChatController.class) {
                 return new ChatController(chatViewModel(), app.toolProvider, app.eventBus,
                     app.connectionsStore, app.commandManager, app.conversationStore,
-                    this, app.fileSelector, app.mainStageProvider);
+                    this, app.fileSelector, app.mainStageProvider, app.themeManager);
             }
             if (type == ConnectionsViewController.class) {
                 return new ConnectionsViewController(app.commandManager);

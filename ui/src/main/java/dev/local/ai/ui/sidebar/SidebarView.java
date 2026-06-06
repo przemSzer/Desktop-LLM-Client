@@ -4,6 +4,8 @@ import dev.local.ai.core.storage.SettingsStorage;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.storage.conversations.ConversationSummariesListener;
 import dev.local.ai.core.storage.conversations.ConversationSummary;
+import dev.local.ai.ui.theme.ThemeManager;
+import dev.local.ai.ui.theme.ThemeSwitcherPopover;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -48,6 +50,7 @@ public final class SidebarView extends VBox {
     private SidebarViewModel viewModel;
     private ConversationStore conversationStore;
     private SettingsStorage settingsStorage;
+    private ThemeSwitcherPopover themeSwitcherPopover;
     private ConversationSummariesListener summariesListener;
     private final ObservableList<Object> listItems = FXCollections.observableArrayList();
     private final ObjectProperty<ConversationSummary> selectedConversation = new SimpleObjectProperty<>();
@@ -70,10 +73,12 @@ public final class SidebarView extends VBox {
 
     public void init(SidebarViewModel viewModel,
                      ConversationStore conversationStore,
-                     SettingsStorage settingsStorage) {
+                     SettingsStorage settingsStorage,
+                     ThemeManager themeManager) {
         this.viewModel = viewModel;
         this.conversationStore = conversationStore;
         this.settingsStorage = settingsStorage;
+        this.themeSwitcherPopover = new ThemeSwitcherPopover(themeManager);
 
         SidebarSettings settings = loadSettings();
         expandedWidth = settings.width() > SidebarSettings.COLLAPSED_WIDTH
@@ -108,8 +113,7 @@ public final class SidebarView extends VBox {
 
         collapseButton.setOnAction(e -> toggleCollapsed());
 
-        settingsButton.setVisible(false);
-        settingsButton.setManaged(false);
+        settingsButton.setOnAction(e -> themeSwitcherPopover.toggle(settingsButton));
 
         syncSelectionFromViewModel();
     }
@@ -195,15 +199,13 @@ public final class SidebarView extends VBox {
             setMinWidth(SidebarSettings.COLLAPSED_WIDTH);
             setPrefWidth(SidebarSettings.COLLAPSED_WIDTH);
             setMaxWidth(SidebarSettings.COLLAPSED_WIDTH);
-            newChatButton.setText("+");
-            collapseButton.setText("»");
+            newChatButton.setText("");
         } else {
             getStyleClass().remove("collapsed");
             setMinWidth(SidebarSettings.COLLAPSED_WIDTH);
             setPrefWidth(expandedWidth);
             setMaxWidth(SidebarSettings.MAX_WIDTH);
-            newChatButton.setText("+ New Chat");
-            collapseButton.setText("≡");
+            newChatButton.setText("New Chat");
         }
         setContentVisible(!isCollapsed);
     }

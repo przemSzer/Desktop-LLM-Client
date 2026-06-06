@@ -77,6 +77,23 @@
             <artifactId>controlsfx</artifactId>
         </dependency>
 
+        <!-- Ikonli icons (Feather pack) -->
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-feather-pack</artifactId>
+        </dependency>
+
+        <!-- CSSFX live reload (dev only) -->
+        <dependency>
+            <groupId>fr.brouillard.oss</groupId>
+            <artifactId>cssfx</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Nullness (type use on Optional type args; matches JDK Optional.of) -->
         <dependency>
             <groupId>org.jspecify</groupId>

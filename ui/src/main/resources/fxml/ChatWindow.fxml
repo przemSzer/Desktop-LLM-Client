@@ -12,13 +12,18 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
   <children>
     <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="8" styleClass="chat-header">
       <Label fx:id="conversationTitleLabel" maxWidth="Infinity" styleClass="conversation-title" text="New conversation" HBox.hgrow="ALWAYS" />
-      <Button fx:id="undoButton" mnemonicParsing="false" styleClass="flat" text="↩" />
-      <Button fx:id="redoButton" mnemonicParsing="false" styleClass="flat" text="↪" />
+      <Button fx:id="undoButton" mnemonicParsing="false" styleClass="flat">
+        <graphic><FontIcon iconLiteral="fth-rotate-ccw" iconSize="16" /></graphic>
+      </Button>
+      <Button fx:id="redoButton" mnemonicParsing="false" styleClass="flat">
+        <graphic><FontIcon iconLiteral="fth-rotate-cw" iconSize="16" /></graphic>
+      </Button>
       <HBox alignment="CENTER" spacing="2">
         <ToggleButton fx:id="systemMessageButton" mnemonicParsing="false" text="System ▾" />
         <Label fx:id="systemMessageIndicator" styleClass="system-message-indicator" text="•" visible="false" managed="false" />
@@ -40,13 +45,19 @@
             <TextArea fx:id="messageInput" prefRowCount="3" promptText="Send a message…" styleClass="composer-input" wrapText="true" VBox.vgrow="ALWAYS" />
             <HBox fx:id="actionRow" alignment="CENTER_LEFT" spacing="8.0" styleClass="composer-actions">
               <children>
-                <Button fx:id="attachButton" mnemonicParsing="false" styleClass="flat, composer-icon-button" text="+" />
+                <Button fx:id="attachButton" mnemonicParsing="false" styleClass="flat, composer-icon-button">
+                  <graphic><FontIcon iconLiteral="fth-paperclip" iconSize="16" /></graphic>
+                </Button>
                 <ToggleButton fx:id="toolsButton" mnemonicParsing="false" text="Tools ▾" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Button fx:id="modelButton" mnemonicParsing="false" styleClass="flat" text="Model ▾" />
                 <ProgressIndicator fx:id="sendingMessageProgress" managed="false" prefHeight="24.0" prefWidth="24.0" visible="false" />
-                <Button fx:id="stopButton" mnemonicParsing="false" managed="false" styleClass="danger, composer-send-button" text="■" visible="false" />
-                <Button fx:id="sendButton" mnemonicParsing="false" styleClass="accent, composer-send-button" text="↑" />
+                <Button fx:id="stopButton" mnemonicParsing="false" managed="false" styleClass="danger, composer-send-button" visible="false">
+                  <graphic><FontIcon iconLiteral="fth-square" iconSize="16" /></graphic>
+                </Button>
+                <Button fx:id="sendButton" mnemonicParsing="false" styleClass="accent, composer-send-button">
+                  <graphic><FontIcon iconLiteral="fth-arrow-up" iconSize="16" /></graphic>
+                </Button>
               </children>
             </HBox>
           </children>
