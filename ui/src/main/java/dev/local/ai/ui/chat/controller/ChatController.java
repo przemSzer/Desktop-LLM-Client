@@ -532,8 +532,7 @@ public class ChatController {
 
     private void setupShortcuts() {
         messageInput.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.ENTER
-                    && !event.isShiftDown() && !event.isControlDown() && !event.isAltDown()) {
+            if (event.getCode() == KeyCode.ENTER && event.isControlDown()) {
                 event.consume();
                 chatViewModel.sendMessage();
             }
