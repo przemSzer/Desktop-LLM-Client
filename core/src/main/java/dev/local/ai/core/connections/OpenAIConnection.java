@@ -1,10 +1,8 @@
 package dev.local.ai.core.connections;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import org.jspecify.annotations.NonNull;
 
-/**
- * OpenAI connection configuration with OpenAI-specific parameters.
- */
 @JsonTypeName("openai")
 public record OpenAIConnection(
     String id,
@@ -21,5 +19,13 @@ public record OpenAIConnection(
     public ConnectionProvider providerType() {
         return ConnectionProvider.OPENAI;
     }
-    
+
+    @Override
+    public String toString() {
+        return "OpenAIConnection{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

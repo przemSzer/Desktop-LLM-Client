@@ -21,4 +21,13 @@ public record GoogleConnection(
     public ConnectionProvider providerType() {
         return ConnectionProvider.GOOGLE;
     }
+
+    @Override
+    public String toString() {
+        return "GoogleConnection{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }
