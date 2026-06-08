@@ -31,10 +31,12 @@ public class GoogleGeminiModelService implements AvailableModelsService {
                 .apiKey(connection.apiKey())
                 .timeout(Duration.ofMinutes(2))
                 .build();
-            return catalog.listModels().stream()
+            var result = catalog.listModels().stream()
                 .filter(m -> m.type() == ModelType.CHAT)
                 .map(this::toModelInfo)
                 .toList();
+            logger.debug("Loaded {} models from Google Gemini", result.size());
+            return result;
         } catch (Exception e) {
             logger.error("Failed to list Gemini models", e);
             throw new RuntimeException("Failed to list Gemini models: " + e.getMessage(), e);

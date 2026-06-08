@@ -23,7 +23,7 @@ public class OllamaModelService implements AvailableModelsService {
     @Override
     public List<ModelInfo> loadModels() {
         try{
-            logger.info("Loading models from Ollama at: {}", this.connection.baseUrl());
+            logger.debug("Loading models from Ollama at: {}", this.connection.baseUrl());
             var ollamaModelsProvider = OllamaModels.builder()
                 .baseUrl(this.connection.baseUrl())
                 .maxRetries(5)
@@ -40,7 +40,7 @@ public class OllamaModelService implements AvailableModelsService {
     private ModelInfo toModelInfo(dev.langchain4j.model.ollama.OllamaModel model, OllamaModels ollamaModelsProvider) {        
         var card = ollamaModelsProvider.modelCard(model);        
         var modelParams = card.content().getModelInfo();
-        logger.info("Model params: {}", modelParams);
+        logger.trace("Model params: {}", modelParams);
         return new ModelInfo(
             model.getName(), 
             model.getName(), 

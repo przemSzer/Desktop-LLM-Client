@@ -33,7 +33,7 @@ public class OpenAIModelService implements AvailableModelsService {
             // .filter(m -> m.type() == ModelType.CHAT)
             .map(this::toModelInfo)
             .toList();
-        logger.info("Loaded {} models from OpenAI", result.size());
+        logger.debug("Loaded {} models from OpenAI", result.size());
         return result;
     }
 
