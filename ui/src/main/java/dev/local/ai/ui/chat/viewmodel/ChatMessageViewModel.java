@@ -1,9 +1,7 @@
 package dev.local.ai.ui.chat.viewmodel;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,54 +10,27 @@ import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 
 /**
  * Model class representing a chat message.
- * Used in the MVVM pattern to structure message data.
  */
 public class ChatMessageViewModel {
-    
-    public enum MessageType {
-        USER("User"),
-        AI("AI"),
-        PARTIAL("Partial"),
-        TOOL_RESULT("Tool result"),        
-        TOOL_CALL("Tool call"),        
-        SYSTEM("System"),
-        ERROR("Error");
-        
-        private final String displayName;
-        
-        MessageType(String displayName) {
-            this.displayName = displayName;
-        }
-        
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-    
-    // Properties for data binding
+
     private final StringProperty content;
-    private final ObjectProperty<MessageType> type;
+    private final ObjectProperty<MessageTypeView> type;
     private final ObjectProperty<LocalDateTime> timestamp;
     private final ObjectProperty<List<AttachedFileViewModel>> attachedFiles;
     private final ObjectProperty<Statistics> statistics;
-    
-    public ChatMessageViewModel(String content, MessageType type, List<AttachedFileViewModel> attachedFiles, Statistics statistics) {
+    private final BooleanProperty isComplete;
+    private final String id;
+
+    public ChatMessageViewModel(String content, MessageTypeView type, List<AttachedFileViewModel> attachedFiles, Statistics statistics, String id) {
         this.content = new SimpleStringProperty(content);
         this.type = new SimpleObjectProperty<>(type);
         this.timestamp = new SimpleObjectProperty<>(LocalDateTime.now());
         this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
         this.statistics = new SimpleObjectProperty<>(statistics);
+        this.isComplete = new SimpleBooleanProperty(false);
+        this.id = id;
     }
-    
-    public ChatMessageViewModel(String content, MessageType type, LocalDateTime timestamp, List<AttachedFileViewModel> attachedFiles) {
-        this.content = new SimpleStringProperty(content);
-        this.type = new SimpleObjectProperty<>(type);
-        this.timestamp = new SimpleObjectProperty<>(timestamp);
-        this.attachedFiles = new SimpleObjectProperty<>(attachedFiles);
-        this.statistics = new SimpleObjectProperty<>(null);
-    }
-    
-    // Properties for data binding
+
     public StringProperty contentProperty() {
         return content;
     }
@@ -72,15 +43,15 @@ public class ChatMessageViewModel {
         this.content.set(content);
     }
     
-    public ObjectProperty<MessageType> typeProperty() {
+    public ObjectProperty<MessageTypeView> typeProperty() {
         return type;
     }
     
-    public MessageType getType() {
+    public MessageTypeView getType() {
         return type.get();
     }
     
-    public void setType(MessageType type) {
+    public void setType(MessageTypeView type) {
         this.type.set(type);
     }
     
@@ -115,10 +86,23 @@ public class ChatMessageViewModel {
     public Statistics getStatistics() {
         return statistics.get();
     }
-        
-    
+
+    public boolean isComplete() {
+        return isComplete.get();
+    }
+
+    public BooleanProperty isCompleteProperty() {
+        return isComplete;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     @Override
     public String toString() {
         return String.format("%s: %s", getType().getDisplayName(), getContent());
     }
+
+
 }

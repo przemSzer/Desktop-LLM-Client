@@ -10,9 +10,9 @@ public interface IChatListener {
     /**
      * Called when a new message is added to the chat
      * @param message the message content
-     * @param isUserMessage true if it's a user message, false if it's an AI response
+     * @param requestId id of the request to the LLM, during which message was created
      */
-    void onMessageAdded(Message message, boolean isUserMessage);
+    void onMessageAdded(Message message, String requestId);
     
     /**
      * Called when an error occurs during message processing

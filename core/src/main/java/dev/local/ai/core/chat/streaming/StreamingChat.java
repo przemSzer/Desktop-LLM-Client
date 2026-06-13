@@ -2,8 +2,11 @@ package dev.local.ai.core.chat.streaming;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import dev.langchain4j.model.chat.response.*;
+import dev.local.ai.core.chat.messages.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,15 +16,6 @@ import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.CompleteToolCall;
-import dev.langchain4j.model.chat.response.PartialResponse;
-import dev.langchain4j.model.chat.response.PartialResponseContext;
-import dev.langchain4j.model.chat.response.PartialThinking;
-import dev.langchain4j.model.chat.response.PartialThinkingContext;
-import dev.langchain4j.model.chat.response.PartialToolCall;
-import dev.langchain4j.model.chat.response.PartialToolCallContext;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
@@ -42,8 +36,8 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private final StreamingChatModelsProvider chatModelsProvider;
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
     private final MessageToChatMessageConverter messageToChatMessageConverter;
-    private IToolProvider toolProvider;
-    private AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private final IToolProvider toolProvider;
+    private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
     private final CoreEventBus eventBus;
     private final EventListener<LLMChangedEvent> llmChangedListener = this::onLLMChanged;
@@ -96,16 +90,22 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
             stopRequested.set(false);
             addNewMessageToChatMemory(message);
                         
-            // Notify callback about user message
+            UUID newRequestId = UUID.randomUUID();
             if (callback != null) {
-                callback.onMessageAdded(message, true);
+                callback.onMessageAdded(message, newRequestId.toString());
             }
             
             var request = prepareChatRequest();
             logger.info("Sending chat request, with {} messages", request.messages().size());
             this.chatModel.chat(
                     request,
-                    new StreamingResponseHandler(chatMemory, callback, partialMessageListener, this.toolProvider)
+                    new StreamingResponseHandler(
+                            chatMemory,
+                            callback,
+                            partialMessageListener,
+                            toolProvider,
+                            newRequestId
+                    )
                 );
             
         } catch (Exception e) {
@@ -146,61 +146,60 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         private final ChatMemory chatMemory;
         private final IPartialMessagesListener partialMessageListener;
         private final IToolProvider toolProvider;
-        private final StringBuffer partialThinkingBuffer = new StringBuffer();
+        private String currentRequestId ;
 
-        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolProvider toolProvider) {
+        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolProvider toolProvider, UUID initialRequestId) {
             this.chatMemory = chatMemory;
             this.callback = callback;
             this.partialMessageListener = partialMessageListener;
             this.toolProvider = toolProvider;
+            currentRequestId = initialRequestId.toString();
         }
 
         @Override
         public void onPartialResponse(PartialResponse partialResponse, PartialResponseContext context) {
-            if (partialMessageListener != null) {
-                partialMessageListener.onPartialMessage(partialResponse.text());
-            }
             if (stopRequested.get()) {
-                logger.info("Stop requested, cancelling streaming");
-                context.streamingHandle().cancel();
-                callback.onCancel();
+                stop(context.streamingHandle());
             }
+            if (partialMessageListener != null) {
+                logger.trace("Partial response reqId {}, value: {}",currentRequestId, partialResponse);
+                partialMessageListener.onPartialMessage(partialResponse.text(), MessageType.PARTIAL, currentRequestId);
+            }
+        }
+
+        private void stop(StreamingHandle streamingHandle) {
+            logger.info("Stop requested, cancelling streaming response for request: {}", currentRequestId);
+            streamingHandle.cancel();
+            callback.onCancel();
         }
 
         @Override
         public void onPartialToolCall(PartialToolCall partialToolCall, PartialToolCallContext context) {
             if (stopRequested.get()) {
-                logger.info("Stop requested, cancelling streaming");
-                context.streamingHandle().cancel();
-                callback.onCancel();
+                stop(context.streamingHandle());
             }
         }
         
         @Override
         public void onPartialThinking(PartialThinking partialThinking, PartialThinkingContext context) {
             if (stopRequested.get()) {
-                logger.info("Stop requested, cancelling streaming in partial thinking");
-                context.streamingHandle().cancel();
-                callback.onCancel();
+                stop(context.streamingHandle());
             }
-            if (partialMessageListener != null) {                
-                partialThinkingBuffer.append(partialThinking.text());
+            if (partialMessageListener != null) {
+                partialMessageListener.onPartialMessage(partialThinking.text(), MessageType.PARTIAL_THINKING, currentRequestId);
             }
+            logger.trace("Partial thinking reqId {}, value: {}", currentRequestId, partialThinking.text());
         }
-
 
 
         @Override
         public void onCompleteResponse(ChatResponse response) {
             chatMemory.add(response.aiMessage());
-            if (partialThinkingBuffer.length() > 0) {
-                logger.info("Partial thinking: {}", partialThinkingBuffer.toString());
-                partialThinkingBuffer.setLength(0);
-            }
             if (response.aiMessage().hasToolExecutionRequests()){
-                logger.info("Tool execution requests: {}", response.aiMessage().toolExecutionRequests());
+                logger.debug("Tool execution requests: {}", response.aiMessage().toolExecutionRequests());
                 executeTools(response.aiMessage().toolExecutionRequests());
                 var request = prepareChatRequest();
+                currentRequestId = UUID.randomUUID().toString();
                 chatModel.chat(
                     request,
                     this
@@ -209,7 +208,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                 logger.info("AI response finished, usage: {}", response.tokenUsage());
                 var statistics = Statistics.fromTokenUsage(response.tokenUsage());
                 var aiMessage = Message.ai(response.aiMessage().text(),statistics);
-                callback.onMessageAdded(aiMessage, false);
+                callback.onMessageAdded(aiMessage, currentRequestId);
             }
             
             logger.info("Message processed successfully. AI response added to memory.");
@@ -229,11 +228,12 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result, ToolExecutionRequest toolExecutionRequest) {
             logger.info("Tool execution returned: {}", result);
             callback.onMessageAdded(
-                Message.toolCall(result.toolName(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)), false
+                Message.toolCall(result.toolName(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)),
+                currentRequestId
             );
             logger.info("Tool execution returned: {}", result);
             chatMemory.add(result);
-            callback.onMessageAdded(Message.toolResult(result.text(), List.of()), false);
+            callback.onMessageAdded(Message.toolResult(result.text(), List.of()), currentRequestId);
         }
 
         @Override

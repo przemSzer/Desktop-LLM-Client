@@ -54,6 +54,12 @@
     --color-btn-hover-bg:      #F0F0F0;
     --color-btn-hover-border:  #BDBDBD;
 
+    --color-thinking-bg:       #F9F7F2;
+    --color-thinking-border:   #E8E2D0;
+    --color-thinking-fg:       #6B5B3A;
+    --color-thinking-accent:   #C4960C;
+    --color-thinking-content-bg: #F5F3EE;
+
     --shadow-bubble: 0 1px 4px rgba(0,0,0,0.06);
 }
 
@@ -101,6 +107,12 @@ html.dark {
     --color-btn-fg:            #8390A1;
     --color-btn-hover-bg:      #434C5E;
     --color-btn-hover-border:  #4C566A;
+
+    --color-thinking-bg:       #33392E;
+    --color-thinking-border:   #4A5240;
+    --color-thinking-fg:       #B8B08A;
+    --color-thinking-accent:   #EBCB8B;
+    --color-thinking-content-bg: #2F3529;
 
     --shadow-bubble: 0 1px 4px rgba(0,0,0,0.35);
 }
@@ -297,6 +309,88 @@ body {
 }
 .tool-body.open { display: block; }
 
+/* ── Thinking message (collapsible, tool-call style) ───── */
+.message.thinking {
+    background: var(--color-thinking-bg);
+    border-color: var(--color-thinking-border);
+    padding: 0;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    border-radius: 10px;
+}
+.thinking-header:hover {
+    background: rgba(128, 128, 128, 0.06);
+}
+
+.thinking-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-thinking-accent);
+}
+.thinking-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.thinking-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-thinking-fg);
+    flex: 1;
+}
+
+.thinking-chevron {
+    font-size: 11px;
+    color: var(--color-thinking-fg);
+    opacity: 0.6;
+    transition: transform 0.2s;
+}
+.thinking-header.open .thinking-chevron {
+    transform: rotate(90deg);
+}
+
+.thinking-content {
+    display: none;
+    padding: 0 14px 12px 40px;
+    border-top: 1px solid var(--color-thinking-border);
+    margin: 0 8px;
+}
+.thinking-content.open {
+    display: block;
+}
+
+.thinking-content .msg-body {
+    font-size: 13px;
+    color: var(--color-fg-muted);
+    line-height: 1.55;
+}
+
+.message.thinking.streaming .thinking-content .msg-body::after {
+    content: "▌";
+    animation: blink 0.8s step-end infinite;
+}
+
+@keyframes thinking-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.message.thinking.streaming .thinking-title {
+    animation: thinking-pulse 1.8s ease-in-out infinite;
+}
+
 /* ── Partial message animation ─────────────────────────── */
 .partial .msg-body::after {
     content: "▌";
@@ -317,7 +411,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function createMessageElement(id, type, typeLabel, bodyHtml) {
+function createMessageElement(id, type, labelText, bodyHtml) {
     const div = document.createElement('div');
     div.className = 'message ' + type;
     div.id = 'msg-' + id;
@@ -325,16 +419,16 @@ function createMessageElement(id, type, typeLabel, bodyHtml) {
     const header = document.createElement('div');
     header.className = 'msg-header';
 
-    const label = document.createElement('span');
-    label.className = 'msg-type ' + type;
-    label.textContent = typeLabel;
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'msg-type ' + type;
+    labelSpan.textContent = labelText;
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn-copy';
     copyBtn.textContent = 'Copy';
     copyBtn.onclick = function() { javaBridge.copyMessage(id); };
 
-    header.appendChild(label);
+    header.appendChild(labelSpan);
     header.appendChild(copyBtn);
 
     const body = document.createElement('div');
@@ -439,6 +533,58 @@ function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
     scrollToBottom();
 }
 
+var BULB_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>'
+    + '</svg>';
+
+function setPartialThinkingMessage(bodyHtml, id) {
+    var elId = 'msg-partial-thinking-' + id;
+    var el = document.getElementById(elId);
+
+    if (!el) {
+        el = document.createElement('div');
+        el.className = 'message thinking streaming';
+        el.id = elId;
+
+        var header = document.createElement('div');
+        header.className = 'thinking-header open';
+
+        var icon = document.createElement('span');
+        icon.className = 'thinking-icon';
+        icon.innerHTML = BULB_SVG;
+
+        var title = document.createElement('span');
+        title.className = 'thinking-title';
+        title.textContent = 'Thinking\u2026';
+
+        var chevron = document.createElement('span');
+        chevron.className = 'thinking-chevron';
+        chevron.textContent = '\u25B8';
+
+        header.appendChild(icon);
+        header.appendChild(title);
+        header.appendChild(chevron);
+
+        var content = document.createElement('div');
+        content.className = 'thinking-content open';
+
+        var body = document.createElement('div');
+        body.className = 'msg-body';
+        content.appendChild(body);
+
+        header.onclick = function() {
+            header.classList.toggle('open');
+            content.classList.toggle('open');
+        };
+
+        el.appendChild(header);
+        el.appendChild(content);
+        container.appendChild(el);
+    }
+
+    el.querySelector('.thinking-content .msg-body').innerHTML = bodyHtml;
+}
+
 function setPartialMessage(bodyHtml) {
     let el = document.getElementById('msg-partial');
     if (!el) {
@@ -452,6 +598,21 @@ function setPartialMessage(bodyHtml) {
 function removePartialMessage() {
     const el = document.getElementById('msg-partial');
     if (el) el.remove();
+}
+
+function thinkingFinished(id) {
+    var el = document.getElementById('msg-partial-thinking-' + id);
+    if (!el) return;
+
+    el.classList.remove('streaming');
+
+    var title = el.querySelector('.thinking-title');
+    if (title) title.textContent = 'Thought for a moment';
+
+    var header = el.querySelector('.thinking-header');
+    var content = el.querySelector('.thinking-content');
+    if (header) header.classList.remove('open');
+    if (content) content.classList.remove('open');
 }
 
 function clearMessages() {

@@ -23,8 +23,10 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import org.controlsfx.control.PopOver;
+import dev.local.ai.ui.controls.OverlayLayer;
+import dev.local.ai.ui.controls.OverlayLayer.Placement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +38,7 @@ import dev.local.ai.ui.chat.command.NewConversationCommand;
 import dev.local.ai.ui.chat.command.RenameConversationCommand;
 import dev.local.ai.ui.chat.controls.ChatWebView;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
-import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
+import dev.local.ai.ui.chat.viewmodel.MessageTypeView;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
@@ -52,8 +54,6 @@ import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 import dev.local.ai.ui.utils.MainStageProvider;
 import javafx.util.Callback;
-
-import java.net.URL;
 
 public class ChatController {
 
@@ -107,14 +107,18 @@ public class ChatController {
     @FXML
     private Button modelButton;
 
+    @FXML
+    private Pane overlayLayer;
+
     private final ToolsSelectorView toolsSelectorView = new ToolsSelectorView();
     private final LLMSelectorView modelSelectorView = new LLMSelectorView();
 
     private TextArea systemMessageTextArea;
     private FileAttachmentControl systemMessageFileAttachments;
-    private PopOver systemMessagePopover;
-    private PopOver toolsPopover;
-    private PopOver modelPopover;
+    private OverlayLayer overlay;
+    private VBox systemMessageContent;
+    private VBox toolsContent;
+    private VBox modelContent;
     private TextField titleEditField;
     private boolean titleBound;
 
@@ -163,9 +167,12 @@ public class ChatController {
 
             composerFiles = new FileAttachmentViewModel(commandManager, fileSelector);
 
+            overlay = new OverlayLayer(overlayLayer);
+
             setupSystemMessagePopover();
             setupToolsPopover();
             setupModelPopover();
+            setupOverlaySelectionSync();
             setupHeader();
             setupComposer();
             setupDataBinding();
@@ -191,26 +198,23 @@ public class ChatController {
         systemMessageFileAttachments = new FileAttachmentControl();
         systemMessageFileAttachments.init(new FileAttachmentViewModel(commandManager, fileSelector));
 
-        VBox content = new VBox(8, systemMessageTextArea, systemMessageFileAttachments);
-        content.setPadding(new Insets(12));
-        content.setPrefWidth(420);
-        content.getStyleClass().add("system-popover-content");
+        systemMessageContent = new VBox(8, systemMessageTextArea, systemMessageFileAttachments);
+        systemMessageContent.setPadding(new Insets(12));
+        systemMessageContent.setPrefWidth(420);
+        systemMessageContent.getStyleClass().add("system-popover-content");
 
-        systemMessagePopover = createPopover(content, PopOver.ArrowLocation.TOP_RIGHT);
-
-        systemMessageButton.setOnAction(event -> togglePopover(systemMessagePopover, systemMessageButton));
+        systemMessageButton.setOnAction(event ->
+                overlay.toggle(systemMessageContent, systemMessageButton, Placement.BELOW_RIGHT));
     }
 
     private void setupToolsPopover() {
-        VBox content = new VBox(toolsSelectorView);
-        content.setPadding(new Insets(30));
-        content.setPrefWidth(360);
-        content.getStyleClass().add("system-popover-content");
+        toolsContent = new VBox(toolsSelectorView);
+        toolsContent.setPadding(new Insets(30));
+        toolsContent.setPrefWidth(360);
+        toolsContent.getStyleClass().add("system-popover-content");
 
-        toolsPopover = createPopover(content, PopOver.ArrowLocation.BOTTOM_LEFT);
-        toolsButton.setOnAction(event -> togglePopover(toolsPopover, toolsButton));
-        toolsPopover.showingProperty().addListener((obs, wasShowing, isShowing) ->
-                toolsButton.setSelected(isShowing));
+        toolsButton.setOnAction(event ->
+                overlay.toggle(toolsContent, toolsButton, Placement.ABOVE_LEFT));
 
         Label badge = new Label();
         badge.getStyleClass().add("tools-badge");
@@ -233,50 +237,34 @@ public class ChatController {
     }
 
     private void setupModelPopover() {
-        VBox content = new VBox(modelSelectorView);
-        content.setPadding(new Insets(12));
-        content.setPrefWidth(420);
-        content.getStyleClass().add("system-popover-content");
+        modelContent = new VBox(modelSelectorView);
+        modelContent.setPadding(new Insets(12));
+        modelContent.setPrefWidth(420);
+        modelContent.getStyleClass().add("system-popover-content");
 
-        modelPopover = createPopover(content, PopOver.ArrowLocation.BOTTOM_RIGHT);
-        modelButton.setOnAction(event -> togglePopover(modelPopover, modelButton));
+        modelButton.setOnAction(event ->
+                overlay.toggle(modelContent, modelButton, Placement.ABOVE_RIGHT));
 
         var modelViewModel = modelSelectorView.getViewModel();
-        modelButton.textProperty().bind(Bindings.createStringBinding(() -> {
-            ConnectionViewModel connection = modelViewModel.getSelectedConnection();
-            LLMInfoViewModel model = modelViewModel.getSelectedModel();
-            String provider = connection != null ? connection.getName() : "No connection";
-            String name = model != null ? model.getName() : "Select model";
-            return provider + " · " + name + " ▾";
-        }, modelViewModel.selectedConnectionProperty(), modelViewModel.selectedModelProperty()));
+        modelButton.textProperty().bind(Bindings.createStringBinding(
+            () -> 
+            {
+                ConnectionViewModel connection = modelViewModel.getSelectedConnection();
+                LLMInfoViewModel model = modelViewModel.getSelectedModel();
+                String provider = connection != null ? connection.getName() : "No connection";
+                String name = model != null ? model.getName() : "Select model";
+                return provider + " · " + name + " ▾";
+            }, 
+            modelViewModel.selectedConnectionProperty(), 
+            modelViewModel.selectedModelProperty())
+        );
     }
 
-    private PopOver createPopover(Node content, PopOver.ArrowLocation arrowLocation) {
-        PopOver popover = new PopOver(content);
-        popover.setArrowLocation(arrowLocation);
-        popover.setDetachable(false);
-        popover.setHeaderAlwaysVisible(false);
-
-        URL stylesheet = getClass().getResource("/css/styles.css");
-        if (stylesheet != null) {
-            String css = stylesheet.toExternalForm();
-            popover.setOnShown(shown -> {
-                Scene scene = content.getScene();
-                if (scene != null && scene.getRoot() != null
-                        && !scene.getRoot().getStylesheets().contains(css)) {
-                    scene.getRoot().getStylesheets().add(css);
-                }
-            });
-        }
-        return popover;
-    }
-
-    private void togglePopover(PopOver popover, Node owner) {
-        if (popover.isShowing()) {
-            popover.hide();
-        } else {
-            popover.show(owner);
-        }
+    private void setupOverlaySelectionSync() {
+        overlay.activeContentProperty().addListener((obs, oldContent, newContent) -> {
+            systemMessageButton.setSelected(newContent == systemMessageContent);
+            toolsButton.setSelected(newContent == toolsContent);
+        });
     }
 
     private void setupHeader() {
@@ -454,10 +442,24 @@ public class ChatController {
                 } else if (change.wasAdded()) {
                     for (ChatMessageViewModel msg : change.getAddedSubList()) {
                         if (msg == null) continue;
-                        if (msg.getType() == MessageType.PARTIAL) {
+                        if (msg.getType() == MessageTypeView.PARTIAL_AI) {
                             chatWebView.setPartialMessage(msg.getContent());
                             msg.contentProperty().addListener((obs, oldVal, newVal) ->
                                     chatWebView.setPartialMessage(newVal));
+                        } else if (msg.getType() == MessageTypeView.PARTIAL_THINKING) {
+                            int thinkingMsgId = chatWebView.setPartialThinkingMessage(msg.getContent());
+                            msg.contentProperty()
+                                .addListener((obs, oldVal, newVal) ->
+                                    chatWebView.setPartialThinkingMessage(newVal, thinkingMsgId)
+                                );
+                            msg.isCompleteProperty()
+                                    .addListener(
+                                            (obs, oldVal, newVal) ->
+                                            {
+                                                if (msg.isComplete()) {
+                                                    chatWebView.thinkingFinished(thinkingMsgId);
+                                                }
+                                            });
                         } else {
                             chatWebView.addMessage(msg);
                         }
@@ -538,6 +540,7 @@ public class ChatController {
             }
         });
 
+        //TODO: this is not a good place for this, it should be in the main view
         chatHeader.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 installSceneShortcuts(newScene);
@@ -564,11 +567,9 @@ public class ChatController {
     }
 
     private boolean hideOpenPopover() {
-        for (PopOver popover : new PopOver[]{systemMessagePopover, toolsPopover, modelPopover}) {
-            if (popover != null && popover.isShowing()) {
-                popover.hide();
-                return true;
-            }
+        if (overlay != null && overlay.isShowing()) {
+            overlay.hide();
+            return true;
         }
         return false;
     }

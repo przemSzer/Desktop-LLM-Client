@@ -5,14 +5,21 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.layout.HBox?>
+<?import org.controlsfx.control.SearchableComboBox?>
 
 <fx:root type="HBox" stylesheets="@../../../../../../css/styles.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>   
-      <ComboBox fx:id="connectionComboBox" promptText="Select a connection..." HBox.hgrow="ALWAYS" />
+      <SearchableComboBox fx:id="connectionComboBox" 
+         promptText="Select a connection..." HBox.hgrow="ALWAYS" 
+         />
       <HBox spacing="10.0" HBox.hgrow="ALWAYS">
          <children>
-            <ProgressIndicator fx:id="loadingIndicator" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="20.0" visible="false" HBox.hgrow="SOMETIMES" />
-            <ComboBox fx:id="modelComboBox" promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS" />
+            <ProgressIndicator 
+               fx:id="loadingIndicator" minHeight="-Infinity" minWidth="-Infinity" 
+               prefHeight="20.0" prefWidth="20.0" visible="false" HBox.hgrow="SOMETIMES" />
+            <SearchableComboBox fx:id="modelComboBox" 
+               promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS"
+               />
          </children>
       </HBox>
       <Button fx:id="manageConnectionsButton" text="Connections..." />

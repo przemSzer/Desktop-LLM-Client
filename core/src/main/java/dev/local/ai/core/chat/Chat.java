@@ -14,6 +14,8 @@ import dev.local.ai.core.models.LLMInfoAndConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 /**
  * Represents a chat conversation with messages and metadata.
  */
@@ -43,18 +45,18 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
 
     public String getSystemMessage() {
         return chatMemory.messages().stream()
-            .filter(message -> message instanceof SystemMessage)
+            .filter(SystemMessage.class::isInstance)
             .map(message -> ((SystemMessage) message).text())
             .findFirst()
             .orElse("");
     }
 
+    @Override
     public void setSystemMessage(String message) {
         if (message == null || message.isEmpty()){
             logger.debug("Removing system message, since it is null or empty");
-            chatMemory.messages().removeIf(m -> m instanceof SystemMessage);
+            chatMemory.messages().removeIf(SystemMessage.class::isInstance);
             logger.info("System message removed");
-            return;
         }else{
             var newSystemMessage = new SystemMessage(message);
             chatMemory.add(newSystemMessage);
@@ -67,10 +69,11 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
         try {
             var newMessage = new UserMessage(message.text());
             chatMemory.add(newMessage);
-            
+
+            UUID newRequestId = UUID.randomUUID();
             // Notify callback about user message
             if (callback != null) {
-                callback.onMessageAdded(message, true);
+                callback.onMessageAdded(message, newRequestId.toString());
             }
             
             var response = chatModel.chat(chatMemory.messages());
@@ -78,13 +81,11 @@ public class Chat implements ILLMChat, EventListener<LLMChangedEvent> {
             Message aiMessage = new Message(response.aiMessage().text(), message.files(), MessageType.AI);
             // Notify callback about AI response
             if (callback != null) { 
-                callback.onMessageAdded(aiMessage, false);
+                callback.onMessageAdded(aiMessage, newRequestId.toString());
             }
             
             logger.info("Message processed successfully. AI response added to memory.");
         } catch (Exception e) {
-            logger.error("Error processing message: {}", message, e);
-            
             // Notify callback about error
             if (callback != null) {
                 callback.onError("Failed to process message: " + e.getMessage(), e);

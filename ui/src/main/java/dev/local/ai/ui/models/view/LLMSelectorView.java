@@ -22,10 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URL;
 
-/**
- * Controller for the Model Selector view following MVVM pattern.
- * Handles UI events and delegates to the ViewModel.
- */
 public class LLMSelectorView extends HBox {
     
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorView.class);
@@ -81,25 +77,19 @@ public class LLMSelectorView extends HBox {
     private void setupDataBinding() {
         logger.debug("Setting up data binding...");
         
-        // Bind connections to ComboBox
         connectionComboBox.setItems(viewModel.getConnections());
         connectionComboBox.valueProperty().bindBidirectional(viewModel.selectedConnectionProperty());
         logger.debug("Connection binding established");
         
-        // Bind models to ComboBox
         modelComboBox.setItems(viewModel.getAvailableModels());
         modelComboBox.itemsProperty().bind(viewModel.availableModelsProperty());    
-        modelComboBox.valueProperty().bindBidirectional(viewModel.selectedModelProperty());
-        
-        // Ensure ComboBox is not editable for consistent binding behavior
+        modelComboBox.valueProperty().bindBidirectional(viewModel.selectedModelProperty());        
         modelComboBox.setEditable(false);
         
         logger.debug("Model binding established");
                 
-        // Bind loading indicator
         loadingIndicator.visibleProperty().bind(viewModel.isLoadingModelsProperty());
         
-        // Setup cell factories for better display
         setupCellFactories();
         
         logger.debug("Data binding setup complete");
@@ -109,13 +99,12 @@ public class LLMSelectorView extends HBox {
         @Override
         protected void updateItem(ConnectionViewModel item, boolean empty) {
             super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    setText(item.getName());
-                    // Note: Icon display would require ImageView wrapper
-                }
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(item.getName());
+            }
         }
     }
 
@@ -190,9 +179,7 @@ public class LLMSelectorView extends HBox {
         });
         
         // Additional listener to track ComboBox value changes
-        modelComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
-            logger.debug("ComboBox valueProperty changed from {} to {}", oldValue, newValue);
-        });
+        modelComboBox.valueProperty().addListener((obs, oldValue, newValue) -> logger.debug("ComboBox valueProperty changed from {} to {}", oldValue, newValue));
         
         // Manage connections button handler
         manageConnectionsButton.setOnAction(event -> showConnectionsDialog());

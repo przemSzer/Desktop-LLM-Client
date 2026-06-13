@@ -18,15 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
-/**
- * ViewModel for the Model Selector UI following MVVM pattern.
- * Manages the observable data and commands for the model selection interface.
- */
 public class LLMSelectorViewModel {
     
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorViewModel.class);
     
-    // Observable properties for data binding
     private final ListProperty<ConnectionViewModel> connections;
     private final ObjectProperty<ConnectionViewModel> selectedConnection;
     private final ListProperty<LLMInfoViewModel> availableModels;
@@ -34,10 +29,11 @@ public class LLMSelectorViewModel {
     private final StringProperty statusMessage;
     private final BooleanProperty isLoadingModels;
     
-    // Dependencies
     private final ConnectionsStore connectionsStore;
 
     private final CoreEventBus coreEventBus;
+
+    private CompletableFuture<Void> lastLoadingTask;
     
     public LLMSelectorViewModel(ConnectionsStore connectionsStore, CoreEventBus coreEventBus) {
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
@@ -83,8 +79,8 @@ public class LLMSelectorViewModel {
             if (newConnection != null) {
                 loadModelsForConnection(newConnection);
             } else {               
+                selectedModel.set(null);                
                 availableModels.clear();
-                selectedModel.set(null);
             }
         });
         
@@ -92,15 +88,15 @@ public class LLMSelectorViewModel {
             logger.debug("Selected model changed from {} to {}", oldModel, newModel);
             if (newModel != null) {
                 try {
-                    var selectedConnection = getSelectedConnection();
-                    if (selectedConnection == null) {
+                    var selectedConn = getSelectedConnection();
+                    if (selectedConn == null) {
                         logger.warn("Cannot publish LLMChangedEvent: no connection selected");
                         return;
                     }
                     
-                    var connection = findConnectionById(selectedConnection.getId());
+                    var connection = findConnectionById(selectedConn.getId());
                     if (connection == null) {
-                        logger.warn("Cannot publish LLMChangedEvent: connection not found for ID: {}", selectedConnection.getId());
+                        logger.warn("Cannot publish LLMChangedEvent: connection not found for ID: {}", selectedConn.getId());
                         return;
                     }
                     
@@ -122,8 +118,8 @@ public class LLMSelectorViewModel {
     private void loadModelsForConnection(ConnectionViewModel connectionViewModel) {
         setStatusMessage("Loading models for " + connectionViewModel.getName() + "...");
         isLoadingModels.set(true);
-        availableModels.clear();
         selectedModel.set(null);
+        availableModels.clear();
         ModelProviderConnection connection = findConnectionById(connectionViewModel.getId());
         
         if (connection == null) {
@@ -131,6 +127,7 @@ public class LLMSelectorViewModel {
             isLoadingModels.set(false);
             return;
         }
+        //Todo: inject the service instead of using the sigleton
         AvailableModelsService service = ModelServicesFactory.forConnection(connection);
                 
         if (service == null) {
@@ -138,22 +135,25 @@ public class LLMSelectorViewModel {
             isLoadingModels.set(false);
             return;
         }
-        CompletableFuture.supplyAsync(() -> service.loadModels())
+        if (this.lastLoadingTask != null && !this.lastLoadingTask.isDone()) {
+            logger.debug("Cancelling last loading task");
+            this.lastLoadingTask.cancel(true);
+        }
+        this.lastLoadingTask = CompletableFuture.supplyAsync(service::loadModels)
             .thenAccept(models -> {
-                Platform.runLater(() -> {
-                    var modelViewModels = models.stream()
+                var modelsForView = models.stream()
                         .map(LLMInfoViewModel::new)
                         .toList();
-                    availableModels.set(FXCollections.observableArrayList(modelViewModels));
+                Platform.runLater(() -> {                    
+                    availableModels.set(FXCollections.observableArrayList(modelsForView));
+                    logger.debug("Loaded {} models for {}", modelsForView.size(), connectionViewModel.getName());
                     setStatusMessage("Loaded " + models.size() + " models for " + connectionViewModel.getName());
-                    isLoadingModels.set(false);
                     
-                    // Auto-select first model if available
-                    if (!modelViewModels.isEmpty()) {
-                        if (modelViewModels.contains(this.selectedModel.get())){
-                            selectedModel.set(this.selectedModel.get());
+                    if (!modelsForView.isEmpty() && modelsForView.contains(selectedModel.get())){
+                            selectedModel.set(selectedModel.get());
                         }
-                    }
+
+                    isLoadingModels.set(false);
                 });
             })
             .exceptionally(throwable -> {
@@ -170,7 +170,6 @@ public class LLMSelectorViewModel {
         return connectionsStore.findById(connectionId).orElse(null);
     }
     
-    // Property getters
     public ListProperty<ConnectionViewModel> connectionsProperty() {
         return connections;
     }
@@ -231,15 +230,7 @@ public class LLMSelectorViewModel {
         return isLoadingModels.get();
     }
     
-    // Commands
     public void refreshConnections() {
         loadConnections();
-    }
-    
-    public void refreshModels() {
-        ConnectionViewModel currentConnection = getSelectedConnection();
-        if (currentConnection != null) {
-            loadModelsForConnection(currentConnection);
-        }
     }
 }

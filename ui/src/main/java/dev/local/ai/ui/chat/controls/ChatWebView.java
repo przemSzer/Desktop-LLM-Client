@@ -2,7 +2,7 @@ package dev.local.ai.ui.chat.controls;
 
 import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
-import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
+import dev.local.ai.ui.chat.viewmodel.MessageTypeView;
 import dev.local.ai.ui.utils.HostServicesProvider;
 import javafx.concurrent.Worker;
 import javafx.scene.layout.StackPane;
@@ -82,17 +82,17 @@ public class ChatWebView extends StackPane {
         int id = idCounter.incrementAndGet();
         messageIndex.put(id, message);
 
-        MessageType type = message.getType();
+        MessageTypeView type = message.getType();
         String cssClass = cssClassFor(type);
         String typeLabel = type.getDisplayName();
         String bodyHtml = bodyHtmlFor(message);
 
-        if (type == MessageType.TOOL_CALL || type == MessageType.TOOL_RESULT) {
+        if (type == MessageTypeView.TOOL_CALL || type == MessageTypeView.TOOL_RESULT) {
             String summary = toolSummary(message.getContent());
             String fullHtml = escapeForJs(bodyHtml);
             String summaryEscaped = escapeForJs(summary);
             runScript("addToolMessage(%d,'%s','%s','%s')", id, typeLabel, summaryEscaped, fullHtml);
-        } else if (type == MessageType.AI) {
+        } else if (type == MessageTypeView.AI) {
             String htmlEscaped = escapeForJs(bodyHtml);
             String labelEscaped = escapeForJs(typeLabel);
             Statistics stats = message.getStatistics();
@@ -120,6 +120,24 @@ public class ChatWebView extends StackPane {
         runScript("setPartialMessage('%s')", html);
     }
 
+    private int partialThinkingMessagesId = 0;
+
+    public int setPartialThinkingMessage(String cumulativeContent) {
+        partialThinkingMessagesId++;
+        String html = escapeForJs(markdownConverter.convertToHtml(cumulativeContent));
+        runScript("setPartialThinkingMessage('%s', " + partialThinkingMessagesId + ")", html);
+        return partialThinkingMessagesId;
+    }
+
+    public void setPartialThinkingMessage(String cumulativeContent, int id) {
+        String html = escapeForJs(markdownConverter.convertToHtml(cumulativeContent));
+        runScript("setPartialThinkingMessage('%s', " + id + ")", html);
+    }
+
+    public void thinkingFinished(int id) {
+        runScript("thinkingFinished(%d)", id);
+    }
+
     public void removePartialMessage() {
         runScript("removePartialMessage()");
     }
@@ -143,12 +161,15 @@ public class ChatWebView extends StackPane {
         };
     }
 
-    private static String cssClassFor(MessageType type) {
+    private static String cssClassFor(MessageTypeView type) {
+        if (type == null) {
+            return "";
+        }
         return switch (type) {
             case USER -> "user";
             case AI -> "ai";
             case TOOL_CALL, TOOL_RESULT -> "tool";
-            case PARTIAL -> "partial";
+            case PARTIAL_AI -> "partial";
             case ERROR -> "error";
             default -> "ai";
         };

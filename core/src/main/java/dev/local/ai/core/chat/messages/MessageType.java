@@ -7,5 +7,6 @@ public enum MessageType {
     TOOL_RESULT,
     PARTIAL,
     SYSTEM,
+    PARTIAL_THINKING,
     ERROR;    
 }

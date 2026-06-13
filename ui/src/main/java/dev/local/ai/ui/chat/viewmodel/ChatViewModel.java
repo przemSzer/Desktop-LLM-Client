@@ -4,6 +4,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.chat.streaming.IPartialMessageAware;
 import dev.local.ai.core.chat.streaming.IPartialMessagesListener;
 import dev.local.ai.core.chat.streaming.MessageToChatMessageConverter;
@@ -45,7 +46,6 @@ import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
 import dev.local.ai.ui.chat.converters.MessageConverter;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.session.ConversationSessionFactory;
-import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel.MessageType;
 import dev.local.ai.ui.chat.command.ClearChatCommand;
 
 /**
@@ -56,9 +56,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatViewModel.class);
 
-    // Observable properties for data binding
     private final ListProperty<ChatMessageViewModel> chatMessages;
-    private SimpleStringProperty systemMessage;
+    private final SimpleStringProperty systemMessage;
     private final StringProperty inputMessage;
     private final StringProperty statusMessage;
     private final BooleanProperty canUndo;
@@ -139,7 +138,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             if (coreMessage == null) {
                 continue;
             }
-            converter.convert(coreMessage).ifPresent(vm -> chatMessages.add(vm));
+            converter.convert(coreMessage).ifPresent(chatMessages::add);
         }
         if (!chatMemory.messages().isEmpty()) {
             logger.info("Restored {} messages from conversation {}",
@@ -187,9 +186,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         });
         systemMessageAttachedFiles.addListener((obs, oldVal, newVal) -> {
             for (var file : newVal) {
-                file.descriptionProperty().addListener((obs1, oldVal1, newVal1) -> {
-                    updateSystemMessage();
-                });
+                file.descriptionProperty().addListener((obs1, oldVal1, newVal1) -> updateSystemMessage());
             }
             updateSystemMessage();
         });
@@ -336,9 +333,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         }
 
         try {
-
             setInputMessage("");
-
             // Update status
             statusMessage.set("Sending message...");
 
@@ -422,7 +417,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     // ChatCallback implementation
     @Override
-    public void onMessageAdded(Message message, boolean isUserMessage) {
+    public void onMessageAdded(Message message, String requestId) {
         logger.debug("Message added to view model: {}", message);
         final var newChatMessageMaybe = messageConverter.convert(message);
         if (newChatMessageMaybe.isEmpty()) {
@@ -431,20 +426,34 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         }
         final var newChatMessage = newChatMessageMaybe.get();
         Platform.runLater(() -> {
-            boolean shouldReplaceLastMessage = newChatMessage.getType() == MessageType.AI
-                && chatMessages.get(chatMessages.size() - 1).getType() == MessageType.PARTIAL;
-            if (shouldReplaceLastMessage) {
-                chatMessages.set(chatMessages.size() - 1, newChatMessage);
-            }else{
+            if (chatMessages.isEmpty()) {
                 chatMessages.add(newChatMessage);
+            }else {
+                var lastMessage = chatMessages.getLast();
+                boolean shouldReplaceLastMessage = newChatMessage.getType() == MessageTypeView.AI
+                        && lastMessage != null
+                        && lastMessage.getType() == MessageTypeView.PARTIAL_AI;
+                if (shouldReplaceLastMessage) {
+                    chatMessages.set(chatMessages.size() - 1, newChatMessage);
+                } else {
+                    chatMessages.add(newChatMessage);
+                }
             }
-            
-            if (newChatMessage.getType() == MessageType.USER) {
+
+            if (newChatMessage.getType() == MessageTypeView.USER) {
                 statusMessage.set("User message added");
                 refreshConversationTitleFromStore();
-            } else if (newChatMessage.getType() == MessageType.AI) {
+            } else if (newChatMessage.getType() == MessageTypeView.AI) {
                 statusMessage.set("Messages " + chatMessages.size() + " in chat");
                 sendingMessageInProgress.set(false);
+            }
+
+            var thinkingMessageFromThisRequest = findMessageExistingMessageByTypeAndId(
+                    MessageTypeView.PARTIAL_THINKING, requestId
+            ) ;
+            if (thinkingMessageFromThisRequest != null) {
+                logger.debug("Marking think message from request {} as complete", requestId);
+                thinkingMessageFromThisRequest.isCompleteProperty().set(true);
             }
         });
     }
@@ -453,7 +462,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     @Override
     public void onError(String errorMessage, Exception exception) {
         Platform.runLater(() -> {
-            ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageType.ERROR, List.of(), null);
+            ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageTypeView.ERROR, List.of(), null, null);
             addMessage(errorMsg);
             statusMessage.set("Error occurred: " + errorMessage);
             sendingMessageInProgress.set(false);
@@ -477,17 +486,48 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     }
 
     @Override
-    public void onPartialMessage(String message) {
+    public void onPartialMessage(String message, MessageType coreMessageType, String requestId) {
         Platform.runLater(() -> {
-            var lastMessage = chatMessages.get(chatMessages.size() - 1);
-            var updateLast = lastMessage.getType() == MessageType.PARTIAL;
-            if (updateLast) {
-                lastMessage.setContent(lastMessage.getContent() + message);
+            logger.debug("Partial message received: {}, type: {}, reqId: {}", message,  coreMessageType, requestId);
+            var viewType = coreMessageTypeToViewMessageType(coreMessageType);
+            var currentPatrialMessage = findMessageExistingMessageByTypeAndId(viewType, requestId);
+            var updateCurrent = currentPatrialMessage != null;
+            if (updateCurrent) {
+                currentPatrialMessage.setContent(currentPatrialMessage.getContent() + message);
             } else {
-                lastMessage = new ChatMessageViewModel(message, MessageType.PARTIAL, List.of(), null);
-                chatMessages.add(lastMessage);
+                var newMessage = new ChatMessageViewModel(message, viewType, List.of(), null, requestId);
+                logger.debug("Adding new partial message: {}", newMessage);
+                chatMessages.add(newMessage);
             }
         });
+    }
+
+    private ChatMessageViewModel findMessageExistingMessageByTypeAndId(MessageTypeView messageType, String requestId) {
+        ChatMessageViewModel foundMessage = null;
+        for (int i =  chatMessages.size() - 1; i >= 0; i--) {
+            var currentMessage =  chatMessages.get(i);
+            if (currentMessage.getType() ==  messageType
+                && requestId.equals(currentMessage.getId())
+            ) {
+                foundMessage = currentMessage;
+                break;
+            }
+        }
+        return foundMessage;
+    }
+
+    private MessageTypeView coreMessageTypeToViewMessageType(dev.local.ai.core.chat.messages.MessageType type) {
+        switch (type) {
+            case PARTIAL_THINKING:
+                return MessageTypeView.PARTIAL_THINKING;
+            case PARTIAL:
+                return MessageTypeView.PARTIAL_AI;
+            case AI:
+                return MessageTypeView.AI;
+            case USER:
+                return MessageTypeView.USER;
+        }
+        return null;
     }
 
     /**

@@ -10,12 +10,16 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<VBox minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" spacing="0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
+<StackPane fx:id="rootStack" minHeight="400.0" minWidth="300.0" prefHeight="892.0" prefWidth="905.0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.chat.controller.ChatController">
   <children>
+    <VBox spacing="0">
+      <children>
     <HBox fx:id="chatHeader" alignment="CENTER_LEFT" spacing="8" styleClass="chat-header">
       <Label fx:id="conversationTitleLabel" maxWidth="Infinity" styleClass="conversation-title" text="New conversation" HBox.hgrow="ALWAYS" />
       <Button fx:id="undoButton" mnemonicParsing="false" styleClass="flat">
@@ -65,5 +69,8 @@
         <Label fx:id="statusLabel" styleClass="status-label" text="Ready" />
       </children>
     </VBox>
+      </children>
+    </VBox>
+    <Pane fx:id="overlayLayer" styleClass="overlay-layer" pickOnBounds="false" visible="false" />
   </children>
-</VBox>
+</StackPane>
