@@ -1,9 +1,15 @@
 package dev.local.ai;
 
+import dev.local.ai.logging.LoggingHelper;
+
 public class Launcher {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
+        LoggingHelper.setPIDProperty();
+        LoggingHelper.bridgeJulToSlf4j();
+        LoggingHelper.redirectStandardStreams();
         GlobalExceptionHandler.install();
+
         MainApplication.launch(MainApplication.class, args);
     }
 }
