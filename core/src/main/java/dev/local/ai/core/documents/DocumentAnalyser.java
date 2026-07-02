@@ -45,6 +45,7 @@ public class DocumentAnalyser {
     public String extractContent(File file) {
         try (FileInputStream fis = new FileInputStream(file)) {
             Tika parser = new Tika();
+            parser.setMaxStringLength(-1);
             var doc = analyseDocument(file);
             if ("image".equals(doc.type().getType().toString())) {
                 return Base64.getEncoder().encodeToString(fis.readAllBytes());

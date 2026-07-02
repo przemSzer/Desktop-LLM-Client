@@ -4,5 +4,5 @@ alwaysApply: true
 ---
 
 Do not use comments, unless you generate a code which is tricky or not obvious.
-Use clean code, good naming, which is ease to read and undestand by human.
+Use clean code, good naming, which is ease to read and understand by human.
 Be objective in propositions, and discussions.
