@@ -133,9 +133,20 @@
     -fx-stroke: -color-border-muted;
 }
 
+.overlay-layer {
+    -fx-background-color: transparent;
+}
+
+.overlay-scrim {
+    -fx-background-color: transparent;
+}
+
 .system-popover-content {
     -fx-background-color: -color-bg-default;
     -fx-background-radius: 6;
+    -fx-border-color: -color-border-muted;
+    -fx-border-radius: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 18, 0.1, 0, 6);
 }
 
 /* ============================================================
