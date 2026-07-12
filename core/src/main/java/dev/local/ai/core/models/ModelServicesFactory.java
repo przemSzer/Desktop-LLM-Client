@@ -1,11 +1,16 @@
 package dev.local.ai.core.models;
 
+import dev.local.ai.core.connections.AnthropicConnection;
 import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 
 public class ModelServicesFactory {
+    private ModelServicesFactory() {
+        /* This utility class should not be instantiated */
+    }
+
 
     public static AvailableModelsService forConnection(ModelProviderConnection connection) {
         if (connection == null) {
@@ -18,6 +23,8 @@ public class ModelServicesFactory {
                 return new OpenAIModelService(openAIConnection);
             case GoogleConnection googleConnection:
                 return new GoogleGeminiModelService(googleConnection);
+            case AnthropicConnection anthropicConnection:
+                return new AnthropicModelService(anthropicConnection);
             default:
                 throw new IllegalArgumentException("Unsupported connection type: " + connection.getClass());
         }

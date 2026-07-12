@@ -10,10 +10,10 @@ import java.util.List;
 /**
  * Test class to verify that connection objects are properly serialized and deserialized.
  */
-public class ConnectionSerializationTest {
+class ConnectionSerializationTest {
 
     @Test
-    public void testOllamaConnectionSerialization() throws Exception {
+    void testOllamaConnectionSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
         // Create an OllamaConnection
@@ -43,7 +43,7 @@ public class ConnectionSerializationTest {
     }
 
     @Test
-    public void testOpenAIConnectionSerialization() throws Exception {
+    void testOpenAIConnectionSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
         // Create an OpenAIConnection
@@ -73,7 +73,7 @@ public class ConnectionSerializationTest {
     }
 
     @Test
-    public void testGoogleConnectionSerialization() throws Exception {
+    void testGoogleConnectionSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         GoogleConnection original = new GoogleConnection("test-google", "Test Google Connection");
@@ -98,14 +98,40 @@ public class ConnectionSerializationTest {
     }
 
     @Test
-    public void testPolymorphicSerialization() throws Exception {
+    void testAnthropicConnectionSerialization() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        AnthropicConnection original = new AnthropicConnection("test-anthropic", "Test Anthropic Connection");
+
+        String json = mapper.writeValueAsString(original);
+        System.out.println("Serialized AnthropicConnection: " + json);
+
+        assertTrue(json.contains("\"id\""));
+        assertTrue(json.contains("\"name\""));
+        assertTrue(json.contains("\"description\""));
+        assertTrue(json.contains("\"apiKey\""));
+        assertTrue(json.contains("\"type\""));
+        assertTrue(json.contains("\"anthropic\""));
+
+        AnthropicConnection deserialized = mapper.readValue(json, AnthropicConnection.class);
+
+        assertEquals(original.id(), deserialized.id());
+        assertEquals(original.name(), deserialized.name());
+        assertEquals(original.description(), deserialized.description());
+        assertEquals(original.apiKey(), deserialized.apiKey());
+        assertEquals(original.providerType(), deserialized.providerType());
+    }
+
+    @Test
+    void testPolymorphicSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
         // Create a list with different connection types
         List<ModelProviderConnection> connections = List.of(
             new OllamaConnection("ollama-1", "Ollama Connection 1"),
             new OpenAIConnection("openai-1", "OpenAI Connection 1"),
-            new GoogleConnection("google-1", "Google Connection 1")
+            new GoogleConnection("google-1", "Google Connection 1"),
+            new AnthropicConnection("anthropic-1", "Anthropic Connection 1")
         );
         
         // Serialize the list
@@ -116,6 +142,7 @@ public class ConnectionSerializationTest {
         assertTrue(json.contains("\"type\":\"ollama\""));
         assertTrue(json.contains("\"type\":\"openai\""));
         assertTrue(json.contains("\"type\":\"google\""));
+        assertTrue(json.contains("\"type\":\"anthropic\""));
 
         List<ModelProviderConnection> deserialized = mapper.readValue(json, new TypeReference<List<ModelProviderConnection>>() {});
         deserialized.forEach(connection -> {
@@ -125,6 +152,8 @@ public class ConnectionSerializationTest {
                 assertEquals("openai-1", connection.name());
             } else if (connection instanceof GoogleConnection) {
                 assertEquals("google-1", connection.name());
+            } else if (connection instanceof AnthropicConnection) {
+                assertEquals("anthropic-1", connection.name());
             } else {
                 fail("Unexpected connection type: " + connection.getClass().getName());
             }

@@ -2,12 +2,13 @@ package dev.local.ai.core.models;
 
 import java.time.Duration;
 
-import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.http.client.HttpClientBuilderLoader;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.local.ai.core.connections.AnthropicConnection;
 import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
@@ -16,12 +17,14 @@ public class StreamingChatModelsProvider {
 
     public StreamingChatModel createStreamingChatModel(LLMInfoAndConnection modelInfo) {
         switch(modelInfo.connection()){
-            case OllamaConnection ollamaConnection:
+            case OllamaConnection _:
                 return ollamaChatModel(modelInfo);
-            case OpenAIConnection openAIConnection:
+            case OpenAIConnection _:
                 return openAIChatModel(modelInfo);
-            case GoogleConnection googleConnection:
+            case GoogleConnection _:
                 return googleGeminiChatModel(modelInfo);
+            case AnthropicConnection _:
+                return anthropicChatModel(modelInfo);
             default:
                 throw new IllegalArgumentException("Unsupported connection type: " + modelInfo.connection().getClass());
         }    
@@ -33,7 +36,8 @@ public class StreamingChatModelsProvider {
             .builder()
             .apiKey(openAIConnection.apiKey())
             .modelName(modelInfo.modelInfo().name())
-            .returnThinking(true)
+            .reasoningEffort("none")
+            //.returnThinking(true)
             .timeout(Duration.ofMinutes(5))
             .build();
     }
@@ -49,7 +53,7 @@ public class StreamingChatModelsProvider {
             .logRequests(true)
             .logResponses(true)
             .modelName(modelInfo.modelInfo().name())
-            .think(true)
+            //.think(true)
             .returnThinking(true)
             .httpClientBuilder(httpClientBuilder)
             .timeout(Duration.ofMinutes(5))
@@ -63,6 +67,19 @@ public class StreamingChatModelsProvider {
             .apiKey(googleConnection.apiKey())
             .modelName(modelInfo.modelInfo().id())
             .timeout(Duration.ofMinutes(5))
+            .build();
+    }
+
+    private StreamingChatModel anthropicChatModel(LLMInfoAndConnection modelInfo) {
+        var anthropicConnection = (AnthropicConnection) modelInfo.connection();
+        return AnthropicStreamingChatModel
+            .builder()
+            .apiKey(anthropicConnection.apiKey())
+            .modelName(modelInfo.modelInfo().id())
+            .returnThinking(true)
+            .timeout(Duration.ofMinutes(5))
+                //TODO: brak limitu jak ogarnąć?
+            .maxTokens(10 * 1024)
             .build();
     }
 

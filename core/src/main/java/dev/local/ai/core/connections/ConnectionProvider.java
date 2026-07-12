@@ -3,7 +3,8 @@ package dev.local.ai.core.connections;
 public enum ConnectionProvider {
     OPENAI("OpenAI", "/images/openai-icon.png"),
     OLLAMA("Ollama", "/images/ollama-icon.png"),
-    GOOGLE("Google Gemini", "/images/google-gemini-icon.png");
+    GOOGLE("Google Gemini", "/images/google-gemini-icon.png"),
+    ANTHROPIC("Anthropic", "/images/anthropic-icon.png");
 
     private final String displayName;
     private final String iconPath;

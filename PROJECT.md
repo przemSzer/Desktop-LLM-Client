@@ -58,7 +58,7 @@ The project is a **multi-module Java 21** desktop application that provides a **
 | Language   | Java 21    |
 | Build      | Maven (multi-module) |
 | UI         | JavaFX 21 (FXML, controls, graphics) |
-| LLM        | LangChain4J 1.4 (OpenAI, Ollama, Google Gemini; streaming + tools) |
+| LLM        | LangChain4J 1.13 (OpenAI, Ollama, Google Gemini, Anthropic; streaming + tools) |
 | Tools      | Built-in (web download, command line) + optional MCP server (Streamable HTTP) |
 | Documents  | Apache Tika, LangChain4J document parser/transformer (Jsoup) |
 | Config     | Typesafe Config |
