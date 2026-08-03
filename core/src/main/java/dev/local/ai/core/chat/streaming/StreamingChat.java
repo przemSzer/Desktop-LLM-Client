@@ -1,31 +1,31 @@
 package dev.local.ai.core.chat.streaming;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import dev.langchain4j.model.chat.response.*;
-import dev.local.ai.core.chat.messages.MessageType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.*;
 import dev.local.ai.core.chat.IChatListener;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.messages.MessageType;
 import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.EventListener;
+import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoCloseable {
 
@@ -43,10 +43,12 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private final EventListener<LLMChangedEvent> llmChangedListener = this::onLLMChanged;
     private final EventListener<StopRequestEvent> stopRequestListener = this::onStopRequest;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private LLMInfoAndConnection currentModelInfo;
 
     //TODO: chatModel in fact should be initial chatModel, 
     // but it also should be gathered from chatModelsProvider
     public StreamingChat(StreamingChatModel initialChatModel,
+                         LLMInfoAndConnection initialModelInfo,
                          ChatMemory chatMemory,
                          IToolProvider toolProvider,
                          CoreEventBus eventBus,
@@ -55,6 +57,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         this.chatMemory = chatMemory;
         this.chatModelsProvider = chatModelsProvider;
         this.eventBus = eventBus;
+        this.currentModelInfo = initialModelInfo;
         logger.info("StreamingChat instance created with model: {}", initialChatModel.getClass().getSimpleName());
         eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
         eventBus.subscribe(StopRequestEvent.EVENT_TYPE, stopRequestListener);
@@ -119,10 +122,12 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     }
 
     private ChatRequest prepareChatRequest() {
+        var maxOutputTokens = currentModelInfo.modelInfo().maxOutputTokens();
         return ChatRequest.builder()
             .messages(chatMemory.messages())
             .toolSpecifications(toolProvider.getToolSpecifications())
-            .build();        
+//            .maxOutputTokens(maxOutputTokens != ModelInfo.NOT_SPECIFIED ? maxOutputTokens : null)
+            .build();
     }
 
     private void addNewMessageToChatMemory(Message message) {
@@ -132,6 +137,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
 
     private void onLLMChanged(LLMChangedEvent event) {
         logger.info("LLMChangedEvent received: {}", event.getModelInfo());
+        this.currentModelInfo = event.getModelInfo();
         this.chatModel = chatModelsProvider.createStreamingChatModel(event.getModelInfo());
     }
 

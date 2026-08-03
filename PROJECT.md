@@ -22,7 +22,7 @@ The project is a **multi-module Java 21** desktop application that provides a **
 
 **Connections:** `ModelProviderConnection` (sealed: `OllamaConnection`, `OpenAIConnection`, `GoogleConnection`); `ConnectionsStore` (with `findById`) backed by `DataStorage` / `JsonFileStorage` at `~/.local-ai/connections.json`.
 
-**Models:** `StreamingChatModelsProvider` builds LangChain4J streaming models; `AvailableModelsService` is implemented per provider (`OllamaModelService`, `OpenAIModelService`, `GoogleGeminiModelService`) and dispatched by `ModelServicesFactory`; `LLMInfoAndConnection` pairs `ModelInfo` with a concrete connection.
+**Models:** `StreamingChatModelsProvider` builds LangChain4J streaming models; `AvailableModelsService` is implemented per provider (`OllamaModelService`, `OpenAIModelService`, `GoogleGeminiModelService`) and dispatched by `AvailableModelsServiceFactory`; `LLMInfoAndConnection` pairs `ModelInfo` with a concrete connection.
 
 **Events:** `CoreEventBus` (async pub/sub, cached thread pool); listeners receive `LLMChangedEvent`, `StopRequestEvent`, `ToolsSelectionChangedEvent`.
 

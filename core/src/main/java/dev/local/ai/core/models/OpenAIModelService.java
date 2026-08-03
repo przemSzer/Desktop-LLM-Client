@@ -38,6 +38,12 @@ public class OpenAIModelService implements AvailableModelsService {
     }
 
     private ModelInfo toModelInfo(ModelDescription model) {
-        return new ModelInfo(model.name(), model.displayName(), "OpenAI model: " + model.toString());
+        return new ModelInfo(
+                model.name(),
+                model.displayName(),
+                "OpenAI model: " + model,
+                ModelInfo.NOT_SPECIFIED,
+                 ModelInfo.NOT_SPECIFIED
+        );
     }
 }

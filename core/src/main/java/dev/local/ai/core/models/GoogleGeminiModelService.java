@@ -49,6 +49,6 @@ public class GoogleGeminiModelService implements AvailableModelsService {
         String description = m.description() != null && !m.description().isBlank()
             ? m.description()
             : "Google Gemini model";
-        return new ModelInfo(id, name, description);
+        return new ModelInfo(id, name, description, m.maxInputTokens(), m.maxOutputTokens());
     }
 }

@@ -3,9 +3,12 @@ package dev.local.ai.core.chat.streaming;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.local.ai.core.chat.LLMChangedEvent;
+import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.Event;
 import dev.local.ai.core.events.EventListener;
+import dev.local.ai.core.models.LLMInfoAndConnection;
+import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.tools.IToolProvider;
 
@@ -54,7 +57,11 @@ class StreamingChatLifecycleTest {
 
     @BeforeEach
     void setUp() {
-        streamingChat = new StreamingChat(chatModel, chatMemory, toolProvider, eventBus, modelsProvider);
+        var initialConnection = new LLMInfoAndConnection(
+                new ModelInfo("id", "name", "description", -1,-1),
+                new OllamaConnection("ollama", "ollama desc")
+        );
+        streamingChat = new StreamingChat(chatModel, initialConnection, chatMemory, toolProvider, eventBus, modelsProvider);
     }
 
     @Test

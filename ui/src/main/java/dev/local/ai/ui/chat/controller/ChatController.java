@@ -118,7 +118,6 @@ public class ChatController {
     private OverlayLayer overlay;
     private VBox systemMessageContent;
     private VBox toolsContent;
-    private VBox modelContent;
     private TextField titleEditField;
     private boolean titleBound;
 
@@ -171,7 +170,7 @@ public class ChatController {
 
             setupSystemMessagePopover();
             setupToolsPopover();
-            setupModelPopover();
+            setupLLMPopover();
             setupOverlaySelectionSync();
             setupHeader();
             setupComposer();
@@ -236,8 +235,8 @@ public class ChatController {
                 dependencies);
     }
 
-    private void setupModelPopover() {
-        modelContent = new VBox(modelSelectorView);
+    private void setupLLMPopover() {
+        var modelContent = new VBox(modelSelectorView);
         modelContent.setPadding(new Insets(12));
         modelContent.setPrefWidth(420);
         modelContent.getStyleClass().add("system-popover-content");
@@ -246,18 +245,21 @@ public class ChatController {
                 overlay.toggle(modelContent, modelButton, Placement.ABOVE_RIGHT));
 
         var modelViewModel = modelSelectorView.getViewModel();
-        modelButton.textProperty().bind(Bindings.createStringBinding(
-            () -> 
-            {
-                ConnectionViewModel connection = modelViewModel.getSelectedConnection();
-                LLMInfoViewModel model = modelViewModel.getSelectedModel();
-                String provider = connection != null ? connection.getName() : "No connection";
-                String name = model != null ? model.getName() : "Select model";
-                return provider + " · " + name + " ▾";
-            }, 
-            modelViewModel.selectedConnectionProperty(), 
-            modelViewModel.selectedModelProperty())
-        );
+        modelButton
+            .textProperty()
+            .bind(
+            Bindings.createStringBinding(
+                () ->
+                {
+                    ConnectionViewModel connection = modelViewModel.getSelectedConnection();
+                    LLMInfoViewModel model = modelViewModel.getSelectedModel();
+                    String provider = connection != null ? connection.getName() : "No connection";
+                    String name = model != null ? model.getName() : "Select model";
+                    return provider + " · " + name + " ▾";
+                },
+                modelViewModel.selectedConnectionProperty(),
+                modelViewModel.selectedModelProperty()
+            ));
     }
 
     private void setupOverlaySelectionSync() {

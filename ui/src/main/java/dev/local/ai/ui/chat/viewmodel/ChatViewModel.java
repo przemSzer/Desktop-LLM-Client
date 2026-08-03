@@ -434,6 +434,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                         && lastMessage != null
                         && lastMessage.getType() == MessageTypeView.PARTIAL_AI;
                 if (shouldReplaceLastMessage) {
+                    logger.debug("Replacing last message with new message: {}", newChatMessage.getContent());
                     chatMessages.set(chatMessages.size() - 1, newChatMessage);
                 } else {
                     chatMessages.add(newChatMessage);

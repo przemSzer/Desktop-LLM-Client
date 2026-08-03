@@ -43,6 +43,9 @@ public class AnthropicModelService implements AvailableModelsService {
         String description = model.description() != null && !model.description().isBlank()
             ? model.description()
             : "Anthropic Claude model";
-        return new ModelInfo(id, name, description);
+        return new ModelInfo(id, name, description,
+                model.maxInputTokens(),
+                model.maxOutputTokens()
+                );
     }
 }

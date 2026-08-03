@@ -44,7 +44,9 @@ public class OllamaModelService implements AvailableModelsService {
         return new ModelInfo(
             model.getName(), 
             model.getName(), 
-            "Ollama model: " + model.getDetails().getFamily()
+            "Ollama model: " + model.getDetails().getFamily(),
+                ModelInfo.NOT_SPECIFIED,
+                ModelInfo.NOT_SPECIFIED
         );
     }
 }
