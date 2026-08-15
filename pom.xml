@@ -26,7 +26,8 @@
         <slf4j.version>2.0.9</slf4j.version>
         <junit.version>5.10.0</junit.version>
         <mockito.version>5.18.0</mockito.version>
-        <assertj.version>3.25.1</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
+        <awaitility.version>4.3.0</awaitility.version>
         <langchain4j.version>1.13.1</langchain4j.version>
         <langchain4j-community.version>1.13.1-beta23</langchain4j-community.version>
         <bytebuddy.version>1.17.5</bytebuddy.version>
@@ -37,6 +38,7 @@
         <controlsfx.version>11.2.2</controlsfx.version>
         <ikonli.version>12.3.1</ikonli.version>
         <cssfx.version>11.5.1</cssfx.version>
+        <rxjava.version>3.1.8</rxjava.version>
     </properties>
 
     <modules>
@@ -177,6 +179,14 @@
                 <version>${cssfx.version}</version>
             </dependency>
 
+            <!-- RxJava – reactive programming for Java. -->
+            <dependency>
+                <groupId>io.reactivex.rxjava3</groupId>
+                <artifactId>rxjava</artifactId>
+                <version>${rxjava.version}</version>
+            </dependency>
+        
+
             <!-- Testing dependencies -->           
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -195,6 +205,13 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${awaitility.version}</version>
                 <scope>test</scope>
             </dependency>
 

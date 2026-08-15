@@ -4,73 +4,104 @@ import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
-import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.core.models.LLMInfoAndConnection;
-import dev.local.ai.core.models.AvailableModelsService;
-import dev.local.ai.core.models.ModelServicesFactory;
-import javafx.application.Platform;
+import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
+import dev.local.ai.ui.models.ModelsInfoDownloadTask;
+import dev.local.ai.ui.models.model.LLMInfoViewModel;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.disposables.SerialDisposable;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
-public class LLMSelectorViewModel {
-    
+public class LLMSelectorViewModel implements AutoCloseable{
+
+    private final IUIRunner uiRunner;
+
+    public enum States {
+        READY,
+        ERROR,
+        LOADING
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorViewModel.class);
     
     private final ListProperty<ConnectionViewModel> connections;
     private final ObjectProperty<ConnectionViewModel> selectedConnection;
     private final ListProperty<LLMInfoViewModel> availableModels;
     private final ObjectProperty<LLMInfoViewModel> selectedModel;
-    private final StringProperty statusMessage;
+    private final ObjectProperty<States> stateProperty;
     private final BooleanProperty isLoadingModels;
     
     private final ConnectionsStore connectionsStore;
 
     private final CoreEventBus coreEventBus;
 
-    private CompletableFuture<Void> lastLoadingTask;
+    private final ModelsInfoDownloadTask modelsInfoDownloadTask;
     
-    public LLMSelectorViewModel(ConnectionsStore connectionsStore, CoreEventBus coreEventBus) {
+    private final SerialDisposable serialDisposable = new SerialDisposable();
+
+    public LLMSelectorViewModel(
+            ConnectionsStore connectionsStore,
+            CoreEventBus coreEventBus,
+            ModelsInfoDownloadTask modelsInfoDownloadTask) {
+        this(connectionsStore, coreEventBus, modelsInfoDownloadTask, new JavaFXUIRunner());
+    }
+
+    public LLMSelectorViewModel(
+            ConnectionsStore connectionsStore,
+            CoreEventBus coreEventBus,
+            ModelsInfoDownloadTask modelsInfoDownloadTask,
+            IUIRunner uiRunner) {
+        this.modelsInfoDownloadTask = modelsInfoDownloadTask;
         this.connections = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.selectedConnection = new SimpleObjectProperty<>();
         this.availableModels = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.selectedModel = new SimpleObjectProperty<>();
-        this.statusMessage = new SimpleStringProperty("Ready");
+        this.stateProperty = new SimpleObjectProperty<>(States.READY);
         this.isLoadingModels = new SimpleBooleanProperty(false);
-
         this.connectionsStore = connectionsStore;
         this.coreEventBus = coreEventBus;
-
+        this.uiRunner = uiRunner;
         loadConnections();
         setupPropertyListeners();
 
         logger.info("ModelSelectorViewModel initialized");
     }
-    
+
+    private static ConnectionViewModel toConnectionViewModel(ModelProviderConnection connection) {
+        return new ConnectionViewModel(
+                connection.providerType(),
+                connection.name(),
+                connection.description(),
+                connection.id()
+        );
+    }
+
     private void loadConnections() {
         try {
             var mappedConnections = connectionsStore
-                .readAll().stream()
-                .map(connection -> new ConnectionViewModel(
-                    connection.providerType(), 
-                    connection.name(), 
-                    connection.description(), 
-                    connection.id()
-                ))
+                .readAll()
+                .stream()
+                .map(LLMSelectorViewModel::toConnectionViewModel)
                 .toList();
             this.connections.set(FXCollections.observableArrayList(mappedConnections));
-            setStatusMessage("Loaded " + mappedConnections.size() + " connections");
+            setState(States.READY);
         } catch (Exception e) {
             logger.error("Failed to load connections", e);
-            setStatusMessage("Failed to load connections: " + e.getMessage());
+            setState(States.ERROR);
         }
     }
-    
+
+    private void setState(States states) {
+        this.stateProperty.set(states);
+    }
+
     private void setupPropertyListeners() {        
         logger.debug("Setting up property listeners...");
         
@@ -81,6 +112,7 @@ public class LLMSelectorViewModel {
             } else {               
                 selectedModel.set(null);                
                 availableModels.clear();
+                serialDisposable.set(Disposable.empty());
             }
         });
         
@@ -114,60 +146,39 @@ public class LLMSelectorViewModel {
         
         logger.debug("Property listeners setup complete");
     }
-    
+
+    private ModelProviderConnection findConnectionById(String connectionId) {
+        return connectionsStore.findById(connectionId).orElse(null);
+    }
+
     private void loadModelsForConnection(ConnectionViewModel connectionViewModel) {
-        setStatusMessage("Loading models for " + connectionViewModel.getName() + "...");
+        setState(States.LOADING);
         isLoadingModels.set(true);
         selectedModel.set(null);
         availableModels.clear();
-        ModelProviderConnection connection = findConnectionById(connectionViewModel.getId());
         
-        if (connection == null) {
-            setStatusMessage("Connection not found");
-            isLoadingModels.set(false);
-            return;
-        }
-        //Todo: inject the service instead of using the sigleton
-        AvailableModelsService service = ModelServicesFactory.forConnection(connection);
-                
-        if (service == null) {
-            setStatusMessage("No model service available for " + connection.providerType());
-            isLoadingModels.set(false);
-            return;
-        }
-        if (this.lastLoadingTask != null && !this.lastLoadingTask.isDone()) {
-            logger.debug("Cancelling last loading task");
-            this.lastLoadingTask.cancel(true);
-        }
-        this.lastLoadingTask = CompletableFuture.supplyAsync(service::loadModels)
-            .thenAccept(models -> {
-                var modelsForView = models.stream()
-                        .map(LLMInfoViewModel::new)
-                        .toList();
-                Platform.runLater(() -> {                    
-                    availableModels.set(FXCollections.observableArrayList(modelsForView));
-                    logger.debug("Loaded {} models for {}", modelsForView.size(), connectionViewModel.getName());
-                    setStatusMessage("Loaded " + models.size() + " models for " + connectionViewModel.getName());
-                    
-                    if (!modelsForView.isEmpty() && modelsForView.contains(selectedModel.get())){
-                            selectedModel.set(selectedModel.get());
-                        }
-
-                    isLoadingModels.set(false);
-                });
-            })
-            .exceptionally(throwable -> {
-                Platform.runLater(() -> {
-                    logger.error("Failed to load models for connection: " + connectionViewModel.getName(), throwable);
-                    setStatusMessage("Failed to load models: " + throwable.getMessage());
-                    isLoadingModels.set(false);
-                });
-                return null;
-            });
+        serialDisposable.set(
+            modelsInfoDownloadTask.start(connectionViewModel.getId()
+        ).subscribe(
+            models -> uiRunner.run(loadingModelsFinished(models)),
+            error -> uiRunner.run(loadingModelsFailed(connectionViewModel, error))
+        ));
     }
-    
-    private ModelProviderConnection findConnectionById(String connectionId) {
-        return connectionsStore.findById(connectionId).orElse(null);
+
+    private Runnable loadingModelsFailed(ConnectionViewModel connectionViewModel, @NonNull Throwable error) {
+        return () -> {
+            logger.error("Failed to load models for connection: {}", connectionViewModel.getName(), error);
+            setState(States.ERROR);
+            isLoadingModels.set(false);
+        };
+    }
+
+    private Runnable loadingModelsFinished(List<LLMInfoViewModel> models) {
+        return () -> {
+            availableModels.set(FXCollections.observableArrayList(models));
+            setState(States.READY);
+            isLoadingModels.set(false);
+        };
     }
     
     public ListProperty<ConnectionViewModel> connectionsProperty() {
@@ -210,18 +221,14 @@ public class LLMSelectorViewModel {
         selectedModel.set(model);
     }
     
-    public StringProperty statusMessageProperty() {
-        return statusMessage;
+    public ObjectProperty<States> statePropertyProperty() {
+        return stateProperty;
     }
-    
-    public String getStatusMessage() {
-        return statusMessage.get();
+
+    public States getState() {
+        return this.stateProperty.get();
     }
-    
-    public void setStatusMessage(String message) {
-        statusMessage.set(message);
-    }
-    
+
     public BooleanProperty isLoadingModelsProperty() {
         return isLoadingModels;
     }
@@ -232,5 +239,10 @@ public class LLMSelectorViewModel {
     
     public void refreshConnections() {
         loadConnections();
+    }
+
+    @Override
+    public void close() throws Exception {
+        serialDisposable.dispose();
     }
 }
