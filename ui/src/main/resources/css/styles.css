@@ -149,6 +149,35 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 18, 0.1, 0, 6);
 }
 
+.combo-box-popup > .list-view {
+    -fx-max-height: 280;
+}
+
+.custom-text-field.combo-box-search,
+.custom-text-field.combo-box-search:focused,
+.custom-text-field.combo-box-search:text-field-has-focus {
+    -fx-background-color: -color-input-border, -color-input-bg;
+    -fx-background-insets: 0, 1px;
+    -fx-background-radius: 4, 3;
+    -fx-text-fill: -color-input-fg;
+    -fx-prompt-text-fill: -color-fg-muted;
+    -fx-highlight-fill: -color-input-bg-highlight;
+    -fx-highlight-text-fill: -color-input-fg-highlight;
+}
+
+.custom-text-field.combo-box-search:focused,
+.custom-text-field.combo-box-search:text-field-has-focus {
+    -fx-background-color: -color-input-border-focused, -color-input-bg-focused;
+}
+
+.combo-box-search.clearable-field .clear-button > .graphic {
+    -fx-background-color: -color-fg-muted;
+}
+
+.combo-box-search.clearable-field .clear-button:hover > .graphic {
+    -fx-background-color: -color-danger-fg;
+}
+
 /* ============================================================
    Composer card
    ============================================================ */

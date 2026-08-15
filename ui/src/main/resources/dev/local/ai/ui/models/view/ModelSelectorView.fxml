@@ -18,7 +18,7 @@
                fx:id="loadingIndicator" minHeight="-Infinity" minWidth="-Infinity" 
                prefHeight="20.0" prefWidth="20.0" visible="false" HBox.hgrow="SOMETIMES" />
             <SearchableComboBox fx:id="modelComboBox" 
-               promptText="Select a model..." visibleRowCount="30" HBox.hgrow="ALWAYS"
+               promptText="Select a model..." visibleRowCount="10" HBox.hgrow="ALWAYS"
                />
          </children>
       </HBox>
