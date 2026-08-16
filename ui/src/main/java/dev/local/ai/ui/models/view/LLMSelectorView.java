@@ -1,31 +1,28 @@
 package dev.local.ai.ui.models.view;
 
-import dev.local.ai.core.connections.ConnectionsStore;
-import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.core.models.AvailableModelsServiceFactory;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
-import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import dev.local.ai.ui.utils.MainStageProvider;
-import io.reactivex.rxjava4.schedulers.Schedulers;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
 
-public class LLMSelectorView extends HBox {
+public class LLMSelectorView extends VBox {
     
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorView.class);
         
@@ -57,15 +54,13 @@ public class LLMSelectorView extends HBox {
         }
     }
 
-    public void init(ConnectionsStore connectionsStore,
-                     CoreEventBus eventBus,
-                     Callback<Class<?>, Object> controllerFactory,
-                     MainStageProvider mainStageProvider) {
+    public void init(Callback<Class<?>, Object> controllerFactory,
+                     MainStageProvider mainStageProvider,
+                     LLMSelectorViewModel viewModel
+    ) {
         try {
             logger.info("Initializing LLMSelectorView");
-
-            var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.virtual(), connectionsStore);
-            this.viewModel = new LLMSelectorViewModel(connectionsStore, eventBus, downloadModelsTask);
+            this.viewModel = viewModel;
             this.controllerFactory = controllerFactory;
             this.mainStageProvider = mainStageProvider;
 
@@ -93,6 +88,7 @@ public class LLMSelectorView extends HBox {
         logger.debug("Model binding established");
                 
         loadingIndicator.visibleProperty().bind(viewModel.isLoadingModelsProperty());
+        loadingIndicator.managedProperty().bind(loadingIndicator.visibleProperty());
         
         setupCellFactories();
         
@@ -242,5 +238,21 @@ public class LLMSelectorView extends HBox {
     
     public void setSelectedModel(LLMInfoViewModel model) {
         viewModel.setSelectedModel(model);
+    }
+
+    ComboBox<ConnectionViewModel> getConnectionComboBox() {
+        return connectionComboBox;
+    }
+
+    ComboBox<LLMInfoViewModel> getModelComboBox() {
+        return modelComboBox;
+    }
+
+    ProgressIndicator getLoadingIndicator() {
+        return loadingIndicator;
+    }
+
+    Button getManageConnectionsButton() {
+        return manageConnectionsButton;
     }
 }

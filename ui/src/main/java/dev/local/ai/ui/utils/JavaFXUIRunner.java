@@ -1,4 +1,4 @@
-package dev.local.ai.ui.models.viewmodel;
+package dev.local.ai.ui.utils;
 
 import javafx.application.Platform;
 

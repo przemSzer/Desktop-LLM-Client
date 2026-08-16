@@ -53,7 +53,7 @@ class ConversationSessionFactoryTest {
     @BeforeEach
     void setUp() {
         // Records and sealed interfaces are not mockable; use real instances.
-        var modelInfo = new ModelInfo("model-id", "model-name", "desc");
+        var modelInfo = new ModelInfo("model-id", "model-name", "desc",-1,-1);
         var connection = new OllamaConnection("conn-id", "test-conn", "test", "http://localhost:11434");
         var llm = new LLMInfoAndConnection(modelInfo, connection);
         given(lastSelectedModel.get()).willReturn(Optional.of(llm));

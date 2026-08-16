@@ -1,21 +1,5 @@
 package dev.local.ai.core.storage.models;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
-
-import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.OllamaConnection;
@@ -25,6 +9,21 @@ import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.core.storage.SettingsStorage;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class LastSelectedModelTest {
@@ -46,7 +45,7 @@ class LastSelectedModelTest {
     @Captor
     private ArgumentCaptor<EventListener<? extends Event>> listenerCaptor;
 
-    private final ModelInfo gemma = new ModelInfo("gemma3:270m", "Gemma 3 270M", "Local small model");
+    private final ModelInfo gemma = new ModelInfo("gemma3:270m", "Gemma 3 270M", "Local small model", -1, -1);
     private final OllamaConnection ollama = new OllamaConnection("conn-1", "Local Ollama", "localhost", "http://localhost:11434");
 
     @Test

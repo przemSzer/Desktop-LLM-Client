@@ -1,5 +1,9 @@
 package dev.local.ai.ui.chat.controller;
 
+import dev.local.ai.core.models.AvailableModelsServiceFactory;
+import dev.local.ai.ui.models.ModelsInfoDownloadTask;
+import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
+import io.reactivex.rxjava4.schedulers.Schedulers;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
@@ -159,7 +163,14 @@ public class ChatController {
             logger.debug("Initializing ChatController");
 
             toolsSelectorView.init(toolProvider, eventBus);
-            modelSelectorView.init(connectionsStore, eventBus, controllerFactory, mainStageProvider);
+
+            var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.virtual(), connectionsStore);
+            var llmSelectorViewModel = new LLMSelectorViewModel(
+                    connectionsStore,
+                    eventBus,
+                    downloadModelsTask
+            );
+            modelSelectorView.init(controllerFactory, mainStageProvider, llmSelectorViewModel);
 
             composerFiles = new FileAttachmentViewModel(commandManager, fileSelector);
 
