@@ -66,7 +66,6 @@
             </HBox>
           </children>
         </VBox>
-        <Label fx:id="statusLabel" styleClass="status-label" text="Ready" />
       </children>
     </VBox>
       </children>

@@ -59,7 +59,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final ListProperty<ChatMessageViewModel> chatMessages;
     private final SimpleStringProperty systemMessage;
     private final StringProperty inputMessage;
-    private final StringProperty statusMessage;
     private final BooleanProperty canUndo;
     private final BooleanProperty canRedo;
     private final ListProperty<AttachedFileViewModel> attachedFiles;
@@ -98,7 +97,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         this.inputMessage = new SimpleStringProperty("");
         this.attachedFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
         this.systemMessageAttachedFiles = new SimpleListProperty<>(FXCollections.observableArrayList());
-        this.statusMessage = new SimpleStringProperty("Ready");
         this.canUndo = new SimpleBooleanProperty(false);
         this.canRedo = new SimpleBooleanProperty(false);
         this.sendingMessageInProgress = new SimpleBooleanProperty(false);
@@ -149,8 +147,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     public void loadConversation(String conversationId) {
         if (sendingMessageInProgress.get()) {
             logger.warn("Refusing to switch conversation while a message is in progress");
-            Platform.runLater(() ->
-                    statusMessage.set("Cannot switch conversation while message is in progress"));
             return;
         }
         if (session != null && Objects.equals(session.conversationId(), conversationId)) {
@@ -170,7 +166,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             inputMessage.set("");
             currentConversationId.set(newSession.conversationId());
             refreshConversationTitleFromStore();
-            statusMessage.set("Loaded conversation");
         });
         if (previous != null) {
             previous.close();
@@ -279,14 +274,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         inputMessage.set(message);
     }
 
-    public StringProperty statusMessageProperty() {
-        return statusMessage;
-    }
-
-    public String getStatusMessage() {
-        return statusMessage.get();
-    }
-
     public StringProperty systemMessageProperty() {
         return systemMessage;
     }
@@ -334,8 +321,6 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
         try {
             setInputMessage("");
-            // Update status
-            statusMessage.set("Sending message...");
 
             var command = new SendUserMessageToLLMCommand(currentChat(), message, files);
             sendingMessageInProgress.set(true);
@@ -345,16 +330,12 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                     logger.info("SendMessageCommand executed successfully: {}", message);
                 } else {
                     logger.error("SendMessageCommand failed: {}", message);
-                    Platform.runLater(() -> {
-                        statusMessage.set("Failed to send message");
-                        sendingMessageInProgress.set(false);
-                    });
+                    Platform.runLater(() -> sendingMessageInProgress.set(false));
                 }                
             });
 
         } catch (Exception e) {
             logger.error("Failed to send message: {}", message, e);
-            statusMessage.set("Error sending message");
         }
     }
 
@@ -362,10 +343,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         if (commandManager.canUndo()) {
             boolean success = commandManager.undo();
             if (success) {
-                statusMessage.set("Command undone");
                 logger.info("Command undone successfully");
             } else {
-                statusMessage.set("Failed to undo command");
                 logger.warn("Failed to undo command");
             }
         }
@@ -375,10 +354,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         if (commandManager.canRedo()) {
             boolean success = commandManager.redo();
             if (success) {
-                statusMessage.set("Command redone");
                 logger.info("Command redone successfully");
             } else {
-                statusMessage.set("Failed to redo command");
                 logger.warn("Failed to redo command");
             }
         }
@@ -386,23 +363,17 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     public void clearChat() {
         try {
-            statusMessage.set("Clearing chat...");
-
-            // Create and execute the clear chat command
             ClearChatCommand command = new ClearChatCommand(currentChat());
             boolean success = commandManager.executeCommand(command);
 
             if (success) {
-                statusMessage.set("Conversation emptied");
                 logger.info("ClearChatCommand executed successfully");
             } else {
-                statusMessage.set("Failed to clear chat");
                 logger.error("ClearChatCommand failed");
             }
 
         } catch (Exception e) {
             logger.error("Failed to clear chat", e);
-            statusMessage.set("Error clearing chat");
         }
     }
 
@@ -442,10 +413,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             }
 
             if (newChatMessage.getType() == MessageTypeView.USER) {
-                statusMessage.set("User message added");
                 refreshConversationTitleFromStore();
             } else if (newChatMessage.getType() == MessageTypeView.AI) {
-                statusMessage.set("Messages " + chatMessages.size() + " in chat");
                 sendingMessageInProgress.set(false);
             }
 
@@ -465,25 +434,18 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         Platform.runLater(() -> {
             ChatMessageViewModel errorMsg = new ChatMessageViewModel(errorMessage, MessageTypeView.ERROR, List.of(), null, null);
             addMessage(errorMsg);
-            statusMessage.set("Error occurred: " + errorMessage);
             sendingMessageInProgress.set(false);
         });
     }
 
     @Override
     public void onMemoryCleared() {
-        Platform.runLater(() -> {
-            chatMessages.clear();
-            statusMessage.set("Chat memory cleared");
-        });
+        Platform.runLater(chatMessages::clear);
     }
 
     @Override
     public void onCancel(){
-        Platform.runLater(() -> {
-            statusMessage.set("Canceled");
-            sendingMessageInProgress.set(false);
-        });
+        Platform.runLater(() -> sendingMessageInProgress.set(false));
     }
 
     @Override
@@ -548,11 +510,8 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             final ClipboardContent content = new ClipboardContent();
             content.putString(message.getContent());
             clipboard.setContent(content);
-            
-            statusMessage.set("Message copied to clipboard");            
         } catch (Exception e) {
             logger.error("Failed to copy message to clipboard", e);
-            statusMessage.set("Failed to copy message");
         }
     }
 

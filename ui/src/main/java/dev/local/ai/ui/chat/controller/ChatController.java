@@ -93,9 +93,6 @@ public class ChatController {
     private Label systemMessageIndicator;
 
     @FXML
-    private Label statusLabel;
-
-    @FXML
     private FlowPane attachmentChips;
 
     @FXML
@@ -474,7 +471,6 @@ public class ChatController {
         });
 
         messageInput.textProperty().bindBidirectional(chatViewModel.inputMessageProperty());
-        statusLabel.textProperty().bind(chatViewModel.statusMessageProperty());
         composerFiles.attachedFilesProperty().bind(chatViewModel.attachedFilesProperty());
         sendButton.visibleProperty().bind(chatViewModel.sendingMessageInProgressProperty().not());
         sendButton.managedProperty().bind(sendButton.visibleProperty());

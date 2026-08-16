@@ -58,7 +58,6 @@ class ChatViewModelTest {
     @Test
     void testInitialization() {
         assertNotNull(viewModel);
-        assertEquals("Ready", viewModel.getStatusMessage());
         assertEquals("", viewModel.getInputMessage());
         assertEquals(0, viewModel.getChatMessages().size());
         assertEquals("conv-test", viewModel.getCurrentConversationId());
