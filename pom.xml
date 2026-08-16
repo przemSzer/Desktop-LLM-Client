@@ -14,8 +14,8 @@
     <description>A multi-module Java project with core and UI components</description>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>26</maven.compiler.source>
+        <maven.compiler.target>26</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jpro.version>0.5.7</jpro.version>
@@ -38,7 +38,7 @@
         <controlsfx.version>11.2.2</controlsfx.version>
         <ikonli.version>12.3.1</ikonli.version>
         <cssfx.version>11.5.1</cssfx.version>
-        <rxjava.version>3.1.8</rxjava.version>
+        <rxjava.version>4.0.0-alpha-21</rxjava.version>
     </properties>
 
     <modules>
@@ -181,7 +181,7 @@
 
             <!-- RxJava – reactive programming for Java. -->
             <dependency>
-                <groupId>io.reactivex.rxjava3</groupId>
+                <groupId>io.reactivex.rxjava4</groupId>
                 <artifactId>rxjava</artifactId>
                 <version>${rxjava.version}</version>
             </dependency>
@@ -216,9 +216,9 @@
             </dependency>
 
             <!--
-                Pin ByteBuddy to a JDK 25-compatible version. assertj-core 3.25.1
+                Pin ByteBuddy to a JDK 26-compatible version. assertj-core 3.25.1
                 otherwise drags in byte-buddy 1.14.11 which cannot read class
-                file version 69 and breaks Mockito's inline mock maker.
+                file version 70 and breaks Mockito's inline mock maker.
             -->
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -244,8 +244,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <source>25</source>
-                        <target>25</target>
+                        <source>26</source>
+                        <target>26</target>
                     </configuration>
                 </plugin>
                 <plugin>

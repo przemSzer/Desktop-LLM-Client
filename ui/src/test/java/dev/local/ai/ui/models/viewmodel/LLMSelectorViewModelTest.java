@@ -6,7 +6,7 @@ import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel.States;
-import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava4.core.Single;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

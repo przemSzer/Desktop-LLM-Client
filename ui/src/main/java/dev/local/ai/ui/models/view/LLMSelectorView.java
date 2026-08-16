@@ -8,7 +8,7 @@ import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import dev.local.ai.ui.utils.MainStageProvider;
-import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava4.schedulers.Schedulers;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -64,7 +64,7 @@ public class LLMSelectorView extends HBox {
         try {
             logger.info("Initializing LLMSelectorView");
 
-            var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.io(), connectionsStore);
+            var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.virtual(), connectionsStore);
             this.viewModel = new LLMSelectorViewModel(connectionsStore, eventBus, downloadModelsTask);
             this.controllerFactory = controllerFactory;
             this.mainStageProvider = mainStageProvider;

@@ -1,17 +1,16 @@
 package dev.local.ai.ui.models;
 
-import java.util.List;
-
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.models.AvailableModelsServiceFactory;
 import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
-import io.reactivex.rxjava3.core.Scheduler;
-import io.reactivex.rxjava3.core.Single;
-
+import io.reactivex.rxjava4.core.Scheduler;
+import io.reactivex.rxjava4.core.Single;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class ModelsInfoDownloadTask {
 
