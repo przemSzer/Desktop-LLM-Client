@@ -1,19 +1,24 @@
 package dev.local.ai.ui.models.viewmodel;
 
+import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.connections.*;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel.States;
+import dev.local.ai.ui.utils.IUIRunner;
 import io.reactivex.rxjava4.core.Single;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +37,9 @@ class LLMSelectorViewModelTest {
 
     @Mock
     ModelsInfoDownloadTask modelsInfoDownloadTask;
+
+    @Captor
+    ArgumentCaptor<LLMChangedEvent> llmChangedEventCaptor;
 
     IUIRunner uiRunner = Runnable::run;
 
@@ -281,6 +289,48 @@ class LLMSelectorViewModelTest {
                 assertThat(firstDisposed).isTrue();
                 assertThat(viewModel.getState()).isEqualTo(States.READY);
                 availableModelsShouldMatch(viewModel.getAvailableModels(), openAIModels);
+        }
+    }
+
+    @Test
+    void when_model_is_selected_event_should_be_published() throws Exception {
+        var openAIConnection = new OpenAIConnection("open AI", "open AI connection");
+        List<ModelProviderConnection> connections = List.of(
+                new OllamaConnection("ollama", "ollama connection"),
+                new GoogleConnection("google", "google connection"),
+                openAIConnection,
+                new AnthropicConnection("anthropic", "anthropic connection")
+        );
+        connectionStoreContent(connections);
+        given(connectionsStore.findById(openAIConnection.id()))
+                .willReturn(Optional.of(openAIConnection));
+
+        var openAIModels = List.of(
+                new ModelInfo("1", "gpt-5.4", "gpt-5.4-description", 1000, 100),
+                new ModelInfo("1", "gpt-5.5", "gpt-5.5-description", 1005, 105),
+                new ModelInfo("1", "gpt-5.6", "gpt-5.6-description", 1006, 106)
+        );
+        given(modelsInfoDownloadTask.start(openAIConnection.id()))
+                .willReturn(Single.just(openAIModels.stream().map(LLMInfoViewModel::new).toList()));
+
+        try (var viewModel = new LLMSelectorViewModel(
+                connectionsStore, coreEventBus, modelsInfoDownloadTask, uiRunner)) {
+            viewModel.selectedConnectionProperty().set(viewModel.getConnections().get(2));
+            var selectedModel = viewModel.getAvailableModels().get(1);
+            viewModel.setSelectedModel(selectedModel);
+
+            then(coreEventBus)
+                    .should()
+                    .publish(llmChangedEventCaptor.capture());
+            var event = llmChangedEventCaptor.getValue();
+            assertThat(event.getSource())
+                    .isEqualTo(LLMSelectorViewModel.class.getSimpleName());
+            assertThat(event.getEventType())
+                    .isEqualTo(LLMChangedEvent.EVENT_TYPE);
+            assertThat(event.getModelInfo().modelInfo())
+                    .isEqualTo(openAIModels.get(1));
+            assertThat(event.getModelInfo().connection())
+                    .isEqualTo(openAIConnection);
         }
     }
 

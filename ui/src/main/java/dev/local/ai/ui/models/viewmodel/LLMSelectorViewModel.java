@@ -8,6 +8,8 @@ import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
+import dev.local.ai.ui.utils.IUIRunner;
+import dev.local.ai.ui.utils.JavaFXUIRunner;
 import io.reactivex.rxjava4.annotations.NonNull;
 import io.reactivex.rxjava4.disposables.Disposable;
 import io.reactivex.rxjava4.disposables.SerialDisposable;
