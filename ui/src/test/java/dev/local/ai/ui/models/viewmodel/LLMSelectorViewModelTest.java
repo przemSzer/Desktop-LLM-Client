@@ -334,6 +334,77 @@ class LLMSelectorViewModelTest {
         }
     }
 
+    @Test
+    void reselecting_same_model_after_clear_should_not_publish_again() throws Exception {
+        var openAIConnection = new OpenAIConnection("open AI", "open AI connection");
+        List<ModelProviderConnection> connections = List.of(
+                new OllamaConnection("ollama", "ollama connection"),
+                new GoogleConnection("google", "google connection"),
+                openAIConnection,
+                new AnthropicConnection("anthropic", "anthropic connection")
+        );
+        connectionStoreContent(connections);
+        given(connectionsStore.findById(openAIConnection.id()))
+                .willReturn(Optional.of(openAIConnection));
+
+        var openAIModels = List.of(
+                new ModelInfo("1", "gpt-5.4", "gpt-5.4-description", 1000, 100),
+                new ModelInfo("1", "gpt-5.5", "gpt-5.5-description", 1005, 105)
+        );
+        given(modelsInfoDownloadTask.start(openAIConnection.id()))
+                .willReturn(Single.just(openAIModels.stream().map(LLMInfoViewModel::new).toList()));
+
+        try (var viewModel = new LLMSelectorViewModel(
+                connectionsStore, coreEventBus, modelsInfoDownloadTask, uiRunner)) {
+            viewModel.selectedConnectionProperty().set(viewModel.getConnections().get(2));
+            var selectedModel = viewModel.getAvailableModels().get(1);
+            viewModel.setSelectedModel(selectedModel);
+            viewModel.setSelectedModel(null);
+            viewModel.setSelectedModel(selectedModel);
+
+            then(coreEventBus)
+                    .should(times(1))
+                    .publish(llmChangedEventCaptor.capture());
+            assertThat(llmChangedEventCaptor.getValue().getModelInfo().modelInfo())
+                    .isEqualTo(openAIModels.get(1));
+        }
+    }
+
+    @Test
+    void selecting_different_model_should_publish_again() throws Exception {
+        var openAIConnection = new OpenAIConnection("open AI", "open AI connection");
+        List<ModelProviderConnection> connections = List.of(
+                new OllamaConnection("ollama", "ollama connection"),
+                new GoogleConnection("google", "google connection"),
+                openAIConnection,
+                new AnthropicConnection("anthropic", "anthropic connection")
+        );
+        connectionStoreContent(connections);
+        given(connectionsStore.findById(openAIConnection.id()))
+                .willReturn(Optional.of(openAIConnection));
+
+        var openAIModels = List.of(
+                new ModelInfo("1", "gpt-5.4", "gpt-5.4-description", 1000, 100),
+                new ModelInfo("1", "gpt-5.5", "gpt-5.5-description", 1005, 105)
+        );
+        given(modelsInfoDownloadTask.start(openAIConnection.id()))
+                .willReturn(Single.just(openAIModels.stream().map(LLMInfoViewModel::new).toList()));
+
+        try (var viewModel = new LLMSelectorViewModel(
+                connectionsStore, coreEventBus, modelsInfoDownloadTask, uiRunner)) {
+            viewModel.selectedConnectionProperty().set(viewModel.getConnections().get(2));
+            viewModel.setSelectedModel(viewModel.getAvailableModels().get(0));
+            viewModel.setSelectedModel(viewModel.getAvailableModels().get(1));
+
+            then(coreEventBus)
+                    .should(times(2))
+                    .publish(llmChangedEventCaptor.capture());
+            assertThat(llmChangedEventCaptor.getAllValues())
+                    .extracting(event -> event.getModelInfo().modelInfo())
+                    .containsExactly(openAIModels.get(0), openAIModels.get(1));
+        }
+    }
+
 
     private void availableModelsShouldMatch(ObservableList<LLMInfoViewModel> viewLLMInfo, List<ModelInfo> openAIModels) {
         assertThat(viewLLMInfo)

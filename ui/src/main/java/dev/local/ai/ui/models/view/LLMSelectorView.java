@@ -25,7 +25,57 @@ import java.net.URL;
 public class LLMSelectorView extends VBox {
     
     private static final Logger logger = LoggerFactory.getLogger(LLMSelectorView.class);
-        
+
+    private static class ConnectionCell extends ListCell<ConnectionViewModel> {
+        @Override
+        protected void updateItem(ConnectionViewModel item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+
+    private static class ConectionButtonCell extends ListCell<ConnectionViewModel> {
+        @Override
+        protected void updateItem(ConnectionViewModel item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+
+    private static class ModelCell extends ListCell<LLMInfoViewModel> {
+        @Override
+        protected void updateItem(LLMInfoViewModel item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+
+    private static class ModelButtonCell extends ListCell<LLMInfoViewModel> {
+        @Override
+        protected void updateItem(LLMInfoViewModel item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+
     @FXML
     private ComboBox<ConnectionViewModel> connectionComboBox;
     
@@ -94,58 +144,8 @@ public class LLMSelectorView extends VBox {
         
         logger.debug("Data binding setup complete");
     }
-    
-    private static class ConnectionCell extends ListCell<ConnectionViewModel> {
-        @Override
-        protected void updateItem(ConnectionViewModel item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                setText(item.getName());
-            }
-        }
-    }
 
-    private static class ConectionButtonCell extends ListCell<ConnectionViewModel> {
-        @Override
-        protected void updateItem(ConnectionViewModel item, boolean empty) {
-            super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    setText(item.getName());
-                    // Note: Icon display would require ImageView wrapper
-                }
-        }
-    }
-
-    private static class ModelCell extends ListCell<LLMInfoViewModel> {
-        @Override
-        protected void updateItem(LLMInfoViewModel item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                setText(item.getName());
-            }
-        }
-    }
-
-    private static class ModelButtonCell extends ListCell<LLMInfoViewModel> {
-        @Override
-        protected void updateItem(LLMInfoViewModel item, boolean empty) {
-            super.updateItem(item, empty);            
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                setText(item.getName());
-            }
-        }
-    }
-    private void setupCellFactories() {        
+    private void setupCellFactories() {
         connectionComboBox.setCellFactory(listView -> new ConnectionCell());    
         connectionComboBox.setButtonCell(new ConectionButtonCell());
         
@@ -154,34 +154,6 @@ public class LLMSelectorView extends VBox {
     }
     
     private void setupEventHandlers() {
-        // Connection selection change handler
-        connectionComboBox.setOnAction(event -> {
-            ConnectionViewModel selectedConnection = connectionComboBox.getValue();
-            if (selectedConnection != null) {
-                logger.info("Connection selected: {}", selectedConnection.getName());
-            }
-        });
-        
-        // Model selection change handler
-        modelComboBox.setOnAction(event -> {
-            LLMInfoViewModel selectedModel = modelComboBox.getValue();
-            if (selectedModel != null) {
-                logger.info("ComboBox onAction: Model selected: {}", selectedModel.getName());
-                logger.debug("ComboBox onAction: ViewModel selectedModel = {}", viewModel.getSelectedModel());
-                logger.debug("ComboBox editable: {}", modelComboBox.isEditable());
-                
-                // Ensure the ViewModel is updated (backup for binding issues)
-                if (!selectedModel.equals(viewModel.getSelectedModel())) {
-                    logger.warn("Binding mismatch detected! Manually updating ViewModel");
-                    viewModel.setSelectedModel(selectedModel);
-                }
-            }
-        });
-        
-        // Additional listener to track ComboBox value changes
-        modelComboBox.valueProperty().addListener((obs, oldValue, newValue) -> logger.debug("ComboBox valueProperty changed from {} to {}", oldValue, newValue));
-        
-        // Manage connections button handler
         manageConnectionsButton.setOnAction(event -> showConnectionsDialog());
     }
     
@@ -209,7 +181,6 @@ public class LLMSelectorView extends VBox {
             
             dialogStage.showAndWait();
             
-            // Refresh connections after dialog is closed
             viewModel.refreshConnections();
             logger.info("Connections refreshed after dialog closed");
             
@@ -219,7 +190,6 @@ public class LLMSelectorView extends VBox {
     }
     
     
-    // Public getters for external access
     public LLMSelectorViewModel getViewModel() {
         return viewModel;
     }

@@ -47,6 +47,7 @@ public class LLMSelectorViewModel implements AutoCloseable{
     private final ModelsInfoDownloadTask modelsInfoDownloadTask;
     
     private final SerialDisposable serialDisposable = new SerialDisposable();
+    private LLMInfoAndConnection lastPublishedSelection;
 
     public LLMSelectorViewModel(
             ConnectionsStore connectionsStore,
@@ -120,33 +121,40 @@ public class LLMSelectorViewModel implements AutoCloseable{
         
         selectedModel.addListener((obs, oldModel, newModel) -> {
             logger.debug("Selected model changed from {} to {}", oldModel, newModel);
-            if (newModel != null) {
-                try {
-                    var selectedConn = getSelectedConnection();
-                    if (selectedConn == null) {
-                        logger.warn("Cannot publish LLMChangedEvent: no connection selected");
-                        return;
-                    }
-                    
-                    var connection = findConnectionById(selectedConn.getId());
-                    if (connection == null) {
-                        logger.warn("Cannot publish LLMChangedEvent: connection not found for ID: {}", selectedConn.getId());
-                        return;
-                    }
-                    
-                    var llmChangedEvent = new LLMChangedEvent(
-                        getClass().getSimpleName(), 
-                        new LLMInfoAndConnection(newModel.getCoreModelInfo(), connection)
-                    );
-                    logger.info("Publishing LLMChangedEvent for model: {}", newModel.getName());
-                    coreEventBus.publish(llmChangedEvent);
-                } catch (Exception e) {
-                    logger.error("Error publishing LLMChangedEvent", e);
-                }
-            }
+            publishLlmChangedIfNeeded(newModel);
         });
         
         logger.debug("Property listeners setup complete");
+    }
+
+    private void publishLlmChangedIfNeeded(LLMInfoViewModel newModel) {
+        if (newModel == null) {
+            return;
+        }
+        try {
+            var selectedConn = getSelectedConnection();
+            if (selectedConn == null) {
+                logger.warn("Cannot publish LLMChangedEvent: no connection selected");
+                return;
+            }
+
+            var connection = findConnectionById(selectedConn.getId());
+            if (connection == null) {
+                logger.warn("Cannot publish LLMChangedEvent: connection not found for ID: {}", selectedConn.getId());
+                return;
+            }
+
+            var selection = new LLMInfoAndConnection(newModel.getCoreModelInfo(), connection);
+            if (selection.equals(lastPublishedSelection)) {
+                return;
+            }
+
+            lastPublishedSelection = selection;
+            logger.info("Publishing LLMChangedEvent for model: {}", newModel.getName());
+            coreEventBus.publish(new LLMChangedEvent(getClass().getSimpleName(), selection));
+        } catch (Exception e) {
+            logger.error("Error publishing LLMChangedEvent", e);
+        }
     }
 
     private ModelProviderConnection findConnectionById(String connectionId) {
