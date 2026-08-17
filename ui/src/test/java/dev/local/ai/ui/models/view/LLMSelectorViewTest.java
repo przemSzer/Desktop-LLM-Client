@@ -6,6 +6,7 @@ import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.ModelInfo;
+import dev.local.ai.ui.connection.ConnectionsManagerDialog;
 import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
@@ -32,6 +33,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
 class LLMSelectorViewTest {
@@ -46,6 +49,9 @@ class LLMSelectorViewTest {
 
     @Mock
     ModelsInfoDownloadTask modelsInfoDownloadTask;
+
+    @Mock
+    ConnectionsManagerDialog connectionsDialog;
 
     private LLMSelectorViewModel viewModel;
     private LLMSelectorView view;
@@ -96,7 +102,6 @@ class LLMSelectorViewTest {
             assertThat(view.getConnectionComboBox().getButtonCell()).isNotNull();
             assertThat(view.getModelComboBox().getCellFactory()).isNotNull();
             assertThat(view.getModelComboBox().getButtonCell()).isNotNull();
-            assertThat(view.getManageConnectionsButton().getOnAction()).isNotNull();
             assertThat(view.getViewModel()).isSameAs(viewModel);
         });
     }
@@ -211,6 +216,17 @@ class LLMSelectorViewTest {
     }
 
     @Test
+    void connections_button_should_show_dialog_then_refresh() throws InterruptedException {
+        showView();
+
+        runOnFxThreadAndWait(() -> view.getManageConnectionsButton().fire());
+
+        var inOrder = inOrder(connectionsDialog, viewModel);
+        then(connectionsDialog).should(inOrder).show();
+        then(viewModel).should(inOrder).refreshConnections();
+    }
+
+    @Test
     void public_api_should_delegate_to_view_model() throws InterruptedException {
         var openAiConnection = new OpenAIConnection("open AI", "open AI connection");
         var gpt = model("gpt-5.4");
@@ -234,11 +250,11 @@ class LLMSelectorViewTest {
 
     private void showView(ModelProviderConnection... connections) throws InterruptedException {
         given(connectionsStore.readAll()).willReturn(List.of(connections));
-        viewModel = new LLMSelectorViewModel(
-                connectionsStore, coreEventBus, modelsInfoDownloadTask, Runnable::run);
+        viewModel = spy(new LLMSelectorViewModel(
+                connectionsStore, coreEventBus, modelsInfoDownloadTask, Runnable::run));
         runOnFxThreadAndWait(() -> {
             view = new LLMSelectorView();
-            view.init(null, null, viewModel);
+            view.init(connectionsDialog, viewModel);
         });
     }
 

@@ -1,26 +1,20 @@
 package dev.local.ai.ui.models.view;
 
+import dev.local.ai.ui.connection.ConnectionsManagerDialog;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
-import dev.local.ai.ui.utils.MainStageProvider;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
 
 public class LLMSelectorView extends VBox {
     
@@ -39,7 +33,7 @@ public class LLMSelectorView extends VBox {
         }
     }
 
-    private static class ConectionButtonCell extends ListCell<ConnectionViewModel> {
+    private static class ConnectionButtonCell extends ListCell<ConnectionViewModel> {
         @Override
         protected void updateItem(ConnectionViewModel item, boolean empty) {
             super.updateItem(item, empty);
@@ -89,8 +83,7 @@ public class LLMSelectorView extends VBox {
     private Button manageConnectionsButton;
             
     private LLMSelectorViewModel viewModel;
-    private Callback<Class<?>, Object> controllerFactory;
-    private MainStageProvider mainStageProvider;
+    private ConnectionsManagerDialog connectionsDialog;
     
     public LLMSelectorView() {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ModelSelectorView.fxml"));
@@ -104,15 +97,13 @@ public class LLMSelectorView extends VBox {
         }
     }
 
-    public void init(Callback<Class<?>, Object> controllerFactory,
-                     MainStageProvider mainStageProvider,
+    public void init(ConnectionsManagerDialog connectionsDialog,
                      LLMSelectorViewModel viewModel
     ) {
         try {
             logger.info("Initializing LLMSelectorView");
             this.viewModel = viewModel;
-            this.controllerFactory = controllerFactory;
-            this.mainStageProvider = mainStageProvider;
+            this.connectionsDialog = connectionsDialog;
 
             setupDataBinding();
             setupEventHandlers();
@@ -147,46 +138,17 @@ public class LLMSelectorView extends VBox {
 
     private void setupCellFactories() {
         connectionComboBox.setCellFactory(listView -> new ConnectionCell());    
-        connectionComboBox.setButtonCell(new ConectionButtonCell());
+        connectionComboBox.setButtonCell(new ConnectionButtonCell());
         
         modelComboBox.setCellFactory(listView -> new ModelCell());                
         modelComboBox.setButtonCell(new ModelButtonCell());
     }
     
     private void setupEventHandlers() {
-        manageConnectionsButton.setOnAction(event -> showConnectionsDialog());
-    }
-    
-    private void showConnectionsDialog() {
-        try {
-            URL fxmlUrl = getClass().getResource("/fxml/ConnectionsView.fxml");
-            if (fxmlUrl == null) {
-                logger.error("ConnectionsView.fxml not found on classpath");
-                return;
-            }
-            
-            FXMLLoader loader = new FXMLLoader(fxmlUrl);
-            if (controllerFactory != null) {
-                loader.setControllerFactory(controllerFactory);
-            }
-            Parent root = loader.load();
-            
-            Stage dialogStage = new Stage();
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
-            dialogStage.initOwner(mainStageProvider.getMainWindow());
-            dialogStage.setTitle("Manage Connections");
-            dialogStage.setScene(new Scene(root));
-            dialogStage.setMinWidth(600);
-            dialogStage.setMinHeight(400);
-            
-            dialogStage.showAndWait();
-            
+        manageConnectionsButton.setOnAction(event -> {
+            connectionsDialog.show();
             viewModel.refreshConnections();
-            logger.info("Connections refreshed after dialog closed");
-            
-        } catch (IOException e) {
-            logger.error("Failed to open Connections dialog", e);
-        }
+        });
     }
     
     

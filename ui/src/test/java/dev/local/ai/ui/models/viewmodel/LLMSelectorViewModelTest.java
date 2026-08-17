@@ -64,6 +64,27 @@ class LLMSelectorViewModelTest {
     }
 
     @Test
+    void refresh_connections_should_reload_from_store() throws Exception {
+        var openAIConnection = new OpenAIConnection("open AI", "open AI connection");
+        connectionStoreContent(List.of(openAIConnection));
+
+        try (var viewModel = new LLMSelectorViewModel(connectionsStore, coreEventBus, modelsInfoDownloadTask)) {
+            assertThat(viewModel.getConnections())
+                    .hasSize(1);
+
+            var ollamaConnection = new OllamaConnection("ollama", "ollama connection");
+            given(connectionsStore.readAll())
+                    .willReturn(List.of(openAIConnection, ollamaConnection));
+            viewModel.refreshConnections();
+
+            connectionsShouldBeMappedToViewEquivalents(
+                    List.of(openAIConnection, ollamaConnection),
+                    viewModel
+            );
+        }
+    }
+
+    @Test
     void changing_connection_should_load_models() throws Exception {
         var openAIConnection = new OpenAIConnection("open AI", "open AI connection");
         List<ModelProviderConnection> connections = List.of(

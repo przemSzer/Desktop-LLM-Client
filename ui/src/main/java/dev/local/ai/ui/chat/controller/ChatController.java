@@ -45,6 +45,7 @@ import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.MessageTypeView;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.connection.ConnectionsManagerDialog;
 import dev.local.ai.ui.connection.viewmodel.ConnectionViewModel;
 import dev.local.ai.ui.files.controls.FileAttachmentControl;
 import dev.local.ai.ui.files.dialogs.FileSelector;
@@ -56,8 +57,6 @@ import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
-import dev.local.ai.ui.utils.MainStageProvider;
-import javafx.util.Callback;
 
 public class ChatController {
 
@@ -130,9 +129,8 @@ public class ChatController {
     private final ConnectionsStore connectionsStore;
     private final CommandManager commandManager;
     private final ConversationStore conversationStore;
-    private final Callback<Class<?>, Object> controllerFactory;
+    private final ConnectionsManagerDialog connectionsDialog;
     private final FileSelector fileSelector;
-    private final MainStageProvider mainStageProvider;
     private final ThemeManager themeManager;
 
     public ChatController(ChatViewModel chatViewModel,
@@ -141,9 +139,8 @@ public class ChatController {
                           ConnectionsStore connectionsStore,
                           CommandManager commandManager,
                           ConversationStore conversationStore,
-                          Callback<Class<?>, Object> controllerFactory,
+                          ConnectionsManagerDialog connectionsDialog,
                           FileSelector fileSelector,
-                          MainStageProvider mainStageProvider,
                           ThemeManager themeManager) {
         this.chatViewModel = chatViewModel;
         this.toolProvider = toolProvider;
@@ -151,9 +148,8 @@ public class ChatController {
         this.connectionsStore = connectionsStore;
         this.commandManager = commandManager;
         this.conversationStore = conversationStore;
-        this.controllerFactory = controllerFactory;
+        this.connectionsDialog = connectionsDialog;
         this.fileSelector = fileSelector;
-        this.mainStageProvider = mainStageProvider;
         this.themeManager = themeManager;
     }
 
@@ -170,7 +166,7 @@ public class ChatController {
                     eventBus,
                     downloadModelsTask
             );
-            modelSelectorView.init(controllerFactory, mainStageProvider, llmSelectorViewModel);
+            modelSelectorView.init(connectionsDialog, llmSelectorViewModel);
 
             composerFiles = new FileAttachmentViewModel(commandManager, fileSelector);
 

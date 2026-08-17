@@ -7,6 +7,7 @@ import dev.local.ai.core.storage.conversations.ConversationSummary;
 import dev.local.ai.ui.chat.controller.ChatController;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
+import dev.local.ai.ui.connection.ManageConnectionsDialog;
 import dev.local.ai.ui.connection.controller.ConnectionsViewController;
 import dev.local.ai.ui.main.MainController;
 import javafx.util.Callback;
@@ -32,7 +33,8 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
             if (type == ChatController.class) {
                 return new ChatController(chatViewModel(), app.toolProvider, app.eventBus,
                     app.connectionsStore, app.commandManager, app.conversationStore,
-                    this, app.fileSelector, app.mainStageProvider, app.themeManager);
+                    new ManageConnectionsDialog(this, app.mainStageProvider),
+                    app.fileSelector, app.themeManager);
             }
             if (type == ConnectionsViewController.class) {
                 return new ConnectionsViewController(app.commandManager);
