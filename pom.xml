@@ -7,11 +7,19 @@
 
     <groupId>dev.local.ai</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.0</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
 
-    <name>Agent Project</name>
-    <description>A multi-module Java project with core and UI components</description>
+    <name>AI Desktop Client</name>
+    <description>Desktop multi-provider AI chat client with streaming, tools, and a JavaFX MVVM UI</description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <maven.compiler.source>26</maven.compiler.source>

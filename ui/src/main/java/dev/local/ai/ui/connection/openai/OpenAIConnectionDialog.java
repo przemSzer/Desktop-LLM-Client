@@ -87,7 +87,7 @@ public class OpenAIConnectionDialog implements INewConnectionDialog<OpenAIConnec
                 }
             }
             
-            logger.info("Saved new OpenAI connection: {} (API Key: {})", name, apiKey.length() > 8 ? apiKey.substring(0, 8) + "..." : apiKey);
+            logger.info("Saved new OpenAI connection: {}", name);
             
         } catch (Exception e) {
             logger.error("Failed to save OpenAI connection", e);
