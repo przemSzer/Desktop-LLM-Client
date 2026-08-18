@@ -16,4 +16,6 @@ jobs:
           java-version: "26"
           cache: maven
       - name: Run tests
-        run: xvfb-run -a ./mvnw -B test
+        run: |
+          chmod +x ./mvnw
+          xvfb-run -a ./mvnw -B test
