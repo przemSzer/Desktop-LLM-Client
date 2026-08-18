@@ -59,4 +59,21 @@ Thumbs.db
 application.properties
 application.yml
 *.properties
-!src/main/resources/*.properties 
+!src/main/resources/*.properties
+
+# Secrets and local config
+.env
+.env.*
+.profileconfig.json
+*.jfr
+*.pem
+*.keystore
+
+# Personal / IDE agent artifacts
+.cursor/
+.run/
+
+# Local app data accidentally copied into the repo
+connections.json
+tool-allowlist.json
+master.key
