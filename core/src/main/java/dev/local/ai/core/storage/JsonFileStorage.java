@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +24,7 @@ public class JsonFileStorage implements DataStorage {
     private final Path connectionsFile;
     
     public JsonFileStorage() {
-        this(Paths.get(System.getProperty("user.home"), ".local-ai"), "connections.json");
+        this(ApplicationDirectory.root(), "connections.json");
     }
 
     public JsonFileStorage(Path dataDirectory, String fileName) {

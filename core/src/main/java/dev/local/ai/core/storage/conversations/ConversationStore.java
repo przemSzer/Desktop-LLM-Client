@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -18,6 +17,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
+
+import dev.local.ai.core.storage.ApplicationDirectory;
 
 public class ConversationStore {
 
@@ -32,7 +33,7 @@ public class ConversationStore {
     private volatile List<ConversationSummary> conversationSummariesSnapshot = List.of();
 
     public ConversationStore() {
-        this(Paths.get(System.getProperty("user.home"), ".local-ai", "chats"));
+        this(ApplicationDirectory.chats());
     }
 
     public ConversationStore(Path chatsDirectory) {

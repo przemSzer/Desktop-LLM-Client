@@ -25,10 +25,9 @@ Run the UI:
 
 - Keep changes focused; describe why, not only what
 - Include tests for behaviour changes in `core` and ViewModels
-- Do not commit secrets, `~/.local-ai` files, `.cursor/`, `.run/`, or profiler dumps
+- Do not commit secrets, `~/.dlc` files, `.cursor/`, `.run/`, or profiler dumps
 
 ## Future hardening (not required for a first PR)
 
 - Stronger API-key storage (OS keychain / encryption)
 - Safer defaults for local command / MCP tools
-- Unify `~/.local-ai` and `~/.ai-agent` data directories

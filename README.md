@@ -66,14 +66,14 @@ ui/     JavaFX views, ViewModels, FXML
 
 | Path | Contents |
 |------|----------|
-| `~/.local-ai/` | Connections, settings, chats |
-| `~/.ai-agent/` | Application logs |
+| `~/.dlc/` | Connections, settings, chats |
+| `~/.dlc/logs/` | Application logs |
 
 ## Security
 
 Provided **as-is** under Apache 2.0.
 
-- API keys are stored locally in `~/.local-ai/connections.json`. Treat that file as secret; do not commit or share it.
+- API keys are stored locally in `~/.dlc/connections.json`. Treat that file as secret; do not commit or share it.
 - When the command-line tool is enabled, the model can run local commands on your machine. Use at your own risk.
 - When the web-page tool is enabled, fetched page content is sent to the model. There is no prompt-injection defense; malicious instructions on a page can steer the model (including into other enabled tools).
 - How to report issues: [SECURITY.md](SECURITY.md).

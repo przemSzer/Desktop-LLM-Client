@@ -69,7 +69,7 @@ public class StorageConfiguration {
         
         // Default fallback to user home
         if (directory == null) {
-            directory = System.getProperty("user.home") + "/.local-ai";
+            directory = ApplicationDirectory.root().toString();
         }
         
         return directory;

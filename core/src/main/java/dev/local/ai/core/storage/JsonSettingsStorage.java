@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +21,7 @@ public class JsonSettingsStorage implements SettingsStorage {
     private final Path settingsFile;
 
     public JsonSettingsStorage() {
-        this(Paths.get(System.getProperty("user.home"), ".local-ai"), DEFAULT_FILE_NAME);
+        this(ApplicationDirectory.root(), DEFAULT_FILE_NAME);
     }
 
     public JsonSettingsStorage(Path directory, String fileName) {

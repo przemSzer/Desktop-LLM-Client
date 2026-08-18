@@ -1,7 +1,6 @@
 package dev.local.ai.context;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
+import dev.local.ai.core.storage.ApplicationDirectory;
 import dev.local.ai.core.storage.DataStorage;
 import dev.local.ai.core.storage.JsonFileStorage;
 import dev.local.ai.core.storage.JsonSettingsStorage;
@@ -66,7 +66,7 @@ public final class AppContext implements AutoCloseable {
         this.settingsStorage = new JsonSettingsStorage();
         this.dataStorage = new JsonFileStorage();
 
-        Path chatsDir = Paths.get(System.getProperty("user.home"), ".local-ai", "chats");
+        Path chatsDir = ApplicationDirectory.chats();
         this.conversationStore = new ConversationStore(chatsDir);
         this.chatMemoryStore = new JsonFileChatMemoryStore(chatsDir);
         this.chatMemoryStore.setConversationStore(conversationStore);
