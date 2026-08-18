@@ -77,3 +77,4 @@ application.yml
 connections.json
 tool-allowlist.json
 master.key
+META-INF/
