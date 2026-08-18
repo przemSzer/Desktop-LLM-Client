@@ -10,8 +10,8 @@
     <version>0.1.0</version>
     <packaging>pom</packaging>
 
-    <name>AI Desktop Client</name>
-    <description>Desktop multi-provider AI chat client with streaming, tools, and a JavaFX MVVM UI</description>
+    <name>Desktop LLM Client</name>
+    <description>Desktop client for multimodal LLMs with streaming chat, optional tools, and a JavaFX MVVM UI</description>
 
     <licenses>
         <license>

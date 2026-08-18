@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Building and running the Agent application..."
+echo "Building and running Desktop LLM Client..."
 echo
 
 # Build the project

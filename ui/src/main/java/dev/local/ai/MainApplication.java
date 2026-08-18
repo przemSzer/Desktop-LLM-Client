@@ -41,7 +41,7 @@ public class MainApplication extends Application {
             scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
             
             // Set up the primary stage
-            primaryStage.setTitle("LLM Chat");
+            primaryStage.setTitle("Desktop LLM Client");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(900);
             primaryStage.setMinHeight(800);

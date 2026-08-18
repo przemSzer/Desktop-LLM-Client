@@ -1,5 +1,5 @@
 @echo off
-echo Building and running the Agent application...
+echo Building and running Desktop LLM Client...
 echo.
 
 REM Build the project
