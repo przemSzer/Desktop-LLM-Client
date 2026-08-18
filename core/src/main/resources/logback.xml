@@ -27,7 +27,7 @@
     </root>
 
     <!-- Application-specific logger configuration -->
-    <logger name="dev.local.ai" level="DEBUG" additivity="false">
+    <logger name="dev.local.ai" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </logger>

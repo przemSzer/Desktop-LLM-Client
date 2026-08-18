@@ -36,7 +36,7 @@
                 <TextArea fx:id="descriptionTextArea" minHeight="80.0" promptText="Enter connection description" wrapText="true" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS" />
 
                 <Label text="API Key:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                <TextField fx:id="apiKeyTextField" promptText="Anthropic API key" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" />
+                <PasswordField fx:id="apiKeyTextField" promptText="Anthropic API key" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="2" />
             </children>
          <columnConstraints>
             <ColumnConstraints />

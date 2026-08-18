@@ -25,12 +25,12 @@
         <appender-ref ref="FILE" />
     </root>
     
-    <logger name="dev.local.ai" level="DEBUG" additivity="false">
+    <logger name="dev.local.ai" level="INFO" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 
     <!-- JavaFX logging -->
-    <logger name="javafx" level="DEBUG" additivity="false">
+    <logger name="javafx" level="INFO" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 </configuration> 
