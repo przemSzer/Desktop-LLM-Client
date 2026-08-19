@@ -53,24 +53,13 @@ public final class ConversationSessionFactory {
     private StreamingChat buildStreamingChat(ChatMemory chatMemory) {
         var lastModelMaybe = lastSelectedModel.get();
         if (lastModelMaybe.isEmpty()) {
-            throw new RuntimeException("no last model selected");
+            return  new StreamingChat(null, chatMemory, toolProvider, eventBus, modelsProvider);
         }
         var llm = lastModelMaybe.get();
         logger.info("Building chat from last selected model: {} on connection {}",
                 llm.modelInfo().id(), llm.connection().id());
         StreamingChatModel streamingModel = modelsProvider.createStreamingChatModel(llm);
-        return new StreamingChat(streamingModel, llm, chatMemory, toolProvider, eventBus, modelsProvider);
+        return new StreamingChat(streamingModel, chatMemory, toolProvider, eventBus, modelsProvider);
     }
 
-//    private StreamingChat buildFallbackChat(ChatMemory chatMemory) {
-//        logger.warn("No last selected model found; falling back to local Ollama gemma3n:latest");
-//        StreamingChatModel streamingModel = OllamaStreamingChatModel.builder()
-//                .baseUrl("http://localhost:11434")
-//                .modelName("gemma3n:latest")
-//                .timeout(Duration.ofMinutes(5))
-//                .logRequests(true)
-//                .logResponses(true)
-//                .build();
-//        return new StreamingChat(streamingModel, chatMemory, toolProvider, eventBus, modelsProvider);
-//    }
 }

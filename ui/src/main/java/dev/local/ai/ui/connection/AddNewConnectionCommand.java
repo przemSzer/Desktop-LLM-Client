@@ -9,7 +9,7 @@ import dev.local.ai.ui.commands.ICommand;
 
 public class AddNewConnectionCommand implements ICommand {
     
-    private INewConnectionDialog<?> newConnectionDialog;
+    private final INewConnectionDialog<?> newConnectionDialog;
     private final ConnectionsStore connectionsStore;
     private Logger logger = LoggerFactory.getLogger(AddNewConnectionCommand.class);
 

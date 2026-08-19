@@ -61,7 +61,7 @@ class StreamingChatLifecycleTest {
                 new ModelInfo("id", "name", "description", -1,-1),
                 new OllamaConnection("ollama", "ollama desc")
         );
-        streamingChat = new StreamingChat(chatModel, initialConnection, chatMemory, toolProvider, eventBus, modelsProvider);
+        streamingChat = new StreamingChat(chatModel, chatMemory, toolProvider, eventBus, modelsProvider);
     }
 
     @Test

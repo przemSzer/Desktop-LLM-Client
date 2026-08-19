@@ -16,17 +16,21 @@ import java.time.Duration;
 public class StreamingChatModelsProvider {
 
     public StreamingChatModel createStreamingChatModel(LLMInfoAndConnection modelInfo) {
-        switch(modelInfo.connection()){
-            case OllamaConnection _:
+        switch (modelInfo.connection()) {
+            case OllamaConnection _ -> {
                 return ollamaChatModel(modelInfo);
-            case OpenAIConnection _:
+            }
+            case OpenAIConnection _ -> {
                 return openAIChatModel(modelInfo);
-            case GoogleConnection _:
+            }
+            case GoogleConnection _ -> {
                 return googleGeminiChatModel(modelInfo);
-            case AnthropicConnection _:
+            }
+            case AnthropicConnection _ -> {
                 return anthropicChatModel(modelInfo);
-            default:
-                throw new IllegalArgumentException("Unsupported connection type: " + modelInfo.connection().getClass());
+            }
+            default ->
+                    throw new IllegalArgumentException("Unsupported connection type: " + modelInfo.connection().getClass());
         }    
     }
 

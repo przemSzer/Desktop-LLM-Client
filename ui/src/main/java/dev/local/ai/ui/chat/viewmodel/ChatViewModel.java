@@ -15,38 +15,29 @@ import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.storage.conversations.ConversationSummariesListener;
 import dev.local.ai.core.storage.conversations.ConversationSummary;
-import javafx.beans.property.ListProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleListProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import dev.local.ai.ui.chat.command.ClearChatCommand;
+import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
+import dev.local.ai.ui.chat.converters.MessageConverter;
+import dev.local.ai.ui.chat.session.ChatSession;
+import dev.local.ai.ui.chat.session.ConversationSessionFactory;
+import dev.local.ai.ui.commands.CommandManager;
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
+import dev.local.ai.ui.files.viewmodel.FileStatus;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.util.Duration;
-import javafx.animation.PauseTransition;
-import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dev.local.ai.ui.commands.CommandManager;
-import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
-import dev.local.ai.ui.files.viewmodel.FileStatus;
-import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
-import dev.local.ai.ui.chat.converters.MessageConverter;
-import dev.local.ai.ui.chat.session.ChatSession;
-import dev.local.ai.ui.chat.session.ConversationSessionFactory;
-import dev.local.ai.ui.chat.command.ClearChatCommand;
 
 /**
  * ViewModel for the Chat UI following MVVM pattern.
@@ -480,17 +471,13 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     }
 
     private MessageTypeView coreMessageTypeToViewMessageType(dev.local.ai.core.chat.messages.MessageType type) {
-        switch (type) {
-            case PARTIAL_THINKING:
-                return MessageTypeView.PARTIAL_THINKING;
-            case PARTIAL:
-                return MessageTypeView.PARTIAL_AI;
-            case AI:
-                return MessageTypeView.AI;
-            case USER:
-                return MessageTypeView.USER;
-        }
-        return null;
+        return switch (type) {
+            case PARTIAL_THINKING -> MessageTypeView.PARTIAL_THINKING;
+            case PARTIAL -> MessageTypeView.PARTIAL_AI;
+            case AI -> MessageTypeView.AI;
+            case USER -> MessageTypeView.USER;
+            default -> null;
+        };
     }
 
     /**

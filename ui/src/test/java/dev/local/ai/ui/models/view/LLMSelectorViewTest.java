@@ -1,9 +1,6 @@
 package dev.local.ai.ui.models.view;
 
-import dev.local.ai.core.connections.ConnectionsStore;
-import dev.local.ai.core.connections.ModelProviderConnection;
-import dev.local.ai.core.connections.OllamaConnection;
-import dev.local.ai.core.connections.OpenAIConnection;
+import dev.local.ai.core.connections.*;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.ui.connection.ConnectionsManagerDialog;
@@ -129,6 +126,29 @@ class LLMSelectorViewTest {
 
             assertThat(view.getConnectionComboBox().getValue())
                     .isSameAs(ollama);
+        });
+    }
+    @Test
+    void connections_combo_items_should_be_bound_to_view_model() throws InterruptedException {
+        ModelProviderConnection openAiConnection = new OpenAIConnection("open AI", "open AI connection");
+        ModelProviderConnection ollamaConnection = new OllamaConnection("ollama", "ollama connection");
+        ModelProviderConnection geminiConnection = new GoogleConnection("Google", "Gemini connection");
+
+        showView(openAiConnection, ollamaConnection);
+
+        runOnFxThreadAndWait(() -> {
+            var openAi = viewModel.getConnections().getFirst();
+            var ollama = viewModel.getConnections().get(1);
+
+            assertThat(view.getConnectionComboBox().getItems())
+                    .containsExactly(openAi, ollama);
+            given(connectionsStore.readAll())
+                    .willReturn(List.of(ollamaConnection, geminiConnection));
+
+            viewModel.refreshConnections();
+
+            assertThat(view.getConnectionComboBox().getItems())
+                    .containsExactlyElementsOf(viewModel.getConnections());
         });
     }
 

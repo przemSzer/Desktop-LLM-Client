@@ -118,6 +118,7 @@ public class LLMSelectorView extends VBox {
         logger.debug("Setting up data binding...");
         
         connectionComboBox.setItems(viewModel.getConnections());
+        connectionComboBox.itemsProperty().bind(viewModel.connectionsProperty());
         connectionComboBox.valueProperty().bindBidirectional(viewModel.selectedConnectionProperty());
         logger.debug("Connection binding established");
         
