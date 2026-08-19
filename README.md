@@ -14,7 +14,7 @@ This is an early preview (`0.1.0`), not production software. I use it daily and 
 
 - Streaming chat with conversation history
 - Multi-provider connections (Ollama, OpenAI, Anthropic, Gemini) with you own API keys (BYOK - Bring Your Own Keys) - you pay for the usage of the LLM not a prepaid credits.
-- Tool use: local shell commands, web page download, MCP (experimental)
+- Tool use: local shell commands, web page download, MCP (experimental); off by default, enable from the chat toolbar
 - Document attachment (images, pdfs, txt etc.)
 - JavaFX desktop UI with MVVM (`core` domain, `ui` presentation)
 
@@ -74,7 +74,7 @@ ui/     JavaFX views, ViewModels, FXML
 Provided **as-is** under Apache 2.0.
 
 - API keys are stored locally in `~/.dlc/connections.json`. Treat that file as secret; do not commit or share it.
-- When the command-line tool is enabled, the model can run local commands on your machine. Use at your own risk.
+- Tools are off until you enable them in the chat toolbar. When the command-line tool is enabled, the model can run local commands on your machine. Use at your own risk.
 - When the web-page tool is enabled, fetched page content is sent to the model. There is no prompt-injection defense; malicious instructions on a page can steer the model (including into other enabled tools).
 - How to report issues: [SECURITY.md](SECURITY.md).
 

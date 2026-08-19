@@ -12,6 +12,7 @@ import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.Event;
 import dev.local.ai.core.events.EventListener;
+import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolDescriptor;
 import dev.local.ai.core.tools.ToolsSelectionChangedEvent;
@@ -56,44 +57,54 @@ class ToolsSelectorViewModelTest {
     }
 
     @Test
-    void allToolsEnabledByDefault() {
+    void listsToolsWhenFilterableProviderHasNoneEnabled() {
+        var filterable = new FilterableToolProvider(toolProvider, eventBus);
+
+        var viewModel = new ToolsSelectorViewModel(filterable, eventBus);
+
+        assertEquals(2, viewModel.getTools().size());
+        assertTrue(viewModel.getTools().stream().noneMatch(ToolItemViewModel::isEnabled));
+    }
+
+    @Test
+    void allToolsDisabledByDefault() {
         var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
 
-        assertTrue(viewModel.getTools().stream().allMatch(ToolItemViewModel::isEnabled));
+        assertTrue(viewModel.getTools().stream().noneMatch(ToolItemViewModel::isEnabled));
+    }
+
+    @Test
+    void publishesEventWhenToolIsEnabled() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+
+        viewModel.getTools().get(0).setEnabled(true);
+
+        assertEquals(1, eventCaptor.captured.size());
+        assertEquals(Set.of("downloadWebPage"), eventCaptor.captured.get(0).getEnabledToolIds());
     }
 
     @Test
     void publishesEventWhenToolIsDisabled() {
         var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
 
+        viewModel.getTools().get(0).setEnabled(true);
         viewModel.getTools().get(0).setEnabled(false);
 
-        assertEquals(1, eventCaptor.captured.size());
-        assertEquals(Set.of("executeLocalCommand"), eventCaptor.captured.get(0).getEnabledToolIds());
+        assertEquals(2, eventCaptor.captured.size());
+        assertTrue(eventCaptor.lastEvent().getEnabledToolIds().isEmpty());
     }
 
     @Test
-    void publishesEventWhenToolIsReEnabled() {
+    void publishesAllIdsWhenAllToolsEnabled() {
         var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
 
-        viewModel.getTools().get(0).setEnabled(false);
         viewModel.getTools().get(0).setEnabled(true);
+        viewModel.getTools().get(1).setEnabled(true);
 
-        assertEquals(2, eventCaptor.captured.size());
         assertEquals(
             Set.of("downloadWebPage", "executeLocalCommand"),
             eventCaptor.lastEvent().getEnabledToolIds()
         );
-    }
-
-    @Test
-    void publishesEmptySetWhenAllToolsDisabled() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-
-        viewModel.getTools().get(0).setEnabled(false);
-        viewModel.getTools().get(1).setEnabled(false);
-
-        assertTrue(eventCaptor.lastEvent().getEnabledToolIds().isEmpty());
     }
 
     @Test

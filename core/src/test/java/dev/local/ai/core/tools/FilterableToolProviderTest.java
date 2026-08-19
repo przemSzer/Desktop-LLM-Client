@@ -36,12 +36,13 @@ class FilterableToolProviderTest {
     }
 
     @Test
-    void allToolsEnabledByDefault() {
+    void noToolsEnabledByDefault() {
         var provider = new FilterableToolProvider(delegate, eventBus);
 
-        assertThat(provider.getToolDescriptors()).containsExactly(descriptorA, descriptorB);
-        assertThat(provider.getToolSpecifications()).hasSize(2);
-        assertThat(provider.getToolExecutors()).hasSize(2);
+        assertThat(provider.getAllToolDescriptors()).containsExactly(descriptorA, descriptorB);
+        assertThat(provider.getToolDescriptors()).isEmpty();
+        assertThat(provider.getToolSpecifications()).isEmpty();
+        assertThat(provider.getToolExecutors()).isEmpty();
     }
 
     @Test
@@ -59,6 +60,7 @@ class FilterableToolProviderTest {
     void returnsEmptyWhenAllToolsDisabled() {
         var provider = new FilterableToolProvider(delegate, eventBus);
 
+        eventBus.publishSync(new ToolsSelectionChangedEvent("test", Set.of("toolA")));
         eventBus.publishSync(new ToolsSelectionChangedEvent("test", Set.of()));
 
         assertThat(provider.getToolDescriptors()).isEmpty();

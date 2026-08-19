@@ -8,6 +8,10 @@ public interface IToolProvider {
 
     List<ToolDescriptor> getToolDescriptors();
 
+    default List<ToolDescriptor> getAllToolDescriptors() {
+        return getToolDescriptors();
+    }
+
     default List<ToolSpecification> getToolSpecifications() {
         return getToolDescriptors().stream()
             .flatMap(d -> d.specifications().stream())

@@ -28,8 +28,8 @@ public class ToolsSelectorViewModel {
     }
 
     private void loadTools() {
-        for (var descriptor : toolProvider.getToolDescriptors()) {
-            var toolItem = new ToolItemViewModel(descriptor.id(), descriptor.displayName(), true);
+        for (var descriptor : toolProvider.getAllToolDescriptors()) {
+            var toolItem = new ToolItemViewModel(descriptor.id(), descriptor.displayName(), false);
             toolItem.enabledProperty().addListener((obs, wasEnabled, isEnabled) -> {
                 logger.info("Tool '{}' enabled: {} -> {}", toolItem.getToolId(), wasEnabled, isEnabled);
                 publishToolsSelectionChanged();

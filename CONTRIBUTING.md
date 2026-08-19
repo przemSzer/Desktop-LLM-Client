@@ -30,4 +30,3 @@ Run the UI:
 ## Future hardening (not required for a first PR)
 
 - Stronger API-key storage (OS keychain / encryption)
-- Safer defaults for local command / MCP tools
