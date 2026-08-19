@@ -80,11 +80,17 @@ Provided **as-is** under Apache 2.0.
 
 ## Screenshots
 
-Add a PNG of the chat window here, for example `docs/screenshot-chat.png`:
+![img.png](docs/img.png)
 
-```markdown
-![Chat window](docs/screenshot-chat.png)
-```
+1. User message
+2. Model thinking (collapsible chain of thought)
+3. LLM reply
+4. Token usage for that reply
+5. Message composer
+6. Connection and model selector
+7. Conversation sidebar (new chat, history, settings)
+8. System prompt
+9. File attachments and tools
 
 ## Build
 
