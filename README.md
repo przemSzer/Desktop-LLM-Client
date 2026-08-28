@@ -13,7 +13,7 @@ This is an early preview (`0.1.0`), not production software. I use it daily and 
 ## Features
 
 - Streaming chat with conversation history
-- Multi-provider connections (Ollama, OpenAI, Anthropic, Gemini) with you own API keys (BYOK - Bring Your Own Keys) - you pay for the usage of the LLM not a prepaid credits.
+- Multi-provider connections (Ollama, OpenAI, Anthropic, Gemini) with your own API keys (BYOK - Bring Your Own Keys) - you pay for the usage of the LLM not a prepaid credits.
 - Tool use: local shell commands, web page download, MCP (experimental); off by default, enable from the chat toolbar
 - Document attachment (images, pdfs, txt etc.)
 - JavaFX desktop UI with MVVM (`core` domain, `ui` presentation)
@@ -21,7 +21,7 @@ This is an early preview (`0.1.0`), not production software. I use it daily and 
 ## What can it be used for?
 
 - Basic chats with LLMs with your own system prompt,
-- Use LLMS from different providers,
+- Use LLMs from different providers,
 - Discuss documents with the LLM (docs are added to the context no RAG is used) i.e. talk to docs
 - Discuss/summarize web pages with the LLM (pages are added to the context no RAG is used)
 - Use LLM to do something in your local environment i.e. search for files, run commands, etc.
