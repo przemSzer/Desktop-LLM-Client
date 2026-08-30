@@ -1,36 +1,30 @@
 package dev.local.ai.core.tools.web;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dev.langchain4j.agent.tool.P;
-import dev.langchain4j.agent.tool.Tool;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
-import dev.langchain4j.agent.tool.ToolMemoryId;
-import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.agent.tool.ToolSpecifications;
+import dev.langchain4j.agent.tool.*;
 import dev.langchain4j.data.document.DocumentLoader;
 import dev.langchain4j.data.document.DocumentParser;
 import dev.langchain4j.data.document.DocumentTransformer;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
 import dev.langchain4j.data.document.transformer.jsoup.HtmlToTextDocumentTransformer;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
-import dev.local.ai.core.tools.IToolExecutor;
+import dev.local.ai.core.tools.ITool;
 import dev.local.ai.core.tools.ToolDescriptor;
 import dev.local.ai.core.tools.ToolHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class WebPageDownloaderTools implements IToolExecutor {
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
 
-    Logger logger = LoggerFactory.getLogger(WebPageDownloaderTools.class);
+public class WebPageDownloaderTools implements ITool {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebPageDownloaderTools.class);
+    private static final String DOWNLOAD_WEB_PAGE_TOOL_NAME = "downloadWebPage";
     private final DocumentTransformer transformer;
     private final DocumentParser parser;
-    private static final String DOWNLOAD_WEB_PAGE_TOOL_NAME = "downloadWebPage";
-    private int readTimeout = 30000;
-    private int connectTimeout = 10000;
+    private static final int READ_TIMEOUT = 30000;
+    private static final int CONNECT_TIMEOUT = 10000;
 
     public WebPageDownloaderTools() {
         transformer = new HtmlToTextDocumentTransformer(null, null, true);
@@ -38,13 +32,15 @@ public class WebPageDownloaderTools implements IToolExecutor {
     }
 
 
-    @Tool("Downloads a web page. The page is converted to text. Returns the text of the web page or error message in case of failure.")
+    @Tool(value = "Downloads a web page. The page is converted to text. Returns the text of the web page or error message in case of failure.",
+        name = DOWNLOAD_WEB_PAGE_TOOL_NAME
+    )
     public String downloadWebPage(@P("The URL of the web page to download") String url, @ToolMemoryId String toolMemoryId){
         logger.info("Downloading web page: {}, tool memory id: {}", url, toolMemoryId);
         try {
             var asUrl = new URI(url);            
-            logger.info("Downloading web page with timeout: {}, connect timeout: {}", readTimeout, connectTimeout);
-            var urlDocumentSource = new URLSourceWithTimeout(asUrl.toURL(), readTimeout, connectTimeout);
+            logger.debug("Downloading web page with timeout: {}, connect timeout: {}", READ_TIMEOUT, CONNECT_TIMEOUT);
+            var urlDocumentSource = new URLSourceWithTimeout(asUrl.toURL(), READ_TIMEOUT, CONNECT_TIMEOUT);
             var document = DocumentLoader.load(urlDocumentSource, parser);            
             var text = transformer.transform(document);
             return text.text();
@@ -71,7 +67,12 @@ public class WebPageDownloaderTools implements IToolExecutor {
     }
 
     public ToolDescriptor toDescriptor() {
-        return new ToolDescriptor(DOWNLOAD_WEB_PAGE_TOOL_NAME, "Download web page", toolSpecifications(), this);
+        var specs = toolSpecifications();
+        if (specs.isEmpty()) {
+            return null;
+        }
+        var spec = specs.getFirst();
+        return new ToolDescriptor(spec.name(), "Download web page", spec , this);
     }
 
     public Optional<ToolExecutionResultMessage> execute(ToolExecutionRequest toolExecutionRequest){
@@ -90,7 +91,6 @@ public class WebPageDownloaderTools implements IToolExecutor {
             
             String result = downloadWebPage(url, "no id");
             return Optional.of(ToolExecutionResultMessage.from(toolExecutionRequest, result));
-            
         } catch (Exception e) {
             logger.error("Unexpected error executing tool: {}", toolExecutionRequest.name(), e);
             var failedResult = ToolExecutionResultMessage.builder()

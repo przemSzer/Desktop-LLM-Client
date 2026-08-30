@@ -74,7 +74,7 @@ class ChatViewModelLoadConversationTest {
     private ChatMemory newMemory;
 
     @Mock(lenient = true)
-    private ConversationSessionFactory sessionFactory;
+    private ChatSessionFactory sessionFactory;
 
     @Mock(lenient = true)
     private CommandManager commandManager;

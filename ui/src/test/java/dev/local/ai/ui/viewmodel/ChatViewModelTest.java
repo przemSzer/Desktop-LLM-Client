@@ -5,7 +5,7 @@ import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.ui.chat.session.ChatSession;
-import dev.local.ai.ui.chat.session.ConversationSessionFactory;
+import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 
@@ -32,7 +32,7 @@ class ChatViewModelTest {
     private ChatMemory mockMemory;
 
     @Mock(lenient = true)
-    private ConversationSessionFactory sessionFactory;
+    private ChatSessionFactory sessionFactory;
 
     @Mock(lenient = true)
     private CommandManager commandManager;

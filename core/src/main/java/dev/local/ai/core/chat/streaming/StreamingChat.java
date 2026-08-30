@@ -16,7 +16,7 @@ import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
-import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.core.tools.IToolExecutor;
 import dev.local.ai.core.tools.ToolHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private final StreamingChatModelsProvider chatModelsProvider;
     private static final Logger logger = LoggerFactory.getLogger(StreamingChat.class);
     private final MessageToChatMessageConverter messageToChatMessageConverter;
-    private final IToolProvider toolProvider;
+    private final IToolExecutor toolExecutor;
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
     private final CoreEventBus eventBus;
@@ -47,7 +47,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     // but it also should be gathered from chatModelsProvider
     public StreamingChat(StreamingChatModel initialChatModel,
                          ChatMemory chatMemory,
-                         IToolProvider toolProvider,
+                         IToolExecutor toolExecutor,
                          CoreEventBus eventBus,
                          StreamingChatModelsProvider chatModelsProvider) {
         this.chatModel = initialChatModel;
@@ -56,7 +56,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         this.eventBus = eventBus;
         eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
         eventBus.subscribe(StopRequestEvent.EVENT_TYPE, stopRequestListener);
-        this.toolProvider = toolProvider;
+        this.toolExecutor = toolExecutor;
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
         logger.info("StreamingChat instance created with model: {}", initialChatModel != null ? initialChatModel.getClass().getSimpleName(): "null");
     }
@@ -102,7 +102,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                             chatMemory,
                             callback,
                             partialMessageListener,
-                            toolProvider,
+                            toolExecutor,
                             newRequestId
                     )
                 );
@@ -120,7 +120,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private ChatRequest prepareChatRequest() {
         return ChatRequest.builder()
             .messages(chatMemory.messages())
-            .toolSpecifications(toolProvider.getToolSpecifications())
+            .toolSpecifications(toolExecutor.toolSpecifications())
             .build();
     }
 
@@ -144,14 +144,14 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         private final IChatListener callback;
         private final ChatMemory chatMemory;
         private final IPartialMessagesListener partialMessageListener;
-        private final IToolProvider toolProvider;
+        private final IToolExecutor toolExecutor;
         private String currentRequestId ;
 
-        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolProvider toolProvider, UUID initialRequestId) {
+        public StreamingResponseHandler(ChatMemory chatMemory, IChatListener callback, IPartialMessagesListener partialMessageListener, IToolExecutor toolExecutor, UUID initialRequestId) {
             this.chatMemory = chatMemory;
             this.callback = callback;
             this.partialMessageListener = partialMessageListener;
-            this.toolProvider = toolProvider;
+            this.toolExecutor = toolExecutor;
             currentRequestId = initialRequestId.toString();
         }
 
@@ -215,22 +215,17 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
 
         private void executeTools(List<ToolExecutionRequest> toolExecutionRequests) {
             logger.debug("Processing {} tool execution requests", toolExecutionRequests.size());
-            for (var toolExecutionRequest : toolExecutionRequests) {                
-                logger.debug("Processing tool execution request: {}", toolExecutionRequest);
-                toolProvider.getToolExecutors()
-                    .stream()
-                    .flatMap(toolExecutor -> toolExecutor.execute(toolExecutionRequest).stream())
-                    .forEach(result ->toolExecutionFinishedProperly(result, toolExecutionRequest));                
-            }
+            toolExecutionRequests.forEach(toolExecutionRequest ->
+                callback.onMessageAdded(
+                        Message.toolCall(toolExecutionRequest.name(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)),
+                        currentRequestId
+                )
+            );
+            toolExecutor.execute(toolExecutionRequests)
+                    .forEach(this::toolExecutionFinishedProperly);
         }
             
-        private void toolExecutionFinishedProperly(ToolExecutionResultMessage result, ToolExecutionRequest toolExecutionRequest) {
-            logger.info("Tool execution returned: {}", result);
-            callback.onMessageAdded(
-                Message.toolCall(result.toolName(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)),
-                currentRequestId
-            );
-            logger.info("Tool execution returned: {}", result);
+        private void toolExecutionFinishedProperly(ToolExecutionResultMessage result) {
             chatMemory.add(result);
             callback.onMessageAdded(Message.toolResult(result.text(), List.of()), currentRequestId);
         }

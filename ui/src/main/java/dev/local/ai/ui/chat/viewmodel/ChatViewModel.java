@@ -19,7 +19,7 @@ import dev.local.ai.ui.chat.command.ClearChatCommand;
 import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
 import dev.local.ai.ui.chat.converters.MessageConverter;
 import dev.local.ai.ui.chat.session.ChatSession;
-import dev.local.ai.ui.chat.session.ConversationSessionFactory;
+import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
@@ -60,7 +60,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final StringProperty currentConversationTitle;
 
     private ChatSession session;
-    private final ConversationSessionFactory sessionFactory;
+    private final ChatSessionFactory sessionFactory;
     private final ConversationStore conversationStore;
     private final CommandManager commandManager;
     private final CoreEventBus eventBus;
@@ -68,11 +68,13 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private final MessageConverter messageConverter;
     private final PauseTransition textChangedDebouncer = new PauseTransition(Duration.millis(500));
 
+    private static final String NEW_CONVERSATION_DEFAULT_TITLE = "New conversation";
+
     private final ConversationSummariesListener conversationSummariesListener =
             summaries -> Platform.runLater(this::refreshConversationTitleFromStore);
 
     public ChatViewModel(ChatSession session,
-                         ConversationSessionFactory sessionFactory,
+                         ChatSessionFactory sessionFactory,
                          ConversationStore conversationStore,
                          CommandManager commandManager,
                          CoreEventBus eventBus) {
@@ -93,7 +95,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         this.sendingMessageInProgress = new SimpleBooleanProperty(false);
         this.selectedModelProperty = new SimpleObjectProperty<>(null);
         this.currentConversationId = new SimpleStringProperty(session.conversationId());
-        this.currentConversationTitle = new SimpleStringProperty("New conversation");
+        this.currentConversationTitle = new SimpleStringProperty(NEW_CONVERSATION_DEFAULT_TITLE);
         attachToSession(session);
         rehydrateFromChatMemory(session.chatMemory());
 
@@ -232,14 +234,14 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
     private void refreshConversationTitleFromStore() {
         String id = session != null ? session.conversationId() : getCurrentConversationId();
         Optional<ConversationSummary> summary = conversationStore.findSummary(id);
-        String title = summary.map(this::titleForSummary).orElse("New conversation");
+        String title = summary.map(this::titleForSummary).orElse(NEW_CONVERSATION_DEFAULT_TITLE);
         currentConversationTitle.set(title);
     }
 
     private String titleForSummary(ConversationSummary summary) {
         String title = summary.title();
         if (title == null || title.isBlank()) {
-            return "New conversation";
+            return NEW_CONVERSATION_DEFAULT_TITLE;
         }
         return title;
     }
@@ -317,7 +319,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
             sendingMessageInProgress.set(true);
             var execution = commandManager.executeCommandAsync(command);
             execution.thenAccept(result -> {                
-                if (result) {
+                if (Boolean.TRUE.equals(result)) {
                     logger.info("SendMessageCommand executed successfully: {}", message);
                 } else {
                     logger.error("SendMessageCommand failed: {}", message);
