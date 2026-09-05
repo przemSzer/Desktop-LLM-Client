@@ -54,6 +54,13 @@
     --color-btn-hover-bg:      #F0F0F0;
     --color-btn-hover-border:  #BDBDBD;
 
+    --color-approve-bg:        #E8F5E9;
+    --color-approve-fg:        #2E7D32;
+    --color-approve-border:    #A5D6A7;
+    --color-reject-bg:         #FFEBEE;
+    --color-reject-fg:         #C62828;
+    --color-reject-border:     #EF9A9A;
+
     --color-thinking-bg:       #F9F7F2;
     --color-thinking-border:   #E8E2D0;
     --color-thinking-fg:       #6B5B3A;
@@ -107,6 +114,13 @@ html.dark {
     --color-btn-fg:            #8390A1;
     --color-btn-hover-bg:      #434C5E;
     --color-btn-hover-border:  #4C566A;
+
+    --color-approve-bg:        #3E4A3A;
+    --color-approve-fg:        #A3BE8C;
+    --color-approve-border:    #5E7A52;
+    --color-reject-bg:         #4A3538;
+    --color-reject-fg:         #BF616A;
+    --color-reject-border:     #7A454A;
 
     --color-thinking-bg:       #33392E;
     --color-thinking-border:   #4A5240;
@@ -308,6 +322,34 @@ body {
     margin-top: 4px;
 }
 .tool-body.open { display: block; }
+
+.tool-approval {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-tool-border);
+}
+
+.btn-approve, .btn-reject {
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+
+.btn-approve {
+    background: var(--color-approve-bg);
+    color: var(--color-approve-fg);
+    border: 1px solid var(--color-approve-border);
+}
+
+.btn-reject {
+    background: var(--color-reject-bg);
+    color: var(--color-reject-fg);
+    border: 1px solid var(--color-reject-border);
+}
 
 /* ── Thinking message (collapsible, tool-call style) ───── */
 .message.thinking {
@@ -531,6 +573,42 @@ function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
     div.appendChild(bodyDiv);
     container.appendChild(div);
     scrollToBottom();
+}
+
+function showToolApproval(id) {
+    const el = document.getElementById('msg-' + id);
+    if (!el || el.querySelector('.tool-approval')) {
+        return;
+    }
+
+    const bar = document.createElement('div');
+    bar.className = 'tool-approval';
+
+    const accept = document.createElement('button');
+    accept.className = 'btn-approve';
+    accept.textContent = 'Accept';
+    accept.onclick = function() { javaBridge.approveTool(id); };
+
+    const reject = document.createElement('button');
+    reject.className = 'btn-reject';
+    reject.textContent = 'Reject';
+    reject.onclick = function() { javaBridge.rejectTool(id); };
+
+    bar.appendChild(accept);
+    bar.appendChild(reject);
+    el.appendChild(bar);
+    scrollToBottom();
+}
+
+function hideToolApproval(id) {
+    const el = document.getElementById('msg-' + id);
+    if (!el) {
+        return;
+    }
+    const bar = el.querySelector('.tool-approval');
+    if (bar) {
+        bar.remove();
+    }
 }
 
 var BULB_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'

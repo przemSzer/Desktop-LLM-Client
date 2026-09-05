@@ -2,19 +2,19 @@ package dev.local.ai.ui.chat.session;
 
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.storage.models.LastSelectedModel;
+import dev.local.ai.core.tools.IToolExecutor;
 import dev.local.ai.core.tools.IToolProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dev.local.ai.core.tools.exectuor.DefaultToolsExecutor;
+import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
+import dev.local.ai.core.tools.gates.WaitForApprovalGate;
 
-public final class ConversationSessionFactory {
+public final class ChatSessionFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConversationSessionFactory.class);
     private static final int MAX_MESSAGES_IN_MEMORY = 1000;
 
     private final ChatMemoryStore chatMemoryStore;
@@ -23,11 +23,11 @@ public final class ConversationSessionFactory {
     private final IToolProvider toolProvider;
     private final CoreEventBus eventBus;
 
-    public ConversationSessionFactory(ChatMemoryStore chatMemoryStore,
-                                      LastSelectedModel lastSelectedModel,
-                                      StreamingChatModelsProvider modelsProvider,
-                                      IToolProvider toolProvider,
-                                      CoreEventBus eventBus) {
+    public ChatSessionFactory(ChatMemoryStore chatMemoryStore,
+                              LastSelectedModel lastSelectedModel,
+                              StreamingChatModelsProvider modelsProvider,
+                              IToolProvider toolProvider,
+                              CoreEventBus eventBus) {
         this.chatMemoryStore = chatMemoryStore;
         this.lastSelectedModel = lastSelectedModel;
         this.modelsProvider = modelsProvider;
@@ -37,8 +37,15 @@ public final class ConversationSessionFactory {
 
     public ChatSession openConversation(String conversationId) {
         ChatMemory memory = buildChatMemory(conversationId);
-        StreamingChat chat = buildStreamingChat(memory);
-        return new ChatSession(conversationId, memory, chat);
+        var alwaysAskGate = new WaitForApprovalGate();
+        var toolExecutor = new DefaultToolsExecutor(toolProvider, new MultipleToolExecutionGate(alwaysAskGate));
+        StreamingChat chat = buildStreamingChat(memory, toolExecutor);
+        return new ChatSession(
+                conversationId,
+                memory,
+                chat,
+                alwaysAskGate::setApprovalProvider
+                );
     }
 
     private ChatMemory buildChatMemory(String conversationId) {
@@ -50,16 +57,14 @@ public final class ConversationSessionFactory {
                 .build();
     }
 
-    private StreamingChat buildStreamingChat(ChatMemory chatMemory) {
+    private StreamingChat buildStreamingChat(ChatMemory chatMemory, IToolExecutor toolExecutor) {
         var lastModelMaybe = lastSelectedModel.get();
         if (lastModelMaybe.isEmpty()) {
-            return  new StreamingChat(null, chatMemory, toolProvider, eventBus, modelsProvider);
+            return new StreamingChat(null, chatMemory, toolExecutor, eventBus, modelsProvider);
         }
         var llm = lastModelMaybe.get();
-        logger.info("Building chat from last selected model: {} on connection {}",
-                llm.modelInfo().id(), llm.connection().id());
-        StreamingChatModel streamingModel = modelsProvider.createStreamingChatModel(llm);
-        return new StreamingChat(streamingModel, chatMemory, toolProvider, eventBus, modelsProvider);
+        var streamingModel = modelsProvider.createStreamingChatModel(llm);
+        return new StreamingChat(streamingModel, chatMemory, toolExecutor, eventBus, modelsProvider);
     }
 
 }

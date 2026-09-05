@@ -21,7 +21,7 @@ import dev.local.ai.core.storage.models.LastSelectedModel;
 import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsProviderWithMCP;
-import dev.local.ai.ui.chat.session.ConversationSessionFactory;
+import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.dialogs.FileSelector;
 import dev.local.ai.ui.files.dialogs.OpenFilesDialog;
@@ -48,7 +48,7 @@ public final class AppContext implements AutoCloseable {
     public final ConversationStore conversationStore;
     public final JsonFileChatMemoryStore chatMemoryStore;
 
-    public final ConversationSessionFactory conversationSessionFactory;
+    public final ChatSessionFactory chatSessionFactory;
 
     private final List<AutoCloseable> closeables;
 
@@ -82,7 +82,7 @@ public final class AppContext implements AutoCloseable {
 
         this.commandManager = new CommandManager();
 
-        this.conversationSessionFactory = new ConversationSessionFactory(
+        this.chatSessionFactory = new ChatSessionFactory(
             chatMemoryStore, lastSelectedModel, modelsProvider, toolProvider, eventBus
         );
 
