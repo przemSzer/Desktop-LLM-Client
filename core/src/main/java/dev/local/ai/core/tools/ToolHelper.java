@@ -21,7 +21,7 @@ public class ToolHelper {
         }
     }
 
-    public static Map<String, String> getArguments(ToolExecutionRequest toolExecutionRequest) {
+    public static Map<String, String> getArguments(ToolExecutionRequest toolExecutionRequest, String... argumentNames) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
 
@@ -43,7 +43,7 @@ public class ToolHelper {
                 new TypeReference<Map<String, String>>() {}
             );
         } catch (JsonProcessingException e) {
-            logger.debug("Can not extract arguments from tool execution request: " + toolExecutionRequest.arguments(), e);
+            logger.debug("Can not extract arguments from tool execution request: {}" , toolExecutionRequest.arguments(), e);
             return Map.of("arg0", toolExecutionRequest.arguments());
         }
     }

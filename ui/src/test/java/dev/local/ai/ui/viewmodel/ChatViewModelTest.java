@@ -51,7 +51,7 @@ class ChatViewModelTest {
         given(mockMemory.messages()).willReturn(Collections.emptyList());
         given(mockChat.getSystemMessage()).willReturn("");
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());
-        session = new ChatSession("conv-test", mockMemory, mockChat);
+        session = new ChatSession("conv-test", mockMemory, mockChat, provider -> {});
         viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager, eventBus);
     }
 

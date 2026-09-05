@@ -43,6 +43,9 @@ public class DefaultToolsExecutor implements IToolExecutor {
         var beforeToolExecutionResult = toolExecutionGates.beforeToolExecution(currentRequest);
         if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.REJECTED) {
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
+        } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.ERROR) {
+            //TODO: what to do on error?
+            return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         }
         logger.debug("Tool passed before execution gate, so executing it");
         return toolForCurrentRequest.executor()

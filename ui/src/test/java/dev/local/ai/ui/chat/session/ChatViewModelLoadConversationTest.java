@@ -41,7 +41,7 @@ class ChatViewModelLoadConversationTest {
             CountDownLatch latch = new CountDownLatch(1);
             try {
                 Platform.startup(latch::countDown);
-            } catch (IllegalStateException alreadyStarted) {
+            } catch (IllegalStateException _) {
                 latch.countDown();
             }
             assertTrue(latch.await(5, TimeUnit.SECONDS),
@@ -96,8 +96,8 @@ class ChatViewModelLoadConversationTest {
         given(initialChat.getSystemMessage()).willReturn("");
         given(newChat.getSystemMessage()).willReturn("");
 
-        initialSession = new ChatSession("conv-A", initialMemory, initialChat);
-        newSession = new ChatSession("conv-B", newMemory, newChat);
+        initialSession = new ChatSession("conv-A", initialMemory, initialChat, provider -> {});
+        newSession = new ChatSession("conv-B", newMemory, newChat, provider -> {});
 
         given(sessionFactory.openConversation("conv-B")).willReturn(newSession);
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());

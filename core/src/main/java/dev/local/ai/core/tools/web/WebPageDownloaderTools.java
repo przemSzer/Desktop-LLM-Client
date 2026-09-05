@@ -81,7 +81,7 @@ public class WebPageDownloaderTools implements ITool {
         }
         
         try {
-            var args = ToolHelper.getArguments(toolExecutionRequest, "url");
+            var args = ToolHelper.getArguments(toolExecutionRequest);
             
             String url = args.get("arg0");
             if (url == null || url.trim().isEmpty()) {

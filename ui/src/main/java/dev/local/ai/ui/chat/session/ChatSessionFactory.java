@@ -7,9 +7,11 @@ import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.storage.models.LastSelectedModel;
+import dev.local.ai.core.tools.IToolExecutor;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.exectuor.DefaultToolsExecutor;
-import dev.local.ai.core.tools.gates.DefaultToolExecutionGate;
+import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
+import dev.local.ai.core.tools.gates.WaitForApprovalGate;
 
 public final class ChatSessionFactory {
 
@@ -35,8 +37,15 @@ public final class ChatSessionFactory {
 
     public ChatSession openConversation(String conversationId) {
         ChatMemory memory = buildChatMemory(conversationId);
-        StreamingChat chat = buildStreamingChat(memory);
-        return new ChatSession(conversationId, memory, chat);
+        var alwaysAskGate = new WaitForApprovalGate();
+        var toolExecutor = new DefaultToolsExecutor(toolProvider, new MultipleToolExecutionGate(alwaysAskGate));
+        StreamingChat chat = buildStreamingChat(memory, toolExecutor);
+        return new ChatSession(
+                conversationId,
+                memory,
+                chat,
+                alwaysAskGate::setApprovalProvider
+                );
     }
 
     private ChatMemory buildChatMemory(String conversationId) {
@@ -48,11 +57,10 @@ public final class ChatSessionFactory {
                 .build();
     }
 
-    private StreamingChat buildStreamingChat(ChatMemory chatMemory) {
+    private StreamingChat buildStreamingChat(ChatMemory chatMemory, IToolExecutor toolExecutor) {
         var lastModelMaybe = lastSelectedModel.get();
-        var toolExecutor = new DefaultToolsExecutor(toolProvider, new DefaultToolExecutionGate());
         if (lastModelMaybe.isEmpty()) {
-            return  new StreamingChat(null, chatMemory, toolExecutor, eventBus, modelsProvider);
+            return new StreamingChat(null, chatMemory, toolExecutor, eventBus, modelsProvider);
         }
         var llm = lastModelMaybe.get();
         var streamingModel = modelsProvider.createStreamingChatModel(llm);

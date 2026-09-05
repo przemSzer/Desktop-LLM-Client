@@ -217,7 +217,11 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
             logger.debug("Processing {} tool execution requests", toolExecutionRequests.size());
             toolExecutionRequests.forEach(toolExecutionRequest ->
                 callback.onMessageAdded(
-                        Message.toolCall(toolExecutionRequest.name(), ToolHelper.getArgumentsIgnoringError(toolExecutionRequest)),
+                        Message.toolCall(
+                                toolExecutionRequest.name(),
+                                ToolHelper.getArgumentsIgnoringError(toolExecutionRequest),
+                                toolExecutionRequest.id()
+                        ),
                         currentRequestId
                 )
             );

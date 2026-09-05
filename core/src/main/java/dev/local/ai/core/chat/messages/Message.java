@@ -6,24 +6,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public record Message(String text, List<DocumentDescription> files, MessageType type, Statistics statistics) {
+public record Message(String text, List<DocumentDescription> files, MessageType type, Statistics statistics, String id) {
     public Message(String text) {
-        this(text, Collections.emptyList(), MessageType.USER, null);
+        this(text, Collections.emptyList(), MessageType.USER, null, null);
     }
 
     public Message(String text, List<DocumentDescription> files) {
-        this(text, files, MessageType.USER, null);
+        this(text, files, MessageType.USER, null, null);
     }
 
     public Message(String message, List<DocumentDescription> files, MessageType type) {
-        this(message, files, type, null);
+        this(message, files, type, null, null);
+    }
+
+    public Message(String text, List<DocumentDescription> files, MessageType type, Statistics statistics) {
+        this(text, files, type, statistics, null);
     }
 
     public static Message toolCall(String toolName, Map<String, String> arguments) {
+        return toolCall(toolName, arguments, null);
+    }
+
+    public static Message toolCall(String toolName, Map<String, String> arguments, String toolRequestId) {
         var argumentsString = arguments.entrySet().stream()
             .map(entry -> entry.getKey() + ": " + entry.getValue())
             .collect(Collectors.joining(", "));
-        return new Message(toolName + " (" + argumentsString + ")", List.of(), MessageType.TOOL_CALL, new Statistics(0, 0, 0));
+        return new Message(toolName + " (" + argumentsString + ")", List.of(), MessageType.TOOL_CALL, new Statistics(0, 0, 0), toolRequestId);
     }
 
     public static Message ai(String text, Statistics statistics) {
@@ -54,9 +62,9 @@ public record Message(String text, List<DocumentDescription> files, MessageType 
             buffer.append(files.size());
             files.stream()
                 .map(DocumentDescription::title)
-                .map(t -> "[" + t + "],").forEach(buffer::append);            
+                .map(t -> "[" + t + "],").forEach(buffer::append);
         }
-        
+
         return buffer.toString();
     }
 }

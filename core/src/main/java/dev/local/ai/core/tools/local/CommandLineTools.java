@@ -87,7 +87,7 @@ public class CommandLineTools implements ITool {
         }
 
         try {
-            Map<String, String> args = ToolHelper.getArguments(toolExecutionRequest, "cmd");
+            Map<String, String> args = ToolHelper.getArguments(toolExecutionRequest);
 
             String cmd = args.get("arg0");
             if (cmd == null || cmd.isBlank()) {
