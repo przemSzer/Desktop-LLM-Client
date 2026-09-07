@@ -115,7 +115,7 @@ class ChatViewModelApprovalTest {
     }
 
     @Test
-    void shouldCreateToolCallMessageWhenNoneExistsYet() throws Exception {
+    void shouldFailApprovalWhenToolCallMessageIsMissing() throws Exception {
         var request = ToolExecutionRequest.builder()
                 .id("tool-missing")
                 .name("download_page")
@@ -125,18 +125,36 @@ class ChatViewModelApprovalTest {
         var future = viewModel.approvalProvider().askForApproval(request);
         runOnFxThreadAndWait(() -> { });
 
-        assertThat(viewModel.getChatMessages()).hasSize(1);
-        var toolCall = (ToolCallChatMessageViewModel) viewModel.getChatMessages().getFirst();
-        assertThat(toolCall.getId()).isEqualTo("tool-missing");
-        assertThat(toolCall.isNeedsApproval()).isTrue();
+        assertThat(viewModel.getChatMessages()).isEmpty();
+        var result = future.get(2, TimeUnit.SECONDS);
+        assertThat(result.result()).isEqualTo(IToolExecutionGate.GateResult.ERROR);
+        assertThat(result.reason()).contains("tool-missing");
+    }
 
-        runOnFxThreadAndWait(toolCall::reject);
+    @Test
+    void shouldNotAttachApprovalToADifferentToolCall() throws Exception {
+        viewModel.onMessageAdded(Message.toolCall("run_command", Map.of("cmd", "ls"), "tool-1"), "req-1");
+        runOnFxThreadAndWait(() -> { });
 
-        assertThat(future.get(2, TimeUnit.SECONDS).result()).isEqualTo(IToolExecutionGate.GateResult.REJECTED);
+        var request = ToolExecutionRequest.builder()
+                .id("tool-other")
+                .name("run_command")
+                .arguments("{\"cmd\":\"ls\"}")
+                .build();
+
+        var future = viewModel.approvalProvider().askForApproval(request);
+        runOnFxThreadAndWait(() -> { });
+
+        var existing = (ToolCallChatMessageViewModel) viewModel.getChatMessages().getFirst();
+        assertThat(existing.isNeedsApproval()).isFalse();
+        assertThat(future.get(2, TimeUnit.SECONDS).result()).isEqualTo(IToolExecutionGate.GateResult.ERROR);
     }
 
     @Test
     void shouldRejectPendingApprovalOnCancel() throws Exception {
+        viewModel.onMessageAdded(Message.toolCall("run_command", Map.of(), "tool-cancel"), "req-1");
+        runOnFxThreadAndWait(() -> { });
+
         var request = ToolExecutionRequest.builder()
                 .id("tool-cancel")
                 .name("run_command")

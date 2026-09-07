@@ -16,7 +16,6 @@ import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.storage.conversations.ConversationSummariesListener;
 import dev.local.ai.core.storage.conversations.ConversationSummary;
 import dev.local.ai.core.tools.IToolExecutionGate;
-import dev.local.ai.core.tools.ToolHelper;
 import dev.local.ai.core.tools.gates.IApprovalProvider;
 import dev.local.ai.ui.chat.command.ClearChatCommand;
 import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
@@ -548,26 +547,15 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
         public Future<IToolExecutionGate.GateCheckResult> askForApproval(ToolExecutionRequest toolExecutionRequest) {
             CompletableFuture<IToolExecutionGate.GateCheckResult> approval = new CompletableFuture<>();
             Platform.runLater(() -> {
-                var toolMessage = findOrCreateToolCallMessage(toolExecutionRequest);
-                toolMessage.requestApproval(approval);
+                var toolMessage = findExistingToolCall(toolExecutionRequest.id());
+                if (toolMessage == null) {
+                    logger.error("Tool call message not found for request ID: {}", toolExecutionRequest.id());
+                    approval.complete(IToolExecutionGate.GateCheckResult.error("Tool call message not found for request ID: " + toolExecutionRequest.id()));
+                }else{
+                    toolMessage.requestApproval(approval);
+                }
             });
             return approval;
-        }
-
-        private ToolCallChatMessageViewModel findOrCreateToolCallMessage(ToolExecutionRequest toolExecutionRequest) {
-            var existing = findExistingToolCall(toolExecutionRequest.id());
-            if (existing != null) {
-                return existing;
-            }
-            var created = new ToolCallChatMessageViewModel(
-                    formatToolCall(toolExecutionRequest),
-                    MessageTypeView.TOOL_CALL,
-                    List.of(),
-                    null,
-                    toolExecutionRequest.id()
-            );
-            chatMessages.add(created);
-            return created;
         }
 
         private ToolCallChatMessageViewModel findExistingToolCall(String toolRequestId) {
@@ -577,23 +565,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
                     return toolCall;
                 }
             }
-            for (int i = chatMessages.size() - 1; i >= 0; i--) {
-                var current = chatMessages.get(i);
-                if (current instanceof ToolCallChatMessageViewModel toolCall && !toolCall.hasPendingApproval()) {
-                    return toolCall;
-                }
-            }
             return null;
-        }
-
-        private static String formatToolCall(ToolExecutionRequest request) {
-            var arguments = ToolHelper.getArgumentsIgnoringError(request)
-                    .entrySet()
-                    .stream()
-                    .map(entry -> entry.getKey() + ": " + entry.getValue())
-                    .reduce((left, right) -> left + ", " + right)
-                    .orElse("");
-            return "Tool call: " + request.name() + " (" + arguments + ")";
         }
     }
 }

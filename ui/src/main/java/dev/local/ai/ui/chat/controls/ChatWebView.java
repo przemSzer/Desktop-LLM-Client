@@ -93,7 +93,13 @@ public class ChatWebView extends StackPane {
             String summary = toolSummary(message.getContent());
             String fullHtml = escapeForJs(bodyHtml);
             String summaryEscaped = escapeForJs(summary);
-            runScript("addToolMessage(%d,'%s','%s','%s')", id, typeLabel, summaryEscaped, fullHtml);
+            runScript(
+                    "addToolMessage(%d,'%s','%s','%s',%s)",
+                    id,
+                    typeLabel,
+                    summaryEscaped,
+                    fullHtml,
+                    type == MessageTypeView.TOOL_CALL);
         } else if (type == MessageTypeView.AI) {
             String htmlEscaped = escapeForJs(bodyHtml);
             String labelEscaped = escapeForJs(typeLabel);

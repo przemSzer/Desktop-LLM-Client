@@ -324,19 +324,30 @@ body {
 .tool-body.open { display: block; }
 
 .tool-approval {
-    display: flex;
+    display: none;
     gap: 8px;
     margin-top: 10px;
     padding-top: 8px;
     border-top: 1px solid var(--color-tool-border);
 }
+.tool-approval.visible {
+    display: flex;
+}
 
 .btn-approve, .btn-reject {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
+    line-height: 20px;
+    min-height: 28px;
     padding: 4px 12px;
     cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    user-select: none;
 }
 
 .btn-approve {
@@ -536,7 +547,7 @@ function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalT
     //scrollToBottom();
 }
 
-function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
+function addToolMessage(id, typeLabel, summaryText, bodyHtml, withApproval) {
     const div = document.createElement('div');
     div.className = 'message tool';
     div.id = 'msg-' + id;
@@ -571,33 +582,43 @@ function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
     div.appendChild(header);
     div.appendChild(toggle);
     div.appendChild(bodyDiv);
+    if (withApproval) {
+        div.appendChild(createToolApprovalBar(id));
+    }
     container.appendChild(div);
     scrollToBottom();
 }
 
-function showToolApproval(id) {
-    const el = document.getElementById('msg-' + id);
-    if (!el || el.querySelector('.tool-approval')) {
-        return;
-    }
-
+function createToolApprovalBar(id) {
     const bar = document.createElement('div');
     bar.className = 'tool-approval';
 
-    const accept = document.createElement('button');
+    const accept = document.createElement('div');
     accept.className = 'btn-approve';
+    accept.setAttribute('role', 'button');
     accept.textContent = 'Accept';
     accept.onclick = function() { javaBridge.approveTool(id); };
 
-    const reject = document.createElement('button');
+    const reject = document.createElement('div');
     reject.className = 'btn-reject';
+    reject.setAttribute('role', 'button');
     reject.textContent = 'Reject';
     reject.onclick = function() { javaBridge.rejectTool(id); };
 
     bar.appendChild(accept);
     bar.appendChild(reject);
-    el.appendChild(bar);
-    scrollToBottom();
+    return bar;
+}
+
+function showToolApproval(id) {
+    const el = document.getElementById('msg-' + id);
+    if (!el) {
+        return;
+    }
+    const bar = el.querySelector('.tool-approval');
+    if (bar) {
+        bar.classList.add('visible');
+    }
 }
 
 function hideToolApproval(id) {
@@ -607,7 +628,7 @@ function hideToolApproval(id) {
     }
     const bar = el.querySelector('.tool-approval');
     if (bar) {
-        bar.remove();
+        bar.classList.remove('visible');
     }
 }
 
