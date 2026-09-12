@@ -8,7 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class DefaultToolsExecutor implements IToolExecutor {
 
@@ -22,21 +26,43 @@ public class DefaultToolsExecutor implements IToolExecutor {
     }
 
     @Override
-    public List<ToolExecutionResultMessage> execute(List<ToolExecutionRequest> toolExecutionRequests) {
+    public List<ToolExecutionResultMessage> execute(List<ToolExecutionRequest> toolExecutionRequests, IToolExecutionEventListener listener) {
+        var executor = prepareExecutor();
         logger.debug("Processing {} requests", toolExecutionRequests.size());
-        var results = new ArrayList<ToolExecutionResultMessage>();
+        var results = Collections.synchronizedList(new ArrayList<ToolExecutionResultMessage>());
         for (var currentToolRequest : toolExecutionRequests) {
             logger.debug("Processing request {}", currentToolRequest);
             var toolForCurrentRequest = getMatchingTool(currentToolRequest);
             if (toolForCurrentRequest != null) {
-                var gatedToolResult = executeToolIncludingGates(currentToolRequest, toolForCurrentRequest);
-                results.add(gatedToolResult);
+                executor.execute(() -> {
+                    var gatedToolResult = executeToolIncludingGates(currentToolRequest, toolForCurrentRequest);
+                    listener.onToolCallFinished(gatedToolResult);
+                    results.add(gatedToolResult);
+                });
             } else {
                 logger.warn("No matching tool found for {}", currentToolRequest);
                 results.add(toolNotFoundError(currentToolRequest, "No matching tool found for " + currentToolRequest));
             }
         }
+        waitForToolCallBeingFinished(executor);
         return results;
+    }
+
+    private void waitForToolCallBeingFinished(ExecutorService executor) {
+        executor.shutdown();
+        boolean shouldWait = true;
+        while(shouldWait){
+            try {
+                shouldWait = !executor.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException _) {
+                logger.info("Waiting for tools to finish interrupted");
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private ExecutorService prepareExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 
     private ToolExecutionResultMessage executeToolIncludingGates(ToolExecutionRequest currentRequest, ToolDescriptor toolForCurrentRequest) {

@@ -7,6 +7,7 @@ import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import java.util.List;
 
 public interface IToolExecutor {
-    List<ToolExecutionResultMessage> execute(List<ToolExecutionRequest> toolExecutionRequests);
+
+    List<ToolExecutionResultMessage> execute(List<ToolExecutionRequest> toolExecutionRequests, IToolExecutionEventListener listener);
     List<ToolSpecification> toolSpecifications();
 }

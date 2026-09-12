@@ -225,8 +225,8 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                         currentRequestId
                 )
             );
-            toolExecutor.execute(toolExecutionRequests)
-                    .forEach(this::toolExecutionFinishedProperly);
+            toolExecutor.execute(toolExecutionRequests, this::toolExecutionFinishedProperly);
+                    //.forEach(this::toolExecutionFinishedProperly);
         }
             
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result) {
