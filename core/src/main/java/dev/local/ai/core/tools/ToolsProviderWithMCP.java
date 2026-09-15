@@ -1,12 +1,5 @@
 package dev.local.ai.core.tools;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
@@ -14,6 +7,12 @@ import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.local.ai.core.tools.local.CommandLineTools;
 import dev.local.ai.core.tools.mcp.McpServerToolProvider;
 import dev.local.ai.core.tools.web.WebPageDownloaderTools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ToolsProviderWithMCP implements IToolProvider, AutoCloseable {
@@ -37,9 +36,7 @@ public class ToolsProviderWithMCP implements IToolProvider, AutoCloseable {
             McpClient mcpClient = initializeMCPClient();
 
             this.mcpServer = new McpServerToolProvider(MCP_SERVER_ID, MCP_SERVER_DISPLAY_NAME, mcpClient);
-            if (this.mcpServer != null) {
-                this.descriptors.addAll(this.mcpServer.getToolDescriptors());
-            }
+            this.descriptors.addAll(this.mcpServer.getToolDescriptors());
             logger.info("ToolsProviderWithMCP initialized with {} descriptors total", descriptors.size());
         } catch (Exception e) {
             logger.error("Error initializing ToolsProviderWithMCP, will use only local tools", e);
