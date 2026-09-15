@@ -77,12 +77,18 @@ public class StreamingChatModelsProvider {
         var anthropicConnection = (AnthropicConnection) modelInfo.connection();
         return AnthropicStreamingChatModel
             .builder()
+            .cacheSystemMessages(true)
+            .cacheTools(true)
+            .beta("cache-diagnosis-2026-04-07")
+            .returnCacheDiagnostics(true)
             .apiKey(anthropicConnection.apiKey())
             .modelName(modelInfo.modelInfo().id())
             .returnThinking(true)
             .timeout(Duration.ofMinutes(5))
                 //TODO: brak limitu jak ogarnąć?
             .maxTokens(10 * 1024)
+            .logRequests(true)
+            .logResponses(true)
             .build();
     }
 

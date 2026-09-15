@@ -4,6 +4,11 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.model.anthropic.AnthropicCacheDiagnostics;
+import dev.langchain4j.model.anthropic.AnthropicChatRequestParameters;
+import dev.langchain4j.model.anthropic.AnthropicChatResponseMetadata;
+import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
+import dev.langchain4j.model.anthropic.AnthropicTokenUsage;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.*;
@@ -21,9 +26,7 @@ import dev.local.ai.core.tools.ToolHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoCloseable {
@@ -42,6 +45,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private final EventListener<LLMChangedEvent> llmChangedListener = this::onLLMChanged;
     private final EventListener<StopRequestEvent> stopRequestListener = this::onStopRequest;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private String lastAnthropicMessageId;
 
     //TODO: chatModel in fact should be initial chatModel, 
     // but it also should be gathered from chatModelsProvider
@@ -125,10 +129,15 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     }
 
     private ChatRequest prepareChatRequest() {
-        return ChatRequest.builder()
-            .messages(chatMemory.messages())
-            .toolSpecifications(toolExecutor.toolSpecifications())
-            .build();
+        var builder = ChatRequest.builder()
+            .messages(AnthropicPromptCacheControl.withBreakpointOnLastMessage(chatMemory.messages()))
+            .toolSpecifications(toolExecutor.toolSpecifications());
+        if (chatModel instanceof AnthropicStreamingChatModel) {
+            builder.parameters(AnthropicChatRequestParameters.builder()
+                    .previousMessageId(lastAnthropicMessageId)
+                    .build());
+        }
+        return builder.build();
     }
 
     private void addNewMessageToChatMemory(Message message) {
@@ -139,11 +148,34 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private void onLLMChanged(LLMChangedEvent event) {
         logger.info("LLMChangedEvent received: {}", event.getModelInfo());
         this.chatModel = chatModelsProvider.createStreamingChatModel(event.getModelInfo());
+        lastAnthropicMessageId = null;
     }
 
     private void onStopRequest(StopRequestEvent event) {
         logger.info("StopRequestEvent received: {}", event.getEventId());
         stopRequested.set(true);
+    }
+
+    private void logAnthropicCacheUsage(ChatResponse response) {
+        if (response.metadata() instanceof AnthropicChatResponseMetadata anthropicMetadata) {
+            lastAnthropicMessageId = anthropicMetadata.id();
+            AnthropicCacheDiagnostics diagnostics = anthropicMetadata.cacheDiagnostics();
+            if (diagnostics != null && diagnostics.cacheMissReasonType() != null) {
+                logger.info(
+                        "Anthropic cache diagnostics: reason={}, missedInputTokens={}",
+                        diagnostics.cacheMissReasonType(),
+                        diagnostics.cacheMissedInputTokens());
+            }
+        }
+        if (!(response.tokenUsage() instanceof AnthropicTokenUsage anthropicUsage)) {
+            return;
+        }
+        logger.info(
+                "Anthropic prompt cache: created={}, read={}, uncachedInput={}, output={}",
+                anthropicUsage.cacheCreationInputTokens(),
+                anthropicUsage.cacheReadInputTokens(),
+                anthropicUsage.inputTokenCount(),
+                anthropicUsage.outputTokenCount());
     }
 
     private class StreamingResponseHandler implements StreamingChatResponseHandler{
@@ -201,6 +233,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         @Override
         public void onCompleteResponse(ChatResponse response) {
             chatMemory.add(response.aiMessage());
+            logAnthropicCacheUsage(response);
             if (response.aiMessage().hasToolExecutionRequests()){
                 logger.debug("Tool execution requests: {}", response.aiMessage().toolExecutionRequests());
                 executeTools(response.aiMessage().toolExecutionRequests());
@@ -233,7 +266,6 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                 )
             );
             toolExecutor.execute(toolExecutionRequests, this::toolExecutionFinishedProperly);
-                    //.forEach(this::toolExecutionFinishedProperly);
         }
             
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result) {
@@ -261,6 +293,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     @Override
     public void clearMemory() {
         chatMemory.clear();
+        lastAnthropicMessageId = null;
         if (callback != null) {
             callback.onMemoryCleared();
         }
@@ -274,6 +307,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                 .filter(SystemMessage.class::isInstance)
                 .toList();
         chatMemory.set(new ArrayList<>(systemMessages));
+        lastAnthropicMessageId = null;
         if (callback != null) {
             callback.onMemoryCleared();
         }

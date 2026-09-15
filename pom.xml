@@ -27,24 +27,21 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jpro.version>0.5.7</jpro.version>
-        <javafx.version>26.0.1</javafx.version>
+        <javafx.version>26.0.2</javafx.version>
         <!-- Dependency versions -->
-        <typesafe-config.version>1.4.4</typesafe-config.version>
-        <logback.version>1.5.18</logback.version>
-        <slf4j.version>2.0.9</slf4j.version>
-        <junit.version>5.10.0</junit.version>
-        <mockito.version>5.18.0</mockito.version>
+        <typesafe-config.version>1.4.9</typesafe-config.version>
+        <logback.version>1.5.38</logback.version>
+        <slf4j.version>2.0.19</slf4j.version>
+        <junit.version>5.14.4</junit.version>
+        <mockito.version>5.23.0</mockito.version>
         <assertj.version>3.27.7</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <langchain4j.version>1.13.1</langchain4j.version>
-        <langchain4j-community.version>1.13.1-beta23</langchain4j-community.version>
-        <bytebuddy.version>1.17.5</bytebuddy.version>
-        <langchain4j-mcp.version>1.13.1-beta23</langchain4j-mcp.version>
-        <langchain4j-apache-tika.version>1.13.1-beta23</langchain4j-apache-tika.version>
-        <langchain4j-jsoup.version>1.13.1-beta23</langchain4j-jsoup.version>
+        <langchain4j.version>1.20.0</langchain4j.version>
+        <langchain4j-beta.version>1.20.0-beta30</langchain4j-beta.version>
+        <bytebuddy.version>1.18.13</bytebuddy.version>
         <atlantafx.version>2.1.0</atlantafx.version>
-        <controlsfx.version>11.2.2</controlsfx.version>
-        <ikonli.version>12.3.1</ikonli.version>
+        <controlsfx.version>11.2.5</controlsfx.version>
+        <ikonli.version>12.4.0</ikonli.version>
         <cssfx.version>11.5.1</cssfx.version>
         <rxjava.version>4.0.0-alpha-21</rxjava.version>
     </properties>
@@ -90,26 +87,26 @@
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-mcp</artifactId>
-                <version>${langchain4j-mcp.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
 
             <!-- apache tika documents -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-parser-apache-tika</artifactId>
-                <version>${langchain4j-apache-tika.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
             <!-- document transformer jsoup -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-transformer-jsoup</artifactId>
-                <version>${langchain4j-jsoup.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
             <!-- local code execution engine -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-community-code-execution-engine-local</artifactId>
-                <version>${langchain4j-community.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
         <!-- 
             Jackson-datatype-jsr310 is a necessary 
@@ -118,7 +115,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>2.21.1</version>
+                <version>2.22.1</version>
             </dependency>
 
         <!-- Configuration management -->
@@ -250,7 +247,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
+                    <version>3.14.1</version>
                     <configuration>
                         <source>26</source>
                         <target>26</target>
@@ -259,7 +256,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.5.4</version>
                 </plugin>
             </plugins>
         </pluginManagement>
