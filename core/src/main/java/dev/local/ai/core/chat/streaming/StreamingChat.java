@@ -66,6 +66,13 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
         if (closed.compareAndSet(false, true)) {
             eventBus.unsubscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
             eventBus.unsubscribe(StopRequestEvent.EVENT_TYPE, stopRequestListener);
+            if (toolExecutor instanceof AutoCloseable ac){
+                try {
+                    ac.close();
+                } catch (Exception e) {
+                    logger.error("Can not close tool executor", e);
+                }
+            }
             logger.info("StreamingChat closed and unsubscribed from CoreEventBus");            
         }
     }

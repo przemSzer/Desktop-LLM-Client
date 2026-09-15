@@ -8,61 +8,73 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-public class DefaultToolsExecutor implements IToolExecutor {
+public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultToolsExecutor.class);
     private final IToolProvider toolProvider;
     private final IToolExecutionGate toolExecutionGates;
+    private final ExecutorService executor;
 
     public DefaultToolsExecutor(IToolProvider toolProvider, IToolExecutionGate toolExecutionGate) {
         this.toolProvider = toolProvider;
         this.toolExecutionGates = toolExecutionGate;
+        var toolsThreadFactory = createToolsThreadFactory();
+        this.executor = Executors.newThreadPerTaskExecutor(toolsThreadFactory);
+    }
+
+    private ThreadFactory createToolsThreadFactory() {
+        return Thread.ofVirtual()
+                .name("tools-", 0)
+                .uncaughtExceptionHandler((th, ex) -> logger.error("Uncaught exception in during tool call", ex))
+                .factory();
     }
 
     @Override
     public List<ToolExecutionResultMessage> execute(List<ToolExecutionRequest> toolExecutionRequests, IToolExecutionEventListener listener) {
-        var executor = prepareExecutor();
+        var completionService = prepareExecutor();
         logger.debug("Processing {} requests", toolExecutionRequests.size());
-        var results = Collections.synchronizedList(new ArrayList<ToolExecutionResultMessage>());
+        var results = new ArrayList<ToolExecutionResultMessage>(toolExecutionRequests.size());
         for (var currentToolRequest : toolExecutionRequests) {
             logger.debug("Processing request {}", currentToolRequest);
             var toolForCurrentRequest = getMatchingTool(currentToolRequest);
             if (toolForCurrentRequest != null) {
-                executor.execute(() -> {
-                    var gatedToolResult = executeToolIncludingGates(currentToolRequest, toolForCurrentRequest);
-                    listener.onToolCallFinished(gatedToolResult);
-                    results.add(gatedToolResult);
-                });
+                completionService.submit(() -> executeToolIncludingGates(currentToolRequest, toolForCurrentRequest));
             } else {
                 logger.warn("No matching tool found for {}", currentToolRequest);
                 results.add(toolNotFoundError(currentToolRequest, "No matching tool found for " + currentToolRequest));
             }
         }
-        waitForToolCallBeingFinished(executor);
+        waitForToolCallsBeingFinished(completionService, results, toolExecutionRequests.size(),listener);
         return results;
     }
 
-    private void waitForToolCallBeingFinished(ExecutorService executor) {
-        executor.shutdown();
-        boolean shouldWait = true;
-        while(shouldWait){
-            try {
-                shouldWait = !executor.awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException _) {
-                logger.info("Waiting for tools to finish interrupted");
-                Thread.currentThread().interrupt();
+    private void waitForToolCallsBeingFinished(CompletionService<ToolExecutionResultMessage> executor, ArrayList<ToolExecutionResultMessage> results, int expectedToolResults, IToolExecutionEventListener listener) {
+        try{
+            while(results.size() < expectedToolResults) {
+                try {
+                    var finishedCall = executor.take();
+                    var toolCallResult = finishedCall.get();
+                    results.add(toolCallResult);
+                    //TODO: handle exception in listener
+                    listener.onToolCallFinished(toolCallResult);
+                } catch (ExecutionException e) {
+                    logger.warn("Execution of a tool threw an exception", e);
+                    //TODO: add response for a LLM about failed tool call
+                }
             }
+        } catch (InterruptedException _){
+            logger.info("Waiting for tools to finish interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 
-    private ExecutorService prepareExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+    private CompletionService<ToolExecutionResultMessage> prepareExecutor() {
+        return new ExecutorCompletionService<>(
+            executor
+        );
     }
 
     private ToolExecutionResultMessage executeToolIncludingGates(ToolExecutionRequest currentRequest, ToolDescriptor toolForCurrentRequest) {
@@ -73,13 +85,13 @@ public class DefaultToolsExecutor implements IToolExecutor {
             //TODO: what to do on error?
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         }
-        logger.debug("Tool passed before execution gate, so executing it");
+        logger.debug("Tool passed 'before execution gate', so executing it");
         return toolForCurrentRequest.executor()
                 .execute(currentRequest)
                 .orElseGet(() -> {
                     logger.debug("Tool {} returned empty result", toolForCurrentRequest);
                     return toolNotFoundError(currentRequest, "Tool returned empty result for " + currentRequest);
-                        }
+                    }
                 );
     }
 
@@ -123,5 +135,10 @@ public class DefaultToolsExecutor implements IToolExecutor {
         var foundTool = found.orElse(null);
         logger.debug("Found the following tool {} for {}",foundTool, currentRequest.name());
         return foundTool;
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.executor.close();
     }
 }
