@@ -1,0 +1,33 @@
+Desktop LLM Client
+Copyright 2026 Przemysław Szeremeta
+
+This product is licensed under the Apache License, Version 2.0. See the LICENSE
+file for the full license text.
+
+========================================================================
+Third-party notices
+========================================================================
+
+This section lists material from third parties used by the application.
+Additional dependencies may be documented in a Help / About dialog in a
+future release.
+
+------------------------------------------------------------------------
+Twemoji (emoji graphics in chat UI)
+------------------------------------------------------------------------
+
+The chat UI renders emoji in AI messages using PNG graphics from the
+Twemoji project.
+
+  Copyright (c) Twitter, Inc. and other contributors
+  Graphics licensed under the Creative Commons Attribution 4.0 International
+  License (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+  Project: https://github.com/twitter/twemoji
+  Version: 14.0.2 (72x72 PNG assets)
+  Runtime: bundled under classpath chat/emoji/ (Maven generate-resources); jsDelivr CDN
+  is used only as a fallback when a specific PNG is missing (see HtmlEmojiWrapper)
+
+The Twemoji repository also includes build tooling and scripts under the
+MIT License. This notice applies to the emoji artwork (PNG) displayed in
+the application.

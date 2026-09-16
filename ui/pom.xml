@@ -15,6 +15,10 @@
     <name>UI Module</name>
     <description>User interface components and presentation layer</description>
 
+    <properties>
+        <twemoji.version>14.0.2</twemoji.version>
+    </properties>
+
     <dependencies>
         <!-- Core module dependency -->
         <dependency>
@@ -133,7 +137,60 @@
     </dependencies>
     
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/emoji</directory>
+                <targetPath>chat/emoji</targetPath>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.13.0</version>
+                <executions>
+                    <execution>
+                        <id>download-twemoji</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/twitter/twemoji/archive/refs/tags/v${twemoji.version}.zip</url>
+                            <outputDirectory>${project.build.directory}/twemoji</outputDirectory>
+                            <outputFileName>twemoji-${twemoji.version}.zip</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-twemoji-pngs</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/emoji</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/twemoji/twemoji-${twemoji.version}/assets/72x72</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
