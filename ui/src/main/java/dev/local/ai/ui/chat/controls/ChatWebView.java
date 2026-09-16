@@ -31,6 +31,7 @@ public class ChatWebView extends StackPane {
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
     private boolean pageReady = false;
+    private JSObject jsWindow;
     private final java.util.List<Runnable> pendingCalls = new java.util.ArrayList<>();
 
     private final Map<Integer, ChatMessageViewModel> messageIndex = new java.util.LinkedHashMap<>();
@@ -52,9 +53,9 @@ public class ChatWebView extends StackPane {
 
         engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
-                JSObject window = (JSObject) engine.executeScript("window");
+                jsWindow = (JSObject) engine.executeScript("window");
                 javaBridge = new JavaBridge();
-                window.setMember("javaBridge", javaBridge);
+                jsWindow.setMember("javaBridge", javaBridge);
                 pageReady = true;
                 pendingCalls.forEach(Runnable::run);
                 pendingCalls.clear();
@@ -91,81 +92,76 @@ public class ChatWebView extends StackPane {
 
         if (type == MessageTypeView.TOOL_CALL || type == MessageTypeView.TOOL_RESULT) {
             String summary = toolSummary(message.getContent());
-            String fullHtml = escapeForJs(bodyHtml);
-            String summaryEscaped = escapeForJs(summary);
-            runScript(
-                    "addToolMessage(%d,'%s','%s','%s',%s)",
+            callJs(
+                    "addToolMessage",
                     id,
                     typeLabel,
-                    summaryEscaped,
-                    fullHtml,
+                    summary,
+                    bodyHtml,
                     type == MessageTypeView.TOOL_CALL);
         } else if (type == MessageTypeView.AI) {
-            String htmlEscaped = escapeForJs(bodyHtml);
-            String labelEscaped = escapeForJs(typeLabel);
             Statistics stats = message.getStatistics();
             if (stats != null) {
-                runScript(
-                    "addAiMessage(%d,'%s','%s',%d,%d,%d)",
-                    id,
-                    labelEscaped,
-                    htmlEscaped,
-                    stats.inputTokens(),
-                    stats.outputTokens(),
-                    stats.totalTokens());
+                callJs(
+                        "addAiMessage",
+                        id,
+                        typeLabel,
+                        bodyHtml,
+                        stats.inputTokens(),
+                        stats.outputTokens(),
+                        stats.totalTokens());
             } else {
-                runScript("addMessage(%d,'%s','%s','%s')", id, cssClass, labelEscaped, htmlEscaped);
+                callJs("addMessage", id, cssClass, typeLabel, bodyHtml);
             }
         } else {
-            String htmlEscaped = escapeForJs(bodyHtml);
-            runScript("addMessage(%d,'%s','%s','%s')", id, cssClass, typeLabel, htmlEscaped);
+            callJs("addMessage", id, cssClass, typeLabel, bodyHtml);
         }
         return id;
     }
 
     public void setPartialMessage(String cumulativeContent) {
-        String html = escapeForJs(markdownConverter.convertToHtml(cumulativeContent));
-        runScript("setPartialMessage('%s')", html);
+        String html = markdownConverter.convertToHtml(cumulativeContent);
+        callJs("setPartialMessage", html);
     }
 
     private int partialThinkingMessagesId = 0;
 
     public int setPartialThinkingMessage(String cumulativeContent) {
         partialThinkingMessagesId++;
-        String html = escapeForJs(markdownConverter.convertToHtml(cumulativeContent));
-        runScript("setPartialThinkingMessage('%s', " + partialThinkingMessagesId + ")", html);
+        String html = markdownConverter.convertToHtml(cumulativeContent);
+        callJs("setPartialThinkingMessage", html, partialThinkingMessagesId);
         return partialThinkingMessagesId;
     }
 
     public void setPartialThinkingMessage(String cumulativeContent, int id) {
-        String html = escapeForJs(markdownConverter.convertToHtml(cumulativeContent));
-        runScript("setPartialThinkingMessage('%s', " + id + ")", html);
+        String html = markdownConverter.convertToHtml(cumulativeContent);
+        callJs("setPartialThinkingMessage", html, id);
     }
 
     public void thinkingFinished(int id) {
-        runScript("thinkingFinished(%d)", id);
+        callJs("thinkingFinished", id);
     }
 
     public void removePartialMessage() {
-        runScript("removePartialMessage()");
+        callJs("removePartialMessage");
     }
 
     public void clearMessages() {
         messageIndex.clear();
         idCounter.set(0);
-        runScript("clearMessages()");
+        callJs("clearMessages");
     }
 
     public void setDarkMode(boolean enabled) {
-        runScript("setDarkMode(%s)", enabled);
+        callJs("setDarkMode", enabled);
     }
 
     public void requestApproval(int webViewId) {
-        runScript("showToolApproval(%d)", webViewId);
+        callJs("showToolApproval", webViewId);
     }
 
     public void hideToolApproval(int webViewId) {
-        runScript("hideToolApproval(%d)", webViewId);
+        callJs("hideToolApproval", webViewId);
     }
 
     public void requestApproval(String messageId) {
@@ -223,20 +219,16 @@ public class ChatWebView extends StackPane {
                    .replace("\n", "<br>");
     }
 
-    private static String escapeForJs(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\n", "\\n")
-                .replace("\r", "");
-    }
-
-    private void runScript(String format, Object... args) {
-        String script = String.format(format, args);
+    /**
+     * Invokes a global function in chat.html via {@link JSObject#call}, so Unicode
+     * (e.g. emoji) is passed as Java strings instead of being embedded in script source.
+     */
+    private void callJs(String functionName, Object... args) {
+        Runnable action = () -> jsWindow.call(functionName, args);
         if (pageReady) {
-            engine.executeScript(script);
+            action.run();
         } else {
-            pendingCalls.add(() -> engine.executeScript(script));
+            pendingCalls.add(action);
         }
     }
 

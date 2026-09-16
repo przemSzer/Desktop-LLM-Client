@@ -31,7 +31,8 @@ public class MarkdownHtmlConverter {
         if (markdown == null || markdown.isEmpty()) {
             return "";
         }
-        var document = parser.parse(markdown);
-        return renderer.render(document);
+        var normalized = InlineLatexSimplifier.simplify(markdown);
+        var document = parser.parse(normalized);
+        return HtmlEmojiWrapper.wrap(renderer.render(document));
     }
 }
