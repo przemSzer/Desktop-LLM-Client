@@ -16,6 +16,7 @@ import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
+import dev.local.ai.core.tools.ICancellable;
 import dev.local.ai.core.tools.IToolExecutor;
 import dev.local.ai.core.tools.ToolHelper;
 import org.slf4j.Logger;
@@ -144,6 +145,9 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
     private void onStopRequest(StopRequestEvent event) {
         logger.info("StopRequestEvent received: {}", event.getEventId());
         stopRequested.set(true);
+        if (toolExecutor instanceof ICancellable cancellable) {
+            cancellable.cancel();
+        }
     }
 
     private class StreamingResponseHandler implements StreamingChatResponseHandler{
@@ -204,6 +208,11 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
             if (response.aiMessage().hasToolExecutionRequests()){
                 logger.debug("Tool execution requests: {}", response.aiMessage().toolExecutionRequests());
                 executeTools(response.aiMessage().toolExecutionRequests());
+                if (stopRequested.get()) {
+                    logger.debug("Stop requested, cancelling streaming response for request: {}", currentRequestId);
+                    callback.onCancel();
+                    return;
+                }
                 var request = prepareChatRequest();
                 currentRequestId = UUID.randomUUID().toString();
                 chatModel.chat(
@@ -233,7 +242,6 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
                 )
             );
             toolExecutor.execute(toolExecutionRequests, this::toolExecutionFinishedProperly);
-                    //.forEach(this::toolExecutionFinishedProperly);
         }
             
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result) {
@@ -243,7 +251,10 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
 
         @Override
         public void onCompleteToolCall(CompleteToolCall completeToolCall) {
-            logger.info("Tool call completed: {}", completeToolCall.toolExecutionRequest().name());
+            logger.info("Tool call completed: {} with id {}",
+                    completeToolCall.toolExecutionRequest().name(),
+                    completeToolCall.toolExecutionRequest().id()
+            );
         }
 
         @Override
@@ -251,8 +262,7 @@ public class StreamingChat implements ILLMChat, IPartialMessageAware, AutoClosea
             logger.error("Error processing message: {}", error.getMessage(), error);
             if (error instanceof Exception errorAsException){
                 callback.onError("Failed to process message: " + error.getMessage(), errorAsException);
-            }
-            else{
+            } else{
                 callback.onError("Failed to process message: " + error.getMessage(), new Exception(error));
             }
         }

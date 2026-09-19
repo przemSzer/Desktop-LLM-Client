@@ -3,6 +3,7 @@ package dev.local.ai.ui.chat.viewmodel;
 import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.core.tools.IToolExecutionGate;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
@@ -29,6 +30,12 @@ public class ToolCallChatMessageViewModel extends ChatMessageViewModel {
     public void requestApproval(CompletableFuture<IToolExecutionGate.GateCheckResult> approval) {
         this.pendingApproval = approval;
         this.needsApproval.set(true);
+        approval.whenComplete((result, error) ->
+            Platform.runLater(() -> {
+                pendingApproval = null;
+                needsApproval.set(false);
+            })
+        );
     }
 
     public void approve() {

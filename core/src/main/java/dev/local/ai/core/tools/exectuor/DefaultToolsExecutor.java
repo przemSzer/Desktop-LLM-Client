@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
+public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICancellable {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultToolsExecutor.class);
     private final IToolProvider toolProvider;
@@ -44,10 +44,16 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
                 completionService.submit(() -> executeToolIncludingGates(currentToolRequest, toolForCurrentRequest));
             } else {
                 logger.warn("No matching tool found for {}", currentToolRequest);
-                results.add(toolNotFoundError(currentToolRequest, "No matching tool found for " + currentToolRequest));
+                var toolNotFound = toolNotFoundError(currentToolRequest, "No matching tool found for " + currentToolRequest + " or tool disabled");
+                results.add(toolNotFound);
+                listener.onToolCallFinished(toolNotFound);
             }
         }
-        waitForToolCallsBeingFinished(completionService, results, toolExecutionRequests.size(),listener);
+        waitForToolCallsBeingFinished(completionService,
+                results,
+                toolExecutionRequests.size(),
+                listener
+        );
         return results;
     }
 
@@ -62,7 +68,12 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
                     listener.onToolCallFinished(toolCallResult);
                 } catch (ExecutionException e) {
                     logger.warn("Execution of a tool threw an exception", e);
-                    //TODO: add response for a LLM about failed tool call
+                    results.add(ToolExecutionResultMessage
+                            .builder()
+                            .isError(true)
+                            .text("Execution of a tool failed: " + e.getCause().getMessage())
+                            .build()
+                    );
                 }
             }
         } catch (InterruptedException _){
@@ -83,6 +94,8 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.ERROR) {
             //TODO: what to do on error?
+            return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
+        } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.CANCELLED) {
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         }
         logger.debug("Tool passed 'before execution gate', so executing it");
@@ -140,5 +153,12 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable {
     @Override
     public void close() throws Exception {
         this.executor.close();
+    }
+
+    @Override
+    public void cancel() {
+        if (toolExecutionGates instanceof ICancellable cancellable){
+            cancellable.cancel();
+        }
     }
 }

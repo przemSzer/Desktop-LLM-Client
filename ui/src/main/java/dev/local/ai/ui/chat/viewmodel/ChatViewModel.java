@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
@@ -544,7 +543,7 @@ public class ChatViewModel implements IChatListener, IPartialMessagesListener {
 
     private class ChatViewModelApprovalProvider implements IApprovalProvider {
         @Override
-        public Future<IToolExecutionGate.GateCheckResult> askForApproval(ToolExecutionRequest toolExecutionRequest) {
+        public CompletableFuture<IToolExecutionGate.GateCheckResult> askForApproval(ToolExecutionRequest toolExecutionRequest) {
             CompletableFuture<IToolExecutionGate.GateCheckResult> approval = new CompletableFuture<>();
             Platform.runLater(() -> {
                 var toolMessage = findExistingToolCall(toolExecutionRequest.id());

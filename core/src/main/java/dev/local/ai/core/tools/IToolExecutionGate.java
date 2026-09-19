@@ -6,7 +6,8 @@ public interface IToolExecutionGate {
     enum GateResult {
         PASSED,
         REJECTED,
-        ERROR
+        ERROR,
+        CANCELLED
     }
 
     record GateCheckResult(GateResult result, String reason){
@@ -20,6 +21,10 @@ public interface IToolExecutionGate {
 
         public static GateCheckResult error(String reason){
             return new  GateCheckResult(GateResult.ERROR, reason);
+        }
+
+        public static GateCheckResult cancelled(String reason){
+            return new  GateCheckResult(GateResult.CANCELLED, reason);
         }
     }
 
