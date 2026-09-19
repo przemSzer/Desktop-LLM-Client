@@ -54,6 +54,13 @@
     --color-btn-hover-bg:      #F0F0F0;
     --color-btn-hover-border:  #BDBDBD;
 
+    --color-approve-bg:        #E8F5E9;
+    --color-approve-fg:        #2E7D32;
+    --color-approve-border:    #A5D6A7;
+    --color-reject-bg:         #FFEBEE;
+    --color-reject-fg:         #C62828;
+    --color-reject-border:     #EF9A9A;
+
     --color-thinking-bg:       #F9F7F2;
     --color-thinking-border:   #E8E2D0;
     --color-thinking-fg:       #6B5B3A;
@@ -107,6 +114,13 @@ html.dark {
     --color-btn-fg:            #8390A1;
     --color-btn-hover-bg:      #434C5E;
     --color-btn-hover-border:  #4C566A;
+
+    --color-approve-bg:        #3E4A3A;
+    --color-approve-fg:        #A3BE8C;
+    --color-approve-border:    #5E7A52;
+    --color-reject-bg:         #4A3538;
+    --color-reject-fg:         #BF616A;
+    --color-reject-border:     #7A454A;
 
     --color-thinking-bg:       #33392E;
     --color-thinking-border:   #4A5240;
@@ -309,6 +323,45 @@ body {
 }
 .tool-body.open { display: block; }
 
+.tool-approval {
+    display: none;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-tool-border);
+}
+.tool-approval.visible {
+    display: flex;
+}
+
+.btn-approve, .btn-reject {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    min-height: 28px;
+    padding: 4px 12px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    user-select: none;
+}
+
+.btn-approve {
+    background: var(--color-approve-bg);
+    color: var(--color-approve-fg);
+    border: 1px solid var(--color-approve-border);
+}
+
+.btn-reject {
+    background: var(--color-reject-bg);
+    color: var(--color-reject-fg);
+    border: 1px solid var(--color-reject-border);
+}
+
 /* ── Thinking message (collapsible, tool-call style) ───── */
 .message.thinking {
     background: var(--color-thinking-bg);
@@ -494,7 +547,7 @@ function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalT
     //scrollToBottom();
 }
 
-function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
+function addToolMessage(id, typeLabel, summaryText, bodyHtml, withApproval) {
     const div = document.createElement('div');
     div.className = 'message tool';
     div.id = 'msg-' + id;
@@ -529,8 +582,54 @@ function addToolMessage(id, typeLabel, summaryText, bodyHtml) {
     div.appendChild(header);
     div.appendChild(toggle);
     div.appendChild(bodyDiv);
+    if (withApproval) {
+        div.appendChild(createToolApprovalBar(id));
+    }
     container.appendChild(div);
     scrollToBottom();
+}
+
+function createToolApprovalBar(id) {
+    const bar = document.createElement('div');
+    bar.className = 'tool-approval';
+
+    const accept = document.createElement('div');
+    accept.className = 'btn-approve';
+    accept.setAttribute('role', 'button');
+    accept.textContent = 'Accept';
+    accept.onclick = function() { javaBridge.approveTool(id); };
+
+    const reject = document.createElement('div');
+    reject.className = 'btn-reject';
+    reject.setAttribute('role', 'button');
+    reject.textContent = 'Reject';
+    reject.onclick = function() { javaBridge.rejectTool(id); };
+
+    bar.appendChild(accept);
+    bar.appendChild(reject);
+    return bar;
+}
+
+function showToolApproval(id) {
+    const el = document.getElementById('msg-' + id);
+    if (!el) {
+        return;
+    }
+    const bar = el.querySelector('.tool-approval');
+    if (bar) {
+        bar.classList.add('visible');
+    }
+}
+
+function hideToolApproval(id) {
+    const el = document.getElementById('msg-' + id);
+    if (!el) {
+        return;
+    }
+    const bar = el.querySelector('.tool-approval');
+    if (bar) {
+        bar.classList.remove('visible');
+    }
 }
 
 var BULB_SVG = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'

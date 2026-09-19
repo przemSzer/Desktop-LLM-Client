@@ -53,8 +53,8 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
                     .map(ConversationSummary::id)
                     .orElseGet(app.conversationStore::createConversation);
 
-            ChatSession session = app.conversationSessionFactory.openConversation(conversationId);
-            chatViewModel = new ChatViewModel(session, app.conversationSessionFactory,
+            ChatSession session = app.chatSessionFactory.openConversation(conversationId);
+            chatViewModel = new ChatViewModel(session, app.chatSessionFactory,
                     app.conversationStore, app.commandManager, app.eventBus);
             chatViewModel.selectedModelProperty().set(app.lastSelectedModel.get().orElse(null));
         }

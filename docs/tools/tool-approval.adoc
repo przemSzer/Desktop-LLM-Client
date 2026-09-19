@@ -1,0 +1,126 @@
+= Tool approval
+:toc:
+:toc-title: Contents
+
+This document describes how user confirmation (Accept / Reject) works before the executor runs a tool.
+
+== Wiring (when a conversation is opened)
+
+`ChatSessionFactory` always installs `WaitForApprovalGate` as the default in `MultipleToolExecutionGate`.
+The UI attaches later, in `ChatViewModel.attachToSession()`.
+
+[mermaid]
+----
+flowchart LR
+    CSF[ChatSessionFactory] --> WAG[WaitForApprovalGate]
+    CSF --> MTEG[MultipleToolExecutionGate<br/>default = always ask]
+    CSF --> DTE[DefaultToolsExecutor]
+    CSF --> SC[StreamingChat]
+    CSF --> CS[ChatSession<br/>setApprovalProvider]
+
+    WAG --> MTEG
+    MTEG --> DTE
+    DTE --> SC
+    WAG -.->|setter| CS
+
+    CVM[ChatViewModel] -->|attachToSession| CS
+    CVM --> AP[ChatViewModelApprovalProvider]
+    AP -->|setApprovalProvider| WAG
+----
+
+For now *every* tool follows this path — `MultipleToolExecutionGate` has no per-tool overrides yet, so the default (`always ask`) catches everything.
+
+== Runtime: a single tool call
+
+[mermaid]
+----
+sequenceDiagram
+    autonumber
+    participant LLM
+    participant SC as StreamingChat
+    participant CVM as ChatViewModel
+    participant CC as ChatController
+    participant WV as ChatWebView / HTML
+    participant EX as DefaultToolsExecutor
+    participant GATE as WaitForApprovalGate
+    participant AP as ApprovalProvider
+    participant VM as ToolCallChatMessageViewModel
+    participant User
+
+    LLM->>SC: tool execution request
+    SC->>CVM: onMessageAdded(TOOL_CALL, toolId)
+    Note over CVM: Platform.runLater
+    CVM->>CVM: MessageConverter → ToolCallChatMessageViewModel
+    CVM->>CC: chatMessages.add(...)
+    CC->>WV: addMessage(tool bubble)
+
+    SC->>EX: execute(requests)
+    EX->>GATE: beforeToolExecution()
+    GATE->>AP: askForApproval()
+    AP-->>GATE: CompletableFuture (still empty)
+    Note over GATE: LLM thread blocks on future.get()
+
+    AP->>CVM: findOrCreateToolCallMessage(toolId)
+    AP->>VM: requestApproval(future)
+    VM->>CC: needsApproval = true
+    CC->>WV: showToolApproval()
+    WV->>User: Accept / Reject buttons
+
+    alt Accept
+        User->>WV: Accept
+        WV->>VM: approve()
+        VM-->>GATE: Future = PASSED
+        GATE-->>EX: PASSED
+        EX->>EX: actually execute the tool
+    else Reject
+        User->>WV: Reject
+        WV->>VM: reject()
+        VM-->>GATE: Future = REJECTED
+        GATE-->>EX: REJECTED
+        EX-->>SC: error result for the LLM
+    else Stop / switch conversation
+        CVM->>VM: rejectIfPending()
+        VM-->>GATE: Future = REJECTED
+    end
+
+    SC->>CVM: onMessageAdded(TOOL_RESULT)
+    SC->>LLM: next turn with the tool result
+----
+
+== What is synchronous and what is not
+
+The important detail: *two threads*.
+
+[cols="1,2"]
+|===
+|Thread |What it does
+
+|Streaming / executor
+|`executeTools` → gate → `future.get()` — *waits*
+
+|JavaFX
+|Adds the bubble, shows the buttons, completes the `Future` after a click
+|===
+
+That is why the order in `StreamingChat.executeTools()` matters:
+
+. first `onMessageAdded(TOOL_CALL)` — queues adding the bubble on the FX thread
+. then `toolExecutor.execute()` — blocks on approval
+
+The FX thread usually adds the message before the provider looks it up by `toolId`.
+If it does not, the provider *creates* the `ToolCallChatMessageViewModel` itself.
+
+== Decision path (short)
+
+[mermaid]
+----
+flowchart TD
+    A[LLM wants a tool] --> B[TOOL_CALL bubble in chat]
+    B --> C{WaitForApprovalGate}
+    C --> D[UI: Accept / Reject]
+    D -->|Accept| E[Tool runs]
+    D -->|Reject / Stop| F[Error result goes back to the LLM]
+    E --> G[TOOL_RESULT in chat]
+    F --> G
+    G --> H[Next LLM turn]
+----

@@ -1,30 +1,15 @@
 package dev.local.ai.core.tools.mcp;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolDescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Exposes the tools of a single MCP server as {@link IToolProvider} descriptors.
- *
- * <p>Granularity: one {@link ToolDescriptor} per remote tool (Option B). The
- * descriptor id is {@code serverId + "/" + toolName} which guarantees
- * uniqueness across servers and lets {@code FilterableToolProvider} key its
- * UI toggles per individual tool.
- *
- * <p>The result of {@link McpClient#listTools()} is cached on first access –
- * it is a remote round-trip that must not be repeated for every chat turn.
- * If the server's tool catalogue changes at runtime, a new instance of this
- * provider should be created (handled by the registry in a later step).
- */
+import java.util.List;
+import java.util.Objects;
+
 public class McpServerToolProvider implements IToolProvider, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(McpServerToolProvider.class);
@@ -33,7 +18,7 @@ public class McpServerToolProvider implements IToolProvider, AutoCloseable {
     private final String serverDisplayName;
     private final McpClient mcpClient;
 
-    private volatile List<ToolDescriptor> descriptorsCache;
+    private List<ToolDescriptor> descriptorsCache;
 
     public McpServerToolProvider(String serverId, String serverDisplayName, McpClient mcpClient) {
         this.serverId = Objects.requireNonNull(serverId, "serverId");
@@ -71,11 +56,18 @@ public class McpServerToolProvider implements IToolProvider, AutoCloseable {
     }
 
     private ToolDescriptor toToolDescriptor(ToolSpecification spec) {
+        var toolName = MCPUtils.toolNameForToolFromMCP(serverId,spec.name());
+        var spectWithChangedName = ToolSpecification.builder()
+                .name(toolName)
+                .description(spec.description())
+                .parameters(spec.parameters())
+                .metadata(spec.metadata())
+                .build();
         return new ToolDescriptor(
-                serverId + "/" + spec.name(),
+                toolName,
                 serverDisplayName + ": " + spec.name(),
-                List.of(spec),
-                new McpToolExecutorAdapter(mcpClient, Set.of(spec.name()))
+                spectWithChangedName,
+                new McpToolAdapter(mcpClient, serverId, spec.name())
         );
     }
 

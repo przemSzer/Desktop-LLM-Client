@@ -34,9 +34,9 @@ class ToolsSelectorViewModelTest {
 
         var descriptors = List.of(
             new ToolDescriptor("downloadWebPage", "Download web page",
-                List.of(specDownload), request -> Optional.empty()),
+                specDownload, request -> Optional.empty()),
             new ToolDescriptor("executeLocalCommand", "Execute local commands",
-                List.of(specCommand), request -> Optional.empty())
+                specCommand, request -> Optional.empty())
         );
 
         toolProvider = new StubToolProvider(descriptors);
@@ -112,7 +112,7 @@ class ToolsSelectorViewModelTest {
         var spec = ToolSpecification.builder()
             .name("someNewTool").description("A new tool").build();
         var descriptor = new ToolDescriptor("someNewTool", "My Custom Tool Name",
-            List.of(spec), request -> Optional.empty());
+            spec, request -> Optional.empty());
         var provider = new StubToolProvider(List.of(descriptor));
 
         var viewModel = new ToolsSelectorViewModel(provider, eventBus);
