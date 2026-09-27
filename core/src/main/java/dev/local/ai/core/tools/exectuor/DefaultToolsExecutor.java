@@ -15,12 +15,12 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultToolsExecutor.class);
     private final IToolProvider toolProvider;
-    private final IToolExecutionGate toolExecutionGates;
+    private final IToolExecutionGate toolExecutionGate;
     private final ExecutorService executor;
 
     public DefaultToolsExecutor(IToolProvider toolProvider, IToolExecutionGate toolExecutionGate) {
         this.toolProvider = toolProvider;
-        this.toolExecutionGates = toolExecutionGate;
+        this.toolExecutionGate = toolExecutionGate;
         var toolsThreadFactory = createToolsThreadFactory();
         this.executor = Executors.newThreadPerTaskExecutor(toolsThreadFactory);
     }
@@ -41,12 +41,12 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
             logger.debug("Processing request {}", currentToolRequest);
             var toolForCurrentRequest = getMatchingTool(currentToolRequest);
             if (toolForCurrentRequest != null) {
-                completionService.submit(() -> executeToolIncludingGates(currentToolRequest, toolForCurrentRequest));
+                completionService.submit(() -> executeToolSafely(currentToolRequest, toolForCurrentRequest));
             } else {
                 logger.warn("No matching tool found for {}", currentToolRequest);
                 var toolNotFound = toolNotFoundError(currentToolRequest, "No matching tool found for " + currentToolRequest + " or tool disabled");
                 results.add(toolNotFound);
-                listener.onToolCallFinished(toolNotFound);
+                notifyToolCallFinished(listener, toolNotFound);
             }
         }
         waitForToolCallsBeingFinished(completionService,
@@ -64,16 +64,12 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
                     var finishedCall = executor.take();
                     var toolCallResult = finishedCall.get();
                     results.add(toolCallResult);
-                    //TODO: handle exception in listener
-                    listener.onToolCallFinished(toolCallResult);
+                    notifyToolCallFinished(listener, toolCallResult);
                 } catch (ExecutionException e) {
                     logger.warn("Execution of a tool threw an exception", e);
-                    results.add(ToolExecutionResultMessage
-                            .builder()
-                            .isError(true)
-                            .text("Execution of a tool failed: " + e.getCause().getMessage())
-                            .build()
-                    );
+                    var failed = toolExecutionFailedWithoutRequest(e);
+                    results.add(failed);
+                    notifyToolCallFinished(listener, failed);
                 }
             }
         } catch (InterruptedException _){
@@ -88,12 +84,50 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
         );
     }
 
+    private ToolExecutionResultMessage executeToolSafely(ToolExecutionRequest currentRequest, ToolDescriptor toolForCurrentRequest) {
+        try {
+            return executeToolIncludingGates(currentRequest, toolForCurrentRequest);
+        } catch (Exception e) {
+            logger.warn("Execution of tool {} failed", currentRequest.name(), e);
+            return toolExecutionFailed(currentRequest, e);
+        }
+    }
+
+    private void notifyToolCallFinished(IToolExecutionEventListener listener, ToolExecutionResultMessage result) {
+        try {
+            listener.onToolCallFinished(result);
+        } catch (Exception e) {
+            logger.warn("Tool finished listener failed for tool {}", result.toolName(), e);
+        }
+    }
+
+    private ToolExecutionResultMessage toolExecutionFailed(ToolExecutionRequest currentRequest, Exception e) {
+        return responseBuilderFrom(currentRequest)
+                .isError(true)
+                .text("Execution of a tool failed: " + failureMessage(e))
+                .build();
+    }
+
+    private ToolExecutionResultMessage toolExecutionFailedWithoutRequest(ExecutionException e) {
+        return ToolExecutionResultMessage.builder()
+                .isError(true)
+                .text("Execution of a tool failed: " + failureMessage(e.getCause() != null ? e.getCause() : e))
+                .build();
+    }
+
+    private static String failureMessage(Throwable failure) {
+        var message = failure.getMessage();
+        if (message == null || message.isBlank()) {
+            return failure.getClass().getSimpleName();
+        }
+        return message;
+    }
+
     private ToolExecutionResultMessage executeToolIncludingGates(ToolExecutionRequest currentRequest, ToolDescriptor toolForCurrentRequest) {
-        var beforeToolExecutionResult = toolExecutionGates.beforeToolExecution(currentRequest);
+        var beforeToolExecutionResult = toolExecutionGate.beforeToolExecution(currentRequest);
         if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.REJECTED) {
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.ERROR) {
-            //TODO: what to do on error?
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.CANCELLED) {
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
@@ -157,7 +191,7 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
 
     @Override
     public void cancel() {
-        if (toolExecutionGates instanceof ICancellable cancellable){
+        if (toolExecutionGate instanceof ICancellable cancellable){
             cancellable.cancel();
         }
     }
