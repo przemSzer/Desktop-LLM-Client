@@ -26,6 +26,7 @@ public class WaitForApprovalGate implements IToolExecutionGate, ICancellable {
         if (approvalProvider == null){
             return GateCheckResult.error("No approval provider found");
         }
+        //TODO: it can be changed for a event?
         var approvalChallenge = approvalProvider.askForApproval(toolExecutionRequest);
         if (approvalChallenge == null) {
             return GateCheckResult.error("Approval provider returned no result");

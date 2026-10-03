@@ -25,9 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -204,15 +202,21 @@ class DefaultToolsExecutorTest {
         var results = executor.execute(List.of(request), listener);
 
         assertThat(results).hasSize(1);
-        assertThat(results.getFirst().isError()).isTrue();
-        assertThat(results.getFirst().id()).isEqualTo("tool-1");
-        assertThat(results.getFirst().toolName()).isEqualTo("run_command");
-        assertThat(results.getFirst().text()).contains("boom");
+        assertThat(results.getFirst().isError())
+                .isTrue();
+        assertThat(results.getFirst().id())
+                .isEqualTo("tool-1");
+        assertThat(results.getFirst().toolName())
+                .isEqualTo("run_command");
+        assertThat(results.getFirst().text())
+                .contains("boom");
         then(listener)
                 .should()
                 .onToolCallFinished(resultCaptor.capture());
-        assertThat(resultCaptor.getValue().id()).isEqualTo("tool-1");
-        assertThat(resultCaptor.getValue().toolName()).isEqualTo("run_command");
+        assertThat(resultCaptor.getValue().id())
+                .isEqualTo("tool-1");
+        assertThat(resultCaptor.getValue().toolName())
+                .isEqualTo("run_command");
     }
 
     @Test
@@ -226,15 +230,21 @@ class DefaultToolsExecutorTest {
         var results = executor.execute(List.of(request), listener);
 
         assertThat(results).hasSize(1);
-        assertThat(results.getFirst().isError()).isTrue();
-        assertThat(results.getFirst().id()).isEqualTo("tool-1");
-        assertThat(results.getFirst().toolName()).isEqualTo("run_command");
-        assertThat(results.getFirst().text()).contains("Tool returned empty result");
+        assertThat(results.getFirst().isError())
+                .isTrue();
+        assertThat(results.getFirst().id())
+                .isEqualTo("tool-1");
+        assertThat(results.getFirst().toolName())
+                .isEqualTo("run_command");
+        assertThat(results.getFirst().text())
+                .contains("Tool returned empty result");
         then(listener)
                 .should()
                 .onToolCallFinished(resultCaptor.capture());
-        assertThat(resultCaptor.getValue().id()).isEqualTo("tool-1");
-        assertThat(resultCaptor.getValue().text()).contains("Tool returned empty result");
+        assertThat(resultCaptor.getValue().id())
+                .isEqualTo("tool-1");
+        assertThat(resultCaptor.getValue().text())
+                .contains("Tool returned empty result");
     }
 
     @Test
@@ -248,13 +258,17 @@ class DefaultToolsExecutorTest {
         var results = executor.execute(List.of(request), listener);
 
         assertThat(results).hasSize(1);
-        assertThat(results.getFirst().isError()).isTrue();
-        assertThat(results.getFirst().text()).contains("future failed");
+        assertThat(results.getFirst().isError())
+                .isTrue();
+        assertThat(results.getFirst().text())
+                .contains("future failed");
         then(listener)
                 .should()
                 .onToolCallFinished(resultCaptor.capture());
-        assertThat(resultCaptor.getValue().isError()).isTrue();
-        assertThat(resultCaptor.getValue().text()).contains("future failed");
+        assertThat(resultCaptor.getValue().isError())
+                .isTrue();
+        assertThat(resultCaptor.getValue().text())
+                .contains("future failed");
     }
 
     @Test
@@ -269,7 +283,8 @@ class DefaultToolsExecutorTest {
 
         var specifications = executor.toolSpecifications();
 
-        assertThat(specifications).containsExactly(specA, specB);
+        assertThat(specifications)
+                .containsExactly(specA, specB);
     }
 
     @Test
@@ -304,9 +319,12 @@ class DefaultToolsExecutorTest {
 
         var results = executor.execute(List.of(request), listener);
 
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().text()).isEqualTo("ok");
-        assertThat(results.getFirst().isError()).isFalse();
+        assertThat(results)
+                .hasSize(1);
+        assertThat(results.getFirst().text())
+                .isEqualTo("ok");
+        assertThat(results.getFirst().isError())
+                .isFalse();
         then(listener)
                 .should()
                 .onToolCallFinished(any());
@@ -318,19 +336,21 @@ class DefaultToolsExecutorTest {
         givenToolDescriptor("run_command", tool);
         var gateEntered = new CountDownLatch(1);
         var releaseGate = new CountDownLatch(1);
-        given(toolExecutionGate.beforeToolExecution(request))
-                .willAnswer(invocation -> {
-                    gateEntered.countDown();
-                    assertThat(releaseGate.await(5, TimeUnit.SECONDS)).isTrue();
-                    return IToolExecutionGate.GateCheckResult.cancelled("test cleanup");
-                });
+
+        willAnswer(invocation -> {
+                gateEntered.countDown();
+                assertThat(releaseGate.await(5, TimeUnit.SECONDS)).isTrue();
+                return IToolExecutionGate.GateCheckResult.cancelled("test cleanup");
+            })
+                .given(toolExecutionGate)
+                .beforeToolExecution(request);
 
         var waitingThread = Thread.currentThread();
         var interrupter = Thread.ofVirtual().start(() -> {
             try {
                 assertThat(gateEntered.await(5, TimeUnit.SECONDS)).isTrue();
                 waitingThread.interrupt();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException _) {
                 Thread.currentThread().interrupt();
             }
         });
@@ -339,7 +359,8 @@ class DefaultToolsExecutorTest {
             var results = executor.execute(List.of(request), listener);
 
             assertThat(Thread.currentThread().isInterrupted()).isTrue();
-            assertThat(results).isEmpty();
+            assertThat(results)
+                    .isEmpty();
             then(listener)
                     .should(never())
                     .onToolCallFinished(any());
@@ -365,14 +386,18 @@ class DefaultToolsExecutorTest {
 
         var results = executor.execute(List.of(requestA, requestB), listener);
 
-        assertThat(results).hasSize(2);
-        var resultTexts = results.stream().map(r -> r.text()).toList();
-        assertThat(resultTexts).containsExactlyInAnyOrder("a", "b");
+        assertThat(results)
+                .hasSize(2);
+        var resultTexts = results.stream()
+                .map(ToolExecutionResultMessage::text).toList();
+        assertThat(resultTexts)
+                .containsExactlyInAnyOrder("a", "b");
         then(listener)
                 .should(times(2))
                 .onToolCallFinished(resultCaptor.capture());
-        var listenerTexts = resultCaptor.getAllValues().stream().map(r -> r.text()).toList();
-        assertThat(listenerTexts).containsExactlyInAnyOrder("a", "b");
+        var listenerTexts = resultCaptor.getAllValues().stream().map(ToolExecutionResultMessage::text).toList();
+        assertThat(listenerTexts)
+                .containsExactlyInAnyOrder("a", "b");
     }
 
     @Test
@@ -386,15 +411,16 @@ class DefaultToolsExecutorTest {
 
         var results = executor.execute(List.of(known, unknown), listener);
 
-        assertThat(results).hasSize(2);
-        assertThat(results).anySatisfy(r -> {
-            assertThat(r.id()).isEqualTo("tool-1");
-            assertThat(r.isError()).isFalse();
-        });
-        assertThat(results).anySatisfy(r -> {
-            assertThat(r.id()).isEqualTo("tool-2");
-            assertThat(r.isError()).isTrue();
-        });
+        assertThat(results)
+                .hasSize(2)
+                .anySatisfy(r -> {
+                    assertThat(r.id()).isEqualTo("tool-1");
+                    assertThat(r.isError()).isFalse();
+                })
+                .anySatisfy(r -> {
+                    assertThat(r.id()).isEqualTo("tool-2");
+                    assertThat(r.isError()).isTrue();
+                });
         then(listener)
                 .should(times(2))
                 .onToolCallFinished(any());

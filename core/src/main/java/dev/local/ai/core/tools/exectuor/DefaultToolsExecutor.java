@@ -60,21 +60,25 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
     private void waitForToolCallsBeingFinished(CompletionService<ToolExecutionResultMessage> executor, ArrayList<ToolExecutionResultMessage> results, int expectedToolResults, IToolExecutionEventListener listener) {
         try{
             while(results.size() < expectedToolResults) {
-                try {
-                    var finishedCall = executor.take();
-                    var toolCallResult = finishedCall.get();
-                    results.add(toolCallResult);
-                    notifyToolCallFinished(listener, toolCallResult);
-                } catch (ExecutionException e) {
-                    logger.warn("Execution of a tool threw an exception", e);
-                    var failed = toolExecutionFailedWithoutRequest(e);
-                    results.add(failed);
-                    notifyToolCallFinished(listener, failed);
-                }
+                collectNextToolResult(executor, results, listener);
             }
         } catch (InterruptedException _){
             logger.info("Waiting for tools to finish interrupted");
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void collectNextToolResult(CompletionService<ToolExecutionResultMessage> executor, ArrayList<ToolExecutionResultMessage> results, IToolExecutionEventListener listener) throws InterruptedException {
+        try {
+            var finishedCall = executor.take();
+            var toolCallResult = finishedCall.get();
+            results.add(toolCallResult);
+            notifyToolCallFinished(listener, toolCallResult);
+        } catch (ExecutionException e) {
+            logger.warn("Execution of a tool threw an exception", e);
+            var failed = toolExecutionFailedWithoutRequest(e);
+            results.add(failed);
+            notifyToolCallFinished(listener, failed);
         }
     }
 
@@ -125,11 +129,7 @@ public class DefaultToolsExecutor implements IToolExecutor, AutoCloseable, ICanc
 
     private ToolExecutionResultMessage executeToolIncludingGates(ToolExecutionRequest currentRequest, ToolDescriptor toolForCurrentRequest) {
         var beforeToolExecutionResult = toolExecutionGate.beforeToolExecution(currentRequest);
-        if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.REJECTED) {
-            return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
-        } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.ERROR) {
-            return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
-        } else if (beforeToolExecutionResult.result() == IToolExecutionGate.GateResult.CANCELLED) {
+        if (beforeToolExecutionResult.result() != IToolExecutionGate.GateResult.PASSED){
             return beforeToolGateRejected(beforeToolExecutionResult, currentRequest);
         }
         logger.debug("Tool passed 'before execution gate', so executing it");
