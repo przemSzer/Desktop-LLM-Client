@@ -53,8 +53,8 @@
 //             .containsExactly("fs-server/read_file", "fs-server/write_file");
 //         assertThat(descriptors).extracting(ToolDescriptor::displayName)
 //             .containsExactly("Filesystem: read_file", "Filesystem: write_file");
-//         assertThat(descriptors.get(0).specifications()).containsExactly(readSpec);
-//         assertThat(descriptors.get(1).specifications()).containsExactly(writeSpec);
+//         assertThat(descriptors.get(0).specification()).containsExactly(readSpec);
+//         assertThat(descriptors.get(1).specification()).containsExactly(writeSpec);
 //     }
 
 //     @Test

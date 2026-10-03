@@ -1,30 +1,23 @@
 package dev.local.ai.core.tools.local;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import dev.langchain4j.agent.tool.*;
+import dev.langchain4j.community.code.local.CommandLineTool;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.local.ai.core.tools.ITool;
+import dev.local.ai.core.tools.ToolDescriptor;
+import dev.local.ai.core.tools.ToolHelper;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.langchain4j.agent.tool.P;
-import dev.langchain4j.agent.tool.Tool;
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
-import dev.langchain4j.agent.tool.ToolMemoryId;
-import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.agent.tool.ToolSpecifications;
-import dev.langchain4j.community.code.local.CommandLineTool;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
-import dev.local.ai.core.tools.IToolExecutor;
-import dev.local.ai.core.tools.ToolDescriptor;
-import dev.local.ai.core.tools.ToolHelper;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
 
-public class CommandLineTools implements IToolExecutor {
+public class CommandLineTools implements ITool {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandLineTools.class);
     private static final String TOOL_NAME = "executeLocalCommand";
@@ -70,15 +63,17 @@ public class CommandLineTools implements IToolExecutor {
         }
     }
 
-    public List<ToolSpecification> toolSpecifications() {
+    ToolSpecification toolSpecifications() {
         String osName = System.getProperty("os.name");
-        return ToolSpecifications.toolSpecificationsFrom(getInstance()).stream()
-            .map(spec -> ToolSpecification.builder()
-                .name(spec.name())
-                .description(spec.description() + " The operating system is: " + osName)
-                .parameters(spec.parameters())
-                .build())
-            .toList();
+        return ToolSpecifications.toolSpecificationsFrom(getInstance())
+                .stream()
+                .map(spec -> ToolSpecification.builder()
+                    .name(spec.name())
+                    .description(spec.description() + " The operating system is: " + osName)
+                    .parameters(spec.parameters())
+                    .build())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Failed to find ToolSpecification for command line tools"));
     }
 
     public ToolDescriptor toDescriptor() {
@@ -92,7 +87,7 @@ public class CommandLineTools implements IToolExecutor {
         }
 
         try {
-            Map<String, String> args = ToolHelper.getArguments(toolExecutionRequest, "cmd");
+            Map<String, String> args = ToolHelper.getArguments(toolExecutionRequest);
 
             String cmd = args.get("arg0");
             if (cmd == null || cmd.isBlank()) {
