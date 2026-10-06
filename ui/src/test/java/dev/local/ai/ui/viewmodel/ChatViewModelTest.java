@@ -2,8 +2,9 @@ package dev.local.ai.ui.viewmodel;
 
 import dev.langchain4j.memory.ChatMemory;
 import dev.local.ai.core.chat.streaming.StreamingChat;
-import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
+import dev.local.ai.core.tools.gates.WaitForApprovalGate;
+import io.reactivex.rxjava4.core.Observable;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 class ChatViewModelTest {
@@ -38,10 +40,10 @@ class ChatViewModelTest {
     private CommandManager commandManager;
 
     @Mock(lenient = true)
-    private CoreEventBus eventBus;
+    private ConversationStore conversationStore;
 
     @Mock(lenient = true)
-    private ConversationStore conversationStore;
+    private WaitForApprovalGate approval;
 
     private ChatSession session;
     private ChatViewModel viewModel;
@@ -50,9 +52,11 @@ class ChatViewModelTest {
     void setUp() {
         given(mockMemory.messages()).willReturn(Collections.emptyList());
         given(mockChat.getSystemMessage()).willReturn("");
+        given(mockChat.events()).willReturn(Observable.empty());
+        given(approval.events()).willReturn(Observable.empty());
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());
-        session = new ChatSession("conv-test", mockMemory, mockChat, provider -> {});
-        viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager, eventBus);
+        session = new ChatSession("conv-test", mockMemory, mockChat, approval);
+        viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager);
     }
 
     @Test
@@ -82,5 +86,12 @@ class ChatViewModelTest {
     void testGetMessageCount() {
         given(mockChat.getMessageCount()).willReturn(5);
         assertEquals(5, viewModel.getMessageCount());
+    }
+
+    @Test
+    void shouldStopTheSessionChat() {
+        viewModel.stopMessage();
+
+        then(mockChat).should().stop();
     }
 }

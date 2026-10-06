@@ -2,15 +2,15 @@
 :toc:
 :toc-title: Contents
 
-This document describes the target shape of a live chat turn. `StreamingChat` publishes one ordered stream of plain events. The UI reacts to that stream. The user changes the turn only through commands.
+This document describes the target shape of a live chat turn. `StreamingChat` publishes one ordered stream of plain chat events, including tool results it receives from the executor. `WaitForApprovalGate` publishes its own stream, which for now contains only an approval request. The UI reacts to both. The user changes the turn only through commands.
 
 This replaces `IChatListener` and `IPartialMessagesListener` as the way the UI hears about a turn. It does not replace `ChatMemory`. Loading an existing conversation is still a snapshot from memory, not a replay of the stream.
 
 == Session boundary
 
-`StreamingChat` owns the stream and is the only publisher. A serialized RxJava `Observable` keeps events in the order they happened. `CoreEventBus` is not this channel: its `publish` runs listeners on a pool, so a token and an approval request from the same turn can arrive out of order.
+`StreamingChat` owns the chat stream. `WaitForApprovalGate` owns the approval stream. Each is a serialized RxJava `Observable`, so events on that stream stay in the order they happened. `CoreEventBus` is not either channel: its `publish` runs listeners on a pool, so a token and an approval request from the same turn can arrive out of order.
 
-The UI subscribes and updates bubbles. It does not get asked whether a bubble already exists.
+The UI subscribes to both and updates bubbles. It does not get asked whether a bubble already exists. `DefaultToolsExecutor` does not know about approval. `StreamingChat` does not approve tools. It runs the executor and forwards each finished tool result onto the chat stream.
 
 [plantuml]
 ----
@@ -18,21 +18,27 @@ The UI subscribes and updates bubbles. It does not get asked whether a bubble al
 left to right direction
 
 rectangle "Chat UI" as UI
+rectangle "ChatSession" as CS
 rectangle "StreamingChat" as SC
 rectangle "Observable<ChatEvent>" as OBS
 rectangle "DefaultToolsExecutor" as EX
 rectangle "WaitForApprovalGate" as GATE
+rectangle "Observable<ToolApprovalEvent>" as AOBS
 
-UI --> SC : commands\nsend, approve, reject, stop
+UI --> CS : commands\nsend, stop, approve, reject
+CS --> SC : send, stop
+CS --> GATE : approve, reject
 SC --> OBS
-OBS --> UI : events
+OBS --> UI : chat events
+GATE --> AOBS
+AOBS --> UI : approval requested
 SC --> EX : execute(requests)
 EX --> GATE : beforeToolExecution()
-GATE --> SC : request a decision\nfor this tool id
+EX --> SC : tool finished
 @enduml
 ----
 
-The gate does not publish on its own stream. It asks `StreamingChat` for a decision, then blocks on a `CompletableFuture` that stays inside the gate. `approve` and `reject` complete that future.
+The gate creates the `CompletableFuture`, emits `ToolApprovalRequested`, and blocks on `future.get()`. `approve` and `reject` on the gate complete that future. `StreamingChat` hears that a tool finished through the listener `execute` already takes, adds the result to `ChatMemory`, and emits tool-finished on its own stream.
 
 == Commands
 
@@ -46,20 +52,24 @@ A command is how the user affects the session.
 |Starts a turn. The user message is added to `ChatMemory`, then announced on the stream.
 
 |`approve(approvalId)`
-|Completes the pending future for that id as passed. The matching tool runs.
+|A command on `WaitForApprovalGate`. Completes the pending future for that id as passed. The matching tool runs.
 
 |`reject(approvalId)`
-|Completes the pending future for that id as rejected. The tool does not run. An error tool-result is still recorded and sent back to the model.
+|A command on `WaitForApprovalGate`. Completes the pending future for that id as rejected. The tool does not run. An error tool-result is still recorded and sent back to the model.
 
 |`stop`
-|Cancels the executor. Every pending approval completes as cancelled, the streaming response is cancelled, and the turn does not continue with another model call.
+|A command on `StreamingChat`. Cancels the executor. Every pending approval completes as cancelled, the streaming response is cancelled, and the turn does not continue with another model call.
 |===
 
 `ToolApprovalToken` is a UI handle, not a core event. When the chat receives an approval request, it builds a token for that `approvalId` and keeps it on the bubble. `setResult(APPROVED)` and `setResult(REJECTED)` call `approve` or `reject`. A later client in another process implements the same token by sending that id over HTTP. The event on the stream stays plain data either way.
 
 == Events
 
-Every item on the stream is immutable data: ids, text, and results. No `CompletableFuture`, no view model, no token object.
+Chat events and tool approval events are separate. Every item is immutable data: ids, text, and results. No `CompletableFuture`, no view model, no token object.
+
+=== Chat stream
+
+`StreamingChat` publishes these.
 
 [cols="1,2"]
 |===
@@ -80,11 +90,8 @@ Every item on the stream is immutable data: ids, text, and results. No `Completa
 |Tool call requested
 |Show a tool bubble for this tool request id.
 
-|Approval requested
-|Carry `approvalId` and the tool request id. Show Accept / Reject on that bubble.
-
 |Tool finished
-|Show the tool result. This includes a successful run, a rejection, a missing tool, and a failed run.
+|Show the tool result. `StreamingChat` emits this when the executor reports that the tool finished. This includes a successful run, a rejection, a missing tool, and a failed run.
 
 |Error
 |Show an error bubble. The turn is no longer in progress.
@@ -97,6 +104,18 @@ Every item on the stream is immutable data: ids, text, and results. No `Completa
 |===
 
 Partial text and partial thinking are deltas for one request id. The subscriber appends them. The stream does not resend the whole bubble on each token.
+
+=== Approval stream
+
+`WaitForApprovalGate` publishes this. `approve` and `reject` are commands on that same gate.
+
+[cols="1,2"]
+|===
+|Event |UI effect
+
+|Tool approval requested
+|Carry `approvalId` and the tool request id. Show Accept / Reject on that bubble.
+|===
 
 == One tool
 
@@ -135,16 +154,14 @@ participant "WaitForApprovalGate" as GATE
 
 SC -> UI : tool call requested
 EX -> GATE : beforeToolExecution()
-GATE -> SC : decision for this tool
-SC -> UI : approval requested (approvalId)
+GATE -> UI : tool approval requested (approvalId)
 note over GATE : blocks on its private future
 
 User -> UI : Accept on that bubble
-UI -> SC : approve(approvalId)
-SC --> GATE : future completes as passed
+UI -> GATE : approve(approvalId)
 GATE --> EX : PASSED
 EX -> EX : run this tool
-EX -> SC : tool finished
+EX -> SC : tool result, for memory
 SC -> UI : tool finished
 @enduml
 ----
@@ -155,7 +172,7 @@ A second tool in the same turn has its own id, its own future, and its own event
 
 `ChatMemory` remains the source of truth for messages the model sees. The observable is only the live turn.
 
-`WaitForApprovalGate` still blocks the tool thread with `future.get()`. The change is who completes that future: a command on `StreamingChat`, keyed by `approvalId`, rather than a lookup of `ToolCallChatMessageViewModel` in the JavaFX message list.
+`WaitForApprovalGate` still blocks the tool thread with `future.get()`. The command that completes that future is `approve(approvalId)` or `reject(approvalId)` on the gate. The UI does not look up a bubble in order to let the tool run.
 
 `CoreEventBus` stays for facts that cross a session, such as `LLMChangedEvent`. Chat tokens, tool bubbles, and approval requests do not go on that bus.
 

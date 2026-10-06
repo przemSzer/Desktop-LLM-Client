@@ -46,10 +46,6 @@ class StreamingChatLifecycleTest {
     @Captor
     private ArgumentCaptor<EventListener> llmListenerCaptor;
 
-    @SuppressWarnings({ "rawtypes" })
-    @Captor
-    private ArgumentCaptor<EventListener> stopListenerCaptor;
-
     private StreamingChat streamingChat;
 
     @BeforeEach
@@ -61,7 +57,7 @@ class StreamingChatLifecycleTest {
     @SuppressWarnings("unchecked")
     void shouldSubscribeListenersOnConstruction() {
         then(eventBus).should().subscribe(eq(LLMChangedEvent.EVENT_TYPE), any(EventListener.class));
-        then(eventBus).should().subscribe(eq(StopRequestEvent.EVENT_TYPE), any(EventListener.class));
+        then(eventBus).should(times(1)).subscribe(any(), any(EventListener.class));
     }
 
     @Test
@@ -69,14 +65,11 @@ class StreamingChatLifecycleTest {
     void shouldUnsubscribeSameListenerInstancesOnClose() {
         InOrder order = inOrder(eventBus);
         order.verify(eventBus).subscribe(eq(LLMChangedEvent.EVENT_TYPE), llmListenerCaptor.capture());
-        order.verify(eventBus).subscribe(eq(StopRequestEvent.EVENT_TYPE), stopListenerCaptor.capture());
         EventListener<? extends Event> capturedLlmListener = llmListenerCaptor.getValue();
-        EventListener<? extends Event> capturedStopListener = stopListenerCaptor.getValue();
 
         streamingChat.close();
 
         then(eventBus).should().unsubscribe(LLMChangedEvent.EVENT_TYPE, capturedLlmListener);
-        then(eventBus).should().unsubscribe(StopRequestEvent.EVENT_TYPE, capturedStopListener);
     }
 
     @Test
@@ -86,7 +79,5 @@ class StreamingChatLifecycleTest {
 
         then(eventBus).should(times(1))
                 .unsubscribe(eq(LLMChangedEvent.EVENT_TYPE), any(EventListener.class));
-        then(eventBus).should(times(1))
-                .unsubscribe(eq(StopRequestEvent.EVENT_TYPE), any(EventListener.class));
     }
 }

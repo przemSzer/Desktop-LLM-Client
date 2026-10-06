@@ -84,6 +84,11 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.reactivex.rxjava4</groupId>
+            <artifactId>rxjava</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.mockito</groupId>
@@ -96,6 +101,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project> 
