@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -38,6 +37,16 @@ public class WaitForApprovalGate implements IToolExecutionGate, ICancellable, Au
         completeDecision(approvalId, GateCheckResult.rejected("User rejected tool execution"));
     }
 
+    // currently used only in tests
+    void finishExceptionally(String approvalId, Exception exception) {
+        var pending = pendingDecisions.remove(approvalId);
+        if (pending == null) {
+            logger.warn("No pending approval for {}", approvalId);
+            return;
+        }
+        pending.completeExceptionally(exception);
+    }
+
     @Override
     public GateCheckResult beforeToolExecution(ToolExecutionRequest toolExecutionRequest) {
         var approvalChallenge = new CompletableFuture<GateCheckResult>();
@@ -51,9 +60,6 @@ public class WaitForApprovalGate implements IToolExecutionGate, ICancellable, Au
             logger.error("Interrupted while waiting for approval", e);
             Thread.currentThread().interrupt();
             return GateCheckResult.error("Interrupted while waiting for approval");
-        } catch (CancellationException _) {
-            logger.info("Approval cancelled for tool {}", toolExecutionRequest.name());
-            return GateCheckResult.rejected("Approval cancelled");
         } catch (ExecutionException e) {
             logger.error("Error while waiting for approval", e);
             return GateCheckResult.error("Error while waiting for approval");
@@ -78,9 +84,6 @@ public class WaitForApprovalGate implements IToolExecutionGate, ICancellable, Au
     }
 
     private void completeDecision(String approvalId, GateCheckResult result) {
-        if (approvalId == null) {
-            return;
-        }
         var pending = pendingDecisions.remove(approvalId);
         if (pending == null) {
             logger.warn("No pending approval for {}", approvalId);

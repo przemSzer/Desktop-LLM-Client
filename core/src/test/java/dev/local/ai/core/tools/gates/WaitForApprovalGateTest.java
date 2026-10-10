@@ -57,13 +57,35 @@ class WaitForApprovalGateTest {
     void should_complete_decision_as_rejected() throws Exception {
         var events = gate.events().test();
         var result = new AtomicReference<IToolExecutionGate.GateCheckResult>();
-        var waiting = Thread.startVirtualThread(() -> {
+        var threadWaitingForToolApproval = Thread.startVirtualThread(() -> {
             result.set(gate.beforeToolExecution(request("tool-1")));
         });
         events.awaitCount(1);
 
         gate.reject("tool-1");
-        waiting.join(2_000);
+        threadWaitingForToolApproval.join(2_000);
+
+        assertThat(result.get().result())
+                .isEqualTo(IToolExecutionGate.GateResult.REJECTED);
+        assertThat(result.get().reason())
+                .contains("User rejected");
+    }
+
+    @Test
+    void should_ignore_other_decisions_and_use_only_first() throws Exception {
+        var events = gate.events().test();
+        var result = new AtomicReference<IToolExecutionGate.GateCheckResult>();
+        var threadWaitingForToolApproval = Thread.startVirtualThread(() -> {
+            result.set(gate.beforeToolExecution(request("tool-1")));
+        });
+
+        events.awaitCount(1);
+
+        gate.reject("tool-1");
+        gate.approve("tool-1");
+        gate.finishExceptionally("tool-1", new RuntimeException());
+
+        threadWaitingForToolApproval.join(2_000);
 
         assertThat(result.get().result())
                 .isEqualTo(IToolExecutionGate.GateResult.REJECTED);
@@ -99,6 +121,46 @@ class WaitForApprovalGateTest {
                 .isEqualTo(IToolExecutionGate.GateResult.CANCELLED);
         assertThat(result.get().reason())
                 .contains("stopped");
+    }
+
+    @Test
+    void should_handle_interruption_while_waiting_for_approval() {
+        var events = gate.events().test();
+        var result = new AtomicReference<IToolExecutionGate.GateCheckResult>();
+        var waiting = Thread.startVirtualThread(() -> {
+            result.set(gate.beforeToolExecution(request()));
+        });
+        
+        events.awaitCount(1);
+
+        waiting.interrupt();
+        await()
+        .untilAsserted(
+                () -> {
+                    assertThat(result.get().result())
+                        .isEqualTo(IToolExecutionGate.GateResult.ERROR);
+                    assertThat(result.get().reason())
+                        .containsIgnoringCase("interrupted");
+                });
+    }
+
+
+    @Test
+    void should_report_error_when_waiting_for_approval_ends_with_exception() {
+        var exception = new RuntimeException("Test exception");
+        gate.events()
+                .ofType(ToolApprovalEvent.ToolApprovalRequested.class)
+                .subscribe(event -> {
+                    gate.finishExceptionally(event.approvalId(), exception);
+                });
+
+        var result = gate.beforeToolExecution(request());
+
+        assertThat(result.result())
+            .isEqualTo(IToolExecutionGate.GateResult.ERROR);
+
+        assertThat(result.reason())
+            .containsIgnoringCase("error");
     }
 
     private static final Logger logger =  LoggerFactory.getLogger(WaitForApprovalGateTest.class);
