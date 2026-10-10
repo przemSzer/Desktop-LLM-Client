@@ -49,7 +49,8 @@ class WaitForApprovalGateTest {
 
         assertThat(result.get().result())
                 .isEqualTo(IToolExecutionGate.GateResult.PASSED);
-        events.assertValue(new ToolApprovalEvent.ToolApprovalRequested("tool-1", "tool-1"));
+        events
+                .assertValue(new ToolApprovalEvent.ToolApprovalRequested("tool-1", "tool-1"));
     }
 
     @Test
@@ -78,7 +79,8 @@ class WaitForApprovalGateTest {
 
     @Test
     void should_not_expose_the_subject_to_subscribers() {
-        assertThat(gate.events()).isNotInstanceOf(Subject.class);
+        assertThat(gate.events())
+                .isNotInstanceOf(Subject.class);
     }
 
     @Test
@@ -129,7 +131,8 @@ class WaitForApprovalGateTest {
             assertThat(decisions.await(10, TimeUnit.SECONDS))
                     .isTrue();
             gate.cancel();
-            await().atMost(5, TimeUnit.SECONDS)
+            await()
+                    .atMost(5, TimeUnit.SECONDS)
                     .until(() -> results.size() == toolRequests.size());
 
             assertThat(results)
@@ -161,12 +164,13 @@ class WaitForApprovalGateTest {
     }
 
     private static void leavePendingForCancel() {
+        // method used for more understandable code
     }
 
     private static void pauseBriefly(Random random) {
         try {
-            Thread.sleep(random.nextInt(1));
-        } catch (InterruptedException e) {
+            Thread.sleep(random.nextInt(10));
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }
