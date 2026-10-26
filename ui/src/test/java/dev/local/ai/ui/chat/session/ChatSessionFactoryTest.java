@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-class ConversationSessionFactoryTest {
+class ChatSessionFactoryTest {
 
     @Mock(lenient = true)
     private ChatMemoryStore chatMemoryStore;
@@ -48,7 +48,7 @@ class ConversationSessionFactoryTest {
     @Mock(lenient = true)
     private StreamingChatModel secondStreamingModel;
 
-    private ConversationSessionFactory factory;
+    private ChatSessionFactory factory;
 
     @BeforeEach
     void setUp() {
@@ -60,7 +60,7 @@ class ConversationSessionFactoryTest {
         given(modelsProvider.createStreamingChatModel(llm))
                 .willReturn(firstStreamingModel, secondStreamingModel);
 
-        factory = new ConversationSessionFactory(chatMemoryStore, lastSelectedModel,
+        factory = new ChatSessionFactory(chatMemoryStore, lastSelectedModel,
                 modelsProvider, toolProvider, eventBus);
     }
 

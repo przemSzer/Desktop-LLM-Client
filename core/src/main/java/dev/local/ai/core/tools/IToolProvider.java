@@ -14,11 +14,11 @@ public interface IToolProvider {
 
     default List<ToolSpecification> getToolSpecifications() {
         return getToolDescriptors().stream()
-            .flatMap(d -> d.specifications().stream())
+            .map(ToolDescriptor::specification)
             .toList();
     }
 
-    default List<IToolExecutor> getToolExecutors() {
+    default List<ITool> getToolExecutors() {
         return getToolDescriptors().stream()
             .map(ToolDescriptor::executor)
             .toList();

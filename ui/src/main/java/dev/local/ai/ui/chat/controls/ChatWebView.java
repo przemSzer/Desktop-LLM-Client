@@ -3,6 +3,7 @@ package dev.local.ai.ui.chat.controls;
 import dev.local.ai.core.chat.messages.Statistics;
 import dev.local.ai.ui.chat.viewmodel.ChatMessageViewModel;
 import dev.local.ai.ui.chat.viewmodel.MessageTypeView;
+import dev.local.ai.ui.chat.viewmodel.ToolCallChatMessageViewModel;
 import dev.local.ai.ui.utils.HostServicesProvider;
 import javafx.concurrent.Worker;
 import javafx.scene.layout.StackPane;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -73,7 +75,7 @@ public class ChatWebView extends StackPane {
             event.consume();
             double current = webView.getZoom();
             double delta = event.getDeltaY() > 0 ? ZOOM_STEP : -ZOOM_STEP;
-            double next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, current + delta));
+            double next = Math.clamp(current + delta, ZOOM_MIN, ZOOM_MAX);
             webView.setZoom(next);
         });
     }
@@ -91,7 +93,13 @@ public class ChatWebView extends StackPane {
             String summary = toolSummary(message.getContent());
             String fullHtml = escapeForJs(bodyHtml);
             String summaryEscaped = escapeForJs(summary);
-            runScript("addToolMessage(%d,'%s','%s','%s')", id, typeLabel, summaryEscaped, fullHtml);
+            runScript(
+                    "addToolMessage(%d,'%s','%s','%s',%s)",
+                    id,
+                    typeLabel,
+                    summaryEscaped,
+                    fullHtml,
+                    type == MessageTypeView.TOOL_CALL);
         } else if (type == MessageTypeView.AI) {
             String htmlEscaped = escapeForJs(bodyHtml);
             String labelEscaped = escapeForJs(typeLabel);
@@ -150,6 +158,32 @@ public class ChatWebView extends StackPane {
 
     public void setDarkMode(boolean enabled) {
         runScript("setDarkMode(%s)", enabled);
+    }
+
+    public void requestApproval(int webViewId) {
+        runScript("showToolApproval(%d)", webViewId);
+    }
+
+    public void hideToolApproval(int webViewId) {
+        runScript("hideToolApproval(%d)", webViewId);
+    }
+
+    public void requestApproval(String messageId) {
+        findWebViewId(messageId).ifPresent(this::requestApproval);
+    }
+
+    public void hideToolApproval(String messageId) {
+        findWebViewId(messageId).ifPresent(this::hideToolApproval);
+    }
+
+    private Optional<Integer> findWebViewId(String messageId) {
+        if (messageId == null) {
+            return Optional.empty();
+        }
+        return messageIndex.entrySet().stream()
+                .filter(entry -> messageId.equals(entry.getValue().getId()))
+                .map(Map.Entry::getKey)
+                .findFirst();
     }
 
     // ── helpers ──────────────────────────────────────────────
@@ -228,6 +262,22 @@ public class ChatWebView extends StackPane {
                     HostServicesProvider.getInstance().getHostServices().showDocument(url);
                 } catch (Exception e) {
                     logger.error("Failed to open link: {}", url, e);
+                }
+            });
+        }
+
+        public void approveTool(int id) {
+            javafx.application.Platform.runLater(() -> {
+                if (messageIndex.get(id) instanceof ToolCallChatMessageViewModel toolCall) {
+                    toolCall.approve();
+                }
+            });
+        }
+
+        public void rejectTool(int id) {
+            javafx.application.Platform.runLater(() -> {
+                if (messageIndex.get(id) instanceof ToolCallChatMessageViewModel toolCall) {
+                    toolCall.reject();
                 }
             });
         }
