@@ -243,12 +243,13 @@ public class StreamingChat implements ILLMChat, AutoCloseable {
 
         private void toolExecutionFinishedProperly(ToolExecutionResultMessage result) {
             chatMemory.add(result);
+            var isError = result.isError() != null && result.isError();
             emit(new ChatEvent.ToolFinished(
                     currentRequestId,
                     result.id(),
                     result.toolName(),
                     result.text(),
-                    result.isError()
+                    isError
             ));
         }
 
