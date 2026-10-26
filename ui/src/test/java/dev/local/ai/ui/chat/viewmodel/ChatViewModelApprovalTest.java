@@ -1,15 +1,15 @@
 package dev.local.ai.ui.chat.viewmodel;
 
-import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.memory.ChatMemory;
-import dev.local.ai.core.chat.messages.Message;
+import dev.local.ai.core.chat.streaming.ChatEvent;
 import dev.local.ai.core.chat.streaming.StreamingChat;
-import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
-import dev.local.ai.core.tools.IToolExecutionGate;
+import dev.local.ai.core.tools.gates.ToolApprovalEvent;
+import dev.local.ai.core.tools.gates.WaitForApprovalGate;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
+import io.reactivex.rxjava4.subjects.PublishSubject;
 import javafx.application.Platform;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class ChatViewModelApprovalTest {
@@ -74,10 +75,13 @@ class ChatViewModelApprovalTest {
     private CommandManager commandManager;
 
     @Mock(lenient = true)
-    private CoreEventBus eventBus;
+    private ConversationStore conversationStore;
 
     @Mock(lenient = true)
-    private ConversationStore conversationStore;
+    private WaitForApprovalGate approval;
+
+    private final PublishSubject<ChatEvent> events = PublishSubject.create();
+    private final PublishSubject<ToolApprovalEvent> approvalEvents = PublishSubject.create();
 
     private ChatViewModel viewModel;
 
@@ -85,23 +89,18 @@ class ChatViewModelApprovalTest {
     void setUp() {
         given(mockMemory.messages()).willReturn(Collections.emptyList());
         given(mockChat.getSystemMessage()).willReturn("");
+        given(mockChat.events()).willReturn(events);
+        given(approval.events()).willReturn(approvalEvents);
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());
-        var session = new ChatSession("conv-test", mockMemory, mockChat, provider -> {});
-        viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager, eventBus);
+        var session = new ChatSession("conv-test", mockMemory, mockChat, approval);
+        viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager);
     }
 
     @Test
-    void shouldReuseExistingToolCallMessageAndCompleteOnApprove() throws Exception {
-        viewModel.onMessageAdded(Message.toolCall("run_command", Map.of("cmd", "ls"), "tool-1"), "req-1");
+    void shouldShowApprovalOnTheToolBubbleAndApprove() throws Exception {
+        events.onNext(new ChatEvent.ToolCallRequested("req-1", "tool-1", "run_command", "cmd: ls"));
         runOnFxThreadAndWait(() -> { });
-
-        var request = ToolExecutionRequest.builder()
-                .id("tool-1")
-                .name("run_command")
-                .arguments("{\"cmd\":\"ls\"}")
-                .build();
-
-        var future = viewModel.approvalProvider().askForApproval(request);
+        approvalEvents.onNext(new ToolApprovalEvent.ToolApprovalRequested("tool-1", "tool-1"));
         runOnFxThreadAndWait(() -> { });
 
         assertThat(viewModel.getChatMessages()).hasSize(1);
@@ -110,64 +109,45 @@ class ChatViewModelApprovalTest {
 
         runOnFxThreadAndWait(toolCall::approve);
 
-        assertThat(future.get(2, TimeUnit.SECONDS).result()).isEqualTo(IToolExecutionGate.GateResult.PASSED);
+        then(approval).should().approve("tool-1");
         assertThat(toolCall.isNeedsApproval()).isFalse();
     }
 
     @Test
-    void shouldFailApprovalWhenToolCallMessageIsMissing() throws Exception {
-        var request = ToolExecutionRequest.builder()
-                .id("tool-missing")
-                .name("download_page")
-                .arguments("{\"url\":\"https://example.com\"}")
-                .build();
-
-        var future = viewModel.approvalProvider().askForApproval(request);
+    void shouldIgnoreApprovalWhenToolCallMessageIsMissing() throws Exception {
+        approvalEvents.onNext(new ToolApprovalEvent.ToolApprovalRequested("tool-missing", "tool-missing"));
         runOnFxThreadAndWait(() -> { });
 
         assertThat(viewModel.getChatMessages()).isEmpty();
-        var result = future.get(2, TimeUnit.SECONDS);
-        assertThat(result.result()).isEqualTo(IToolExecutionGate.GateResult.ERROR);
-        assertThat(result.reason()).contains("tool-missing");
+        then(approval).should(never()).approve(anyString());
+        then(approval).should(never()).reject(anyString());
     }
 
     @Test
     void shouldNotAttachApprovalToADifferentToolCall() throws Exception {
-        viewModel.onMessageAdded(Message.toolCall("run_command", Map.of("cmd", "ls"), "tool-1"), "req-1");
+        events.onNext(new ChatEvent.ToolCallRequested("req-1", "tool-1", "run_command", "cmd: ls"));
         runOnFxThreadAndWait(() -> { });
-
-        var request = ToolExecutionRequest.builder()
-                .id("tool-other")
-                .name("run_command")
-                .arguments("{\"cmd\":\"ls\"}")
-                .build();
-
-        var future = viewModel.approvalProvider().askForApproval(request);
+        approvalEvents.onNext(new ToolApprovalEvent.ToolApprovalRequested("tool-other", "tool-other"));
         runOnFxThreadAndWait(() -> { });
 
         var existing = (ToolCallChatMessageViewModel) viewModel.getChatMessages().getFirst();
         assertThat(existing.isNeedsApproval()).isFalse();
-        assertThat(future.get(2, TimeUnit.SECONDS).result()).isEqualTo(IToolExecutionGate.GateResult.ERROR);
+        then(approval).should(never()).approve(anyString());
     }
 
     @Test
-    void shouldRejectPendingApprovalOnCancel() throws Exception {
-        viewModel.onMessageAdded(Message.toolCall("run_command", Map.of(), "tool-cancel"), "req-1");
+    void shouldHideApprovalButtonsWhenTurnIsCancelled() throws Exception {
+        events.onNext(new ChatEvent.ToolCallRequested("req-1", "tool-cancel", "run_command", ""));
+        runOnFxThreadAndWait(() -> { });
+        approvalEvents.onNext(new ToolApprovalEvent.ToolApprovalRequested("tool-cancel", "tool-cancel"));
         runOnFxThreadAndWait(() -> { });
 
-        var request = ToolExecutionRequest.builder()
-                .id("tool-cancel")
-                .name("run_command")
-                .arguments("{}")
-                .build();
-
-        var future = viewModel.approvalProvider().askForApproval(request);
+        events.onNext(new ChatEvent.TurnCancelled("req-1"));
         runOnFxThreadAndWait(() -> { });
 
-        viewModel.onCancel();
-        runOnFxThreadAndWait(() -> { });
-
-        assertThat(future.get(2, TimeUnit.SECONDS).result()).isEqualTo(IToolExecutionGate.GateResult.REJECTED);
-        assertThat(future.get().reason()).contains("Cancelled");
+        var toolCall = (ToolCallChatMessageViewModel) viewModel.getChatMessages().getFirst();
+        assertThat(toolCall.isNeedsApproval()).isFalse();
+        then(approval).should(never()).reject(anyString());
+        then(approval).should(never()).approve(anyString());
     }
 }

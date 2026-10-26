@@ -5,6 +5,11 @@ import org.slf4j.LoggerFactory;
 
 public class GlobalExceptionHandler {
 
+    private GlobalExceptionHandler() {
+        /* This utility class should not be instantiated */
+    }
+
+
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     public static void install() {

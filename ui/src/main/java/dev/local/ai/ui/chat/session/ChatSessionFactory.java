@@ -44,7 +44,7 @@ public final class ChatSessionFactory {
                 conversationId,
                 memory,
                 chat,
-                alwaysAskGate::setApprovalProvider
+                alwaysAskGate
                 );
     }
 

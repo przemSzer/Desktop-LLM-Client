@@ -35,7 +35,8 @@
          if (defaultGate instanceof ICancellable cancellable) {
              cancellable.cancel();
          }
-         toolExecutionGates.values().stream()
+         toolExecutionGates.values()
+                 .stream()
                  .filter(ICancellable.class::isInstance)
                  .map(ICancellable.class::cast)
                  .forEach(ICancellable::cancel);
