@@ -120,6 +120,51 @@ class ToolsSelectorViewModelTest {
         assertEquals("My Custom Tool Name", viewModel.getTools().get(0).getDisplayName());
     }
 
+    @Test
+    void refreshAlwaysAllowedDoesNotNotifyHandler() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
+
+        assertFalse(viewModel.getTools().get(0).isRequiresApproval());
+        assertTrue(viewModel.getTools().get(1).isRequiresApproval());
+        assertTrue(calls.isEmpty());
+        assertEquals(0, eventCaptor.captured.size());
+    }
+
+    @Test
+    void notifiesHandlerWhenApprovalGateIsUnlockedByUser() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.getTools().get(0).setRequiresApproval(false);
+
+        assertEquals(List.of("downloadWebPage:true"), calls);
+        assertEquals(0, eventCaptor.captured.size());
+    }
+
+    @Test
+    void notifiesHandlerWhenApprovalGateIsLockedByUser() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.getTools().get(0).setRequiresApproval(true);
+
+        assertEquals(List.of("downloadWebPage:false"), calls);
+    }
+
+    @Test
+    void toolsRequireApprovalByDefault() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+
+        assertTrue(viewModel.getTools().stream().allMatch(ToolItemViewModel::isRequiresApproval));
+    }
+
     private static class StubToolProvider implements IToolProvider {
         private final List<ToolDescriptor> descriptors;
 

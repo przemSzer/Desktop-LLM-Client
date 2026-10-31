@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public class ChatViewModel {
 
@@ -218,6 +219,14 @@ public class ChatViewModel {
         return currentConversationId.get();
     }
 
+    public Set<String> alwaysAllowedTools() {
+        return session.toolApproval().alwaysAllowedTools();
+    }
+
+    public void setToolAlwaysAllowed(String toolId, boolean alwaysAllowed) {
+        session.toolApproval().setAlwaysAllowed(toolId, alwaysAllowed);
+    }
+
     public StringProperty currentConversationTitleProperty() {
         return currentConversationTitle;
     }
@@ -391,11 +400,11 @@ public class ChatViewModel {
             case ChatEvent.ToolCallRequested requested -> showMessage(toolCallMessage(requested), requested.requestId());
             case ChatEvent.ToolFinished finished -> showMessage(Message.toolResult(finished.text(), List.of()), finished.requestId());
             case ChatEvent.ChatError error -> showError(error.message());
-            case ChatEvent.TurnCancelled ignored -> {
+            case ChatEvent.TurnCancelled _ -> {
                 clearPendingApprovals();
                 sendingMessageInProgress.set(false);
             }
-            case ChatEvent.MemoryCleared ignored -> chatMessages.clear();
+            case ChatEvent.MemoryCleared _ -> chatMessages.clear();
         }
     }
 

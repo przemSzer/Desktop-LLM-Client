@@ -8,8 +8,9 @@ public record ChatSession(
         String conversationId,
         ChatMemory chatMemory,
         StreamingChat chat,
-        WaitForApprovalGate approval
-        ) implements AutoCloseable
+        WaitForApprovalGate approval,
+        SessionToolApprovalConfiguration toolApproval
+) implements AutoCloseable
 {
     @Override
     public void close() {

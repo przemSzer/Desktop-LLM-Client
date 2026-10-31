@@ -10,11 +10,14 @@ public class ToolItemViewModel {
     private final StringProperty toolId;
     private final StringProperty displayName;
     private final BooleanProperty enabled;
+    /** When true, the tool asks for approval before running (locked). */
+    private final BooleanProperty requiresApproval;
 
     public ToolItemViewModel(String toolId, String displayName, boolean enabled) {
         this.toolId = new SimpleStringProperty(toolId);
         this.displayName = new SimpleStringProperty(displayName);
         this.enabled = new SimpleBooleanProperty(enabled);
+        this.requiresApproval = new SimpleBooleanProperty(true);
     }
 
     public StringProperty toolIdProperty() {
@@ -45,9 +48,23 @@ public class ToolItemViewModel {
         this.enabled.set(enabled);
     }
 
+    public BooleanProperty requiresApprovalProperty() {
+        return requiresApproval;
+    }
+
+    public boolean isRequiresApproval() {
+        return requiresApproval.get();
+    }
+
+    public void setRequiresApproval(boolean requiresApproval) {
+        this.requiresApproval.set(requiresApproval);
+    }
+
     @Override
     public String toString() {
-        return String.format("ToolItem{id='%s', name='%s', enabled=%s}", 
-            getToolId(), getDisplayName(), isEnabled());
+        return String
+                .format("ToolItem{id='%s', name='%s', enabled=%s, requiresApproval=%s}",
+                    getToolId(), getDisplayName(), isEnabled(), isRequiresApproval()
+                );
     }
 }

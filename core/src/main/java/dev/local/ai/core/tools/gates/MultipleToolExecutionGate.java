@@ -20,6 +20,10 @@
         toolExecutionGates.put(toolName, toolExecutionGate);
     }
 
+    public void removeGate(String toolName) {
+        toolExecutionGates.remove(toolName);
+    }
+
     @Override
     public GateCheckResult beforeToolExecution(ToolExecutionRequest toolExecutionRequest) {
         var internalGate = toolExecutionGates.get(toolExecutionRequest.name());

@@ -21,6 +21,8 @@ import dev.local.ai.core.storage.models.LastSelectedModel;
 import dev.local.ai.core.tools.FilterableToolProvider;
 import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.ToolsProviderWithMCP;
+import dev.local.ai.core.tools.settings.ToolSettingsReader;
+import dev.local.ai.core.tools.settings.ToolSettingsWriter;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.dialogs.FileSelector;
@@ -83,7 +85,14 @@ public final class AppContext implements AutoCloseable {
         this.commandManager = new CommandManager();
 
         this.chatSessionFactory = new ChatSessionFactory(
-            chatMemoryStore, lastSelectedModel, modelsProvider, toolProvider, eventBus
+            chatMemoryStore,
+            lastSelectedModel,
+            modelsProvider,
+            toolProvider,
+            eventBus,
+            chatsDir,
+            new ToolSettingsReader(),
+            new ToolSettingsWriter()
         );
 
         this.mainStageProvider = new MainStageProvider();

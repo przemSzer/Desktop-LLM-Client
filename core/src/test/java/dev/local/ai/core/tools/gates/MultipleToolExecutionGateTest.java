@@ -113,6 +113,27 @@ class MultipleToolExecutionGateTest {
     }
 
     @Test
+    void should_delegate_to_default_gate_after_registered_gate_is_removed() {
+        var request = request("run_command");
+        var expected = IToolExecutionGate.GateCheckResult.passed();
+        gate.addGate("run_command", namedGate);
+        gate.removeGate("run_command");
+        given(defaultGate.beforeToolExecution(request))
+                .willReturn(expected);
+
+        var result = gate.beforeToolExecution(request);
+
+        assertThat(result)
+                .isEqualTo(expected);
+        then(defaultGate)
+                .should()
+                .beforeToolExecution(request);
+        then(namedGate)
+                .should(never())
+                .beforeToolExecution(any());
+    }
+
+    @Test
     void should_cancel_default_gate_when_it_is_cancellable() {
         gate.cancel();
 

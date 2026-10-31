@@ -6,8 +6,11 @@ import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.tools.gates.ToolApprovalEvent;
 import dev.local.ai.core.tools.gates.WaitForApprovalGate;
+import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
+import dev.local.ai.core.tools.settings.ToolSettingsWriter;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
+import dev.local.ai.ui.chat.session.SessionToolApprovalConfiguration;
 import dev.local.ai.ui.commands.CommandManager;
 import io.reactivex.rxjava4.subjects.PublishSubject;
 import javafx.application.Platform;
@@ -18,8 +21,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -92,8 +97,17 @@ class ChatViewModelApprovalTest {
         given(mockChat.events()).willReturn(events);
         given(approval.events()).willReturn(approvalEvents);
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());
-        var session = new ChatSession("conv-test", mockMemory, mockChat, approval);
+        var session = new ChatSession("conv-test", mockMemory, mockChat, approval, emptyToolApproval());
         viewModel = new ChatViewModel(session, sessionFactory, conversationStore, commandManager);
+    }
+
+    private static SessionToolApprovalConfiguration emptyToolApproval() {
+        return new SessionToolApprovalConfiguration(
+                new MultipleToolExecutionGate(new WaitForApprovalGate()),
+                new ToolSettingsWriter(),
+                Path.of("unused-tool-settings.json"),
+                Set.of()
+        );
     }
 
     @Test

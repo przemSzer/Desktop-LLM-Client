@@ -27,14 +27,25 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
     public Object call(Class<?> type) {
         try {
             if (type == MainController.class) {
-                return new MainController(chatViewModel(), app.conversationStore,
-                        app.settingsStorage, app.themeManager);
+                return new MainController(
+                        createChatViewModel(),
+                        app.conversationStore,
+                        app.settingsStorage,
+                        app.themeManager
+                );
             }
             if (type == ChatController.class) {
-                return new ChatController(chatViewModel(), app.toolProvider, app.eventBus,
-                    app.connectionsStore, app.commandManager, app.conversationStore,
-                    new ManageConnectionsDialog(this, app.mainStageProvider),
-                    app.fileSelector, app.themeManager);
+                return new ChatController(
+                        createChatViewModel(),
+                        app.toolProvider,
+                        app.eventBus,
+                        app.connectionsStore,
+                        app.commandManager,
+                        app.conversationStore,
+                        new ManageConnectionsDialog(this, app.mainStageProvider),
+                        app.fileSelector,
+                        app.themeManager
+                );
             }
             if (type == ConnectionsViewController.class) {
                 return new ConnectionsViewController(app.commandManager);
@@ -47,16 +58,24 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
         }
     }
 
-    private ChatViewModel chatViewModel() {
+    private ChatViewModel createChatViewModel() {
         if (chatViewModel == null) {
             String conversationId = app.conversationStore.getLastConversation()
                     .map(ConversationSummary::id)
                     .orElseGet(app.conversationStore::createConversation);
 
-            ChatSession session = app.chatSessionFactory.openConversation(conversationId);
-            chatViewModel = new ChatViewModel(session, app.chatSessionFactory,
-                    app.conversationStore, app.commandManager);
-            chatViewModel.selectedModelProperty().set(app.lastSelectedModel.get().orElse(null));
+            ChatSession session = app
+                    .chatSessionFactory
+                    .openConversation(conversationId);
+            chatViewModel = new ChatViewModel(
+                    session,
+                    app.chatSessionFactory,
+                    app.conversationStore,
+                    app.commandManager
+            );
+            chatViewModel
+                    .selectedModelProperty()
+                    .set(app.lastSelectedModel.get().orElse(null));
         }
         return chatViewModel;
     }

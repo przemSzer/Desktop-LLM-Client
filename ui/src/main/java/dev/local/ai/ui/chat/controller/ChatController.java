@@ -58,6 +58,7 @@ import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
+import dev.local.ai.ui.tools.ToolsSelectorViewModel;
 
 public class ChatController {
 
@@ -161,7 +162,9 @@ public class ChatController {
         try {
             logger.debug("Initializing ChatController");
 
-            toolsSelectorView.init(toolProvider, eventBus);
+            var toolsSelectorViewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+            toolsSelectorView.init(toolsSelectorViewModel);
+            setupToolAlwaysAllow(toolsSelectorViewModel);
 
             var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.virtual(), connectionsStore);
             var llmSelectorViewModel = new LLMSelectorViewModel(
@@ -230,6 +233,16 @@ public class ChatController {
         badge.managedProperty().bind(badge.visibleProperty());
         toolsButton.setGraphic(badge);
         toolsButton.setContentDisplay(ContentDisplay.RIGHT);
+    }
+
+    private void setupToolAlwaysAllow(ToolsSelectorViewModel toolsViewModel) {
+        toolsViewModel.setOnAlwaysAllowChanged(chatViewModel::setToolAlwaysAllowed);
+        toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools());
+        chatViewModel.currentConversationIdProperty()
+                .addListener(
+                        (obs, oldId, newId) ->
+                    toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools())
+                );
     }
 
     private IntegerBinding enabledToolCount() {
