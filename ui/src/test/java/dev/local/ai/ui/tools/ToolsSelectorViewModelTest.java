@@ -34,9 +34,9 @@ class ToolsSelectorViewModelTest {
 
         var descriptors = List.of(
             new ToolDescriptor("downloadWebPage", "Download web page",
-                List.of(specDownload), request -> Optional.empty()),
+                specDownload, request -> Optional.empty()),
             new ToolDescriptor("executeLocalCommand", "Execute local commands",
-                List.of(specCommand), request -> Optional.empty())
+                specCommand, request -> Optional.empty())
         );
 
         toolProvider = new StubToolProvider(descriptors);
@@ -112,12 +112,57 @@ class ToolsSelectorViewModelTest {
         var spec = ToolSpecification.builder()
             .name("someNewTool").description("A new tool").build();
         var descriptor = new ToolDescriptor("someNewTool", "My Custom Tool Name",
-            List.of(spec), request -> Optional.empty());
+            spec, request -> Optional.empty());
         var provider = new StubToolProvider(List.of(descriptor));
 
         var viewModel = new ToolsSelectorViewModel(provider, eventBus);
 
         assertEquals("My Custom Tool Name", viewModel.getTools().get(0).getDisplayName());
+    }
+
+    @Test
+    void refreshAlwaysAllowedDoesNotNotifyHandler() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
+
+        assertFalse(viewModel.getTools().get(0).isRequiresApproval());
+        assertTrue(viewModel.getTools().get(1).isRequiresApproval());
+        assertTrue(calls.isEmpty());
+        assertEquals(0, eventCaptor.captured.size());
+    }
+
+    @Test
+    void notifiesHandlerWhenApprovalGateIsUnlockedByUser() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.getTools().get(0).setRequiresApproval(false);
+
+        assertEquals(List.of("downloadWebPage:true"), calls);
+        assertEquals(0, eventCaptor.captured.size());
+    }
+
+    @Test
+    void notifiesHandlerWhenApprovalGateIsLockedByUser() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
+        var calls = new ArrayList<String>();
+        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
+
+        viewModel.getTools().get(0).setRequiresApproval(true);
+
+        assertEquals(List.of("downloadWebPage:false"), calls);
+    }
+
+    @Test
+    void toolsRequireApprovalByDefault() {
+        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+
+        assertTrue(viewModel.getTools().stream().allMatch(ToolItemViewModel::isRequiresApproval));
     }
 
     private static class StubToolProvider implements IToolProvider {

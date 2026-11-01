@@ -26,11 +26,11 @@ class FilterableToolProviderTest {
         var specA = ToolSpecification.builder().name("toolA").description("Tool A").build();
         var specB = ToolSpecification.builder().name("toolB").description("Tool B").build();
 
-        IToolExecutor executorA = request -> Optional.empty();
-        IToolExecutor executorB = request -> Optional.empty();
+        ITool executorA = request -> Optional.empty();
+        ITool executorB = request -> Optional.empty();
 
-        descriptorA = new ToolDescriptor("toolA", "Tool A", List.of(specA), executorA);
-        descriptorB = new ToolDescriptor("toolB", "Tool B", List.of(specB), executorB);
+        descriptorA = new ToolDescriptor("toolA", "Tool A", specA, executorA);
+        descriptorB = new ToolDescriptor("toolB", "Tool B", specB, executorB);
 
         delegate = new StubToolProvider(List.of(descriptorA, descriptorB));
     }

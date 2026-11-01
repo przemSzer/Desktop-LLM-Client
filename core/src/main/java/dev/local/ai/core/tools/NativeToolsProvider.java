@@ -5,11 +5,11 @@ import java.util.List;
 import dev.local.ai.core.tools.local.CommandLineTools;
 import dev.local.ai.core.tools.web.WebPageDownloaderTools;
 
-public class DefaultToolsProvider implements IToolProvider {
+public class NativeToolsProvider implements IToolProvider {
 
     private final List<ToolDescriptor> descriptors;
 
-    public DefaultToolsProvider() {
+    public NativeToolsProvider() {
         this.descriptors = List.of(
             WebPageDownloaderTools.getInstance().toDescriptor(),
             CommandLineTools.getInstance().toDescriptor()

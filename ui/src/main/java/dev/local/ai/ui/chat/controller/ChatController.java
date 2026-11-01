@@ -1,6 +1,7 @@
 package dev.local.ai.ui.chat.controller;
 
 import dev.local.ai.core.models.AvailableModelsServiceFactory;
+import dev.local.ai.ui.chat.viewmodel.ToolCallChatMessageViewModel;
 import dev.local.ai.ui.models.ModelsInfoDownloadTask;
 import dev.local.ai.ui.models.viewmodel.LLMSelectorViewModel;
 import io.reactivex.rxjava4.schedulers.Schedulers;
@@ -57,10 +58,13 @@ import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
+import dev.local.ai.ui.tools.ToolsSelectorViewModel;
 
 public class ChatController {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+
+    private static String SYSTEM_POPOVER_CONTENT = "system-popover-content";
 
     @FXML
     private HBox chatHeader;
@@ -158,7 +162,9 @@ public class ChatController {
         try {
             logger.debug("Initializing ChatController");
 
-            toolsSelectorView.init(toolProvider, eventBus);
+            var toolsSelectorViewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+            toolsSelectorView.init(toolsSelectorViewModel);
+            setupToolAlwaysAllow(toolsSelectorViewModel);
 
             var downloadModelsTask = new ModelsInfoDownloadTask(new AvailableModelsServiceFactory(), Schedulers.virtual(), connectionsStore);
             var llmSelectorViewModel = new LLMSelectorViewModel(
@@ -204,7 +210,7 @@ public class ChatController {
         systemMessageContent = new VBox(8, systemMessageTextArea, systemMessageFileAttachments);
         systemMessageContent.setPadding(new Insets(12));
         systemMessageContent.setPrefWidth(420);
-        systemMessageContent.getStyleClass().add("system-popover-content");
+        systemMessageContent.getStyleClass().add(SYSTEM_POPOVER_CONTENT);
 
         systemMessageButton.setOnAction(event ->
                 overlay.toggle(systemMessageContent, systemMessageButton, Placement.BELOW_RIGHT));
@@ -214,7 +220,7 @@ public class ChatController {
         toolsContent = new VBox(toolsSelectorView);
         toolsContent.setPadding(new Insets(30));
         toolsContent.setPrefWidth(360);
-        toolsContent.getStyleClass().add("system-popover-content");
+        toolsContent.getStyleClass().add(SYSTEM_POPOVER_CONTENT);
 
         toolsButton.setOnAction(event ->
                 overlay.toggle(toolsContent, toolsButton, Placement.ABOVE_LEFT));
@@ -227,6 +233,16 @@ public class ChatController {
         badge.managedProperty().bind(badge.visibleProperty());
         toolsButton.setGraphic(badge);
         toolsButton.setContentDisplay(ContentDisplay.RIGHT);
+    }
+
+    private void setupToolAlwaysAllow(ToolsSelectorViewModel toolsViewModel) {
+        toolsViewModel.setOnAlwaysAllowChanged(chatViewModel::setToolAlwaysAllowed);
+        toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools());
+        chatViewModel.currentConversationIdProperty()
+                .addListener(
+                        (obs, oldId, newId) ->
+                    toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools())
+                );
     }
 
     private IntegerBinding enabledToolCount() {
@@ -243,7 +259,7 @@ public class ChatController {
         var modelContent = new VBox(modelSelectorView);
         modelContent.setPadding(new Insets(12));
         modelContent.setPrefWidth(420);
-        modelContent.getStyleClass().add("system-popover-content");
+        modelContent.getStyleClass().add(SYSTEM_POPOVER_CONTENT);
 
         modelButton.setOnAction(event ->
                 overlay.toggle(modelContent, modelButton, Placement.ABOVE_RIGHT));
@@ -466,6 +482,20 @@ public class ChatController {
                                                     chatWebView.thinkingFinished(thinkingMsgId);
                                                 }
                                             });
+                        } else if (msg.getType() == MessageTypeView.TOOL_CALL){
+                            int webViewId = chatWebView.addMessage(msg);
+                            if (msg instanceof ToolCallChatMessageViewModel toolCall){
+                                if (toolCall.isNeedsApproval()) {
+                                    chatWebView.requestApproval(webViewId);
+                                }
+                                toolCall.needsApprovalProperty().addListener((obs, oldVal, requestApproval) -> {
+                                    if (Boolean.TRUE.equals(requestApproval)) {
+                                        chatWebView.requestApproval(webViewId);
+                                    } else {
+                                        chatWebView.hideToolApproval(webViewId);
+                                    }
+                                });
+                            }
                         } else {
                             chatWebView.addMessage(msg);
                         }

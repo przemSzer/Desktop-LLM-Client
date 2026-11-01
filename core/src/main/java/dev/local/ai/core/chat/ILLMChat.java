@@ -34,6 +34,4 @@ public interface ILLMChat {
 
     int getMessageCount() ;
 
-    void setCallback(IChatListener callback) ;
-
 }

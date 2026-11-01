@@ -1,0 +1,173 @@
+= Tool approval
+:toc:
+:toc-title: Contents
+
+This document describes how a tool waits for Accept or Reject. The session boundary, the event list, and the commands are in link:../StreamingChatArchitecture.adoc[Streaming chat architecture].
+
+== Wiring
+
+`ChatSessionFactory` creates `WaitForApprovalGate` and passes it to `DefaultToolsExecutor` through `MultipleToolExecutionGate`. The same wait gate is stored on `ChatSession` for Accept and Reject.
+
+The UI subscribes to `WaitForApprovalGate.events()` and sends `approve` or `reject` to that gate. The executor does not know about the decision. `StreamingChat` only forwards the finished tool result.
+
+Per-chat always-allow overrides go through `MultipleToolExecutionGate.addGate`. For each tool id in that conversation's `ToolSettings`, the factory registers `AlwaysApproveGate`, which returns `PASSED` without an approval event.
+
+== Per-chat always allow
+
+Each conversation directory holds `tool-settings.json` beside `messages.json` and `metadata.json`. `ToolSettingsReader.read(file)` maps that file to a `ToolSettings` object. A missing file, or a missing `alwaysAllowedTools` list, means every tool still asks.
+
+```json
+{
+  "alwaysAllowedTools": ["downloadWebPage"]
+}
+```
+
+Stored values are tool *ids* (`downloadWebPage`, `local-mcp-tavilysearch`), matching `ToolExecutionRequest.name()` and `ToolDescriptor.id()`.
+
+`SessionToolApprovalConfiguration` on the open session keeps the live gate map in sync and writes the file through `ToolSettingsWriter` when the user toggles the approval gate in the Tools menu. The eye icon means *ask before running*; eye-off means *always allow in this chat* (brave mode). Switching conversation reloads that chat's settings into the Tools menu; tool *enablement* for the model stays app-wide.
+
+[plantuml]
+----
+@startuml
+participant "Tools menu" as UI
+participant "SessionToolApprovalConfiguration" as Policy
+participant "MultipleToolExecutionGate" as Gate
+participant "tool-settings.json" as File
+
+UI -> Policy : setAlwaysAllowed(toolId, true)
+Policy -> Gate : addGate(toolId, AlwaysApproveGate)
+Policy -> File : write ToolSettings
+@enduml
+----
+
+== One tool
+
+[plantuml]
+----
+@startuml
+autonumber
+
+actor User
+participant "Chat UI" as UI
+participant "StreamingChat" as SC
+participant "DefaultToolsExecutor" as EX
+participant "MultipleToolExecutionGate" as MULTI
+participant "WaitForApprovalGate" as GATE
+
+SC -> UI : tool call requested
+EX -> MULTI : beforeToolExecution()
+
+alt tool id is always allowed
+  MULTI --> EX : PASSED (AlwaysApproveGate)
+  EX -> EX : run this tool
+else default
+  MULTI -> GATE : beforeToolExecution()
+  GATE -> UI : tool approval requested (approvalId)
+  note over GATE : blocks on its private future
+
+  alt Accept
+      User -> UI : Accept
+      UI -> GATE : approve(approvalId)
+      GATE --> EX : PASSED
+      EX -> EX : run this tool
+      EX -> SC : tool finished
+      SC -> UI : tool finished
+      SC -> SC : next model call
+  else Reject
+      User -> UI : Reject
+      UI -> GATE : reject(approvalId)
+      GATE --> EX : future = REJECTED
+      EX --> SC : error result, tool not run
+      SC -> UI : tool finished
+      SC -> SC : next model call
+  else Stop
+      User -> UI : Stop
+      UI -> SC : stop()
+      SC -> EX : cancel()
+      EX -> MULTI : cancel()
+      MULTI -> GATE : cancel()
+      GATE --> EX : CANCELLED
+      EX --> SC : error result, tool not run
+      SC -> UI : tool finished
+      SC -> UI : cancelled
+      note over SC : no next model call
+  end
+end
+@enduml
+----
+
+`approvalId` is the tool execution request id. The future stays inside the gate. The approval event carries only that id.
+
+Each tool has its own future. Approving one does not wait for the others. `DefaultToolsExecutor` runs a tool as soon as its own gate returns.
+
+A missing bubble does not fail the tool. The gate keeps waiting until `approve`, `reject`, or `stop`.
+
+Turning always-allow on while a call is already waiting does not complete that wait. The new policy applies to the next call for that tool id.
+
+== Two threads
+
+[cols="1,2"]
+|===
+|Thread |What it does
+
+|Tool thread
+|`beforeToolExecution` → `future.get()` — *waits* (unless always allowed)
+
+|JavaFX
+|Shows the bubble from the events, then calls `approve` or `reject` after a click
+|===
+
+== Stop
+
+Stop abandons this turn. It does not Accept or Reject the tool.
+
+. `ChatViewModel.stopMessage()` calls `StreamingChat.stop()`.
+. `stop()` sets `stopRequested` and, when the executor is `ICancellable`, calls `IToolExecutor.cancel()`.
+. `DefaultToolsExecutor.cancel()` forwards to the gate. `MultipleToolExecutionGate` passes that on to `WaitForApprovalGate`, which completes each pending future with `CANCELLED` (`"Chat stopped by user"`).
+. `REJECTED`, `ERROR`, and `CANCELLED` all mean the tool does not run. The executor still returns an error tool-result, and that result is emitted as tool-finished.
+. The UI hides Accept / Reject when it receives the cancelled event. It does not send another reject.
+. After `executeTools()`, if `stopRequested` is set, `StreamingChat` emits cancelled and does *not* start another `chatModel.chat()`.
+
+A tool that already passed the gate keeps running until `executeTools()` returns.
+
+== Switching conversation
+
+`loadConversation` still refuses to switch while `sendingMessageInProgress` is true. Stop clears that flag when the cancelled event is applied, so after Stop the user can switch conversations and send again.
+
+The Tools menu refreshes always-allow toggles from the new session's `SessionToolApprovalConfiguration`.
+
+== Decision path
+
+[plantuml]
+----
+@startuml
+start
+:LLM wants a tool;
+:tool call requested event;
+if (Tool id is always allowed?) then (yes)
+  :Tool runs;
+else (no)
+  if (Gate asks for a decision?) then (yes)
+    :approval requested event;
+    if (Accept?) then (yes)
+      :Tool runs;
+    else (no)
+      if (Reject?) then (yes)
+        :REJECTED, tool does not run;
+      else (Stop)
+        :CANCELLED, tool does not run;
+        :cancelled event, no next model call;
+        stop
+      endif
+    endif
+  else (no)
+    :Tool runs;
+  endif
+endif
+:tool finished event;
+:Next model call;
+stop
+@enduml
+----
+
+Stop ends the turn. Accept and Reject continue into a follow-up model call.

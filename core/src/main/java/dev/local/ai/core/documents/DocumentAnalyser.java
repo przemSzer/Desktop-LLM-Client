@@ -1,25 +1,21 @@
 package dev.local.ai.core.documents;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Base64;
-
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.util.Base64;
+
 
 public class DocumentAnalyser {
 
-    Logger logger = LoggerFactory.getLogger(DocumentAnalyser.class);
+    private static final Logger logger = LoggerFactory.getLogger(DocumentAnalyser.class);
 
     public DocumentDescription analyseDocument(InputStream inputStream, File file) {
-        try (InputStream fis = inputStream) {
+        try (var _ = inputStream) {
             Tika parser = new Tika();
             var mediaTypeStr = parser.detect(inputStream);
             
@@ -34,11 +30,9 @@ public class DocumentAnalyser {
         try (FileInputStream fis = new FileInputStream(file)) {
             logger.debug("Analysing file: {}", file.getName());
             return analyseDocument(fis, file);
-        } catch (FileNotFoundException e) {
-            logger.error("Failed to analyse file: {}", file.getName(), e);
         } catch (IOException e) {
             logger.error("Failed to analyse file: {}", file.getName(), e);
-        }    
+        }
         return null;              
     }
 
@@ -47,13 +41,11 @@ public class DocumentAnalyser {
             Tika parser = new Tika();
             parser.setMaxStringLength(-1);
             var doc = analyseDocument(file);
-            if ("image".equals(doc.type().getType().toString())) {
+            if ("image".equals(doc.type().getType())) {
                 return Base64.getEncoder().encodeToString(fis.readAllBytes());
             }
             return parser.parseToString(fis);
-        } catch (FileNotFoundException | TikaException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (TikaException | IOException e) {
             throw new RuntimeException(e);
         }
     }

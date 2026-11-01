@@ -3,14 +3,11 @@ package dev.local.ai.core.chat.streaming;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.local.ai.core.chat.LLMChangedEvent;
-import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.Event;
 import dev.local.ai.core.events.EventListener;
-import dev.local.ai.core.models.LLMInfoAndConnection;
-import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
-import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.core.tools.IToolExecutor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +34,7 @@ class StreamingChatLifecycleTest {
     private ChatMemory chatMemory;
 
     @Mock
-    private IToolProvider toolProvider;
+    private IToolExecutor toolProvider;
 
     @Mock
     private CoreEventBus eventBus;
@@ -49,18 +46,10 @@ class StreamingChatLifecycleTest {
     @Captor
     private ArgumentCaptor<EventListener> llmListenerCaptor;
 
-    @SuppressWarnings({ "rawtypes" })
-    @Captor
-    private ArgumentCaptor<EventListener> stopListenerCaptor;
-
     private StreamingChat streamingChat;
 
     @BeforeEach
     void setUp() {
-        var initialConnection = new LLMInfoAndConnection(
-                new ModelInfo("id", "name", "description", -1,-1),
-                new OllamaConnection("ollama", "ollama desc")
-        );
         streamingChat = new StreamingChat(chatModel, chatMemory, toolProvider, eventBus, modelsProvider);
     }
 
@@ -68,7 +57,7 @@ class StreamingChatLifecycleTest {
     @SuppressWarnings("unchecked")
     void shouldSubscribeListenersOnConstruction() {
         then(eventBus).should().subscribe(eq(LLMChangedEvent.EVENT_TYPE), any(EventListener.class));
-        then(eventBus).should().subscribe(eq(StopRequestEvent.EVENT_TYPE), any(EventListener.class));
+        then(eventBus).should(times(1)).subscribe(any(), any(EventListener.class));
     }
 
     @Test
@@ -76,14 +65,11 @@ class StreamingChatLifecycleTest {
     void shouldUnsubscribeSameListenerInstancesOnClose() {
         InOrder order = inOrder(eventBus);
         order.verify(eventBus).subscribe(eq(LLMChangedEvent.EVENT_TYPE), llmListenerCaptor.capture());
-        order.verify(eventBus).subscribe(eq(StopRequestEvent.EVENT_TYPE), stopListenerCaptor.capture());
         EventListener<? extends Event> capturedLlmListener = llmListenerCaptor.getValue();
-        EventListener<? extends Event> capturedStopListener = stopListenerCaptor.getValue();
 
         streamingChat.close();
 
         then(eventBus).should().unsubscribe(LLMChangedEvent.EVENT_TYPE, capturedLlmListener);
-        then(eventBus).should().unsubscribe(StopRequestEvent.EVENT_TYPE, capturedStopListener);
     }
 
     @Test
@@ -93,7 +79,5 @@ class StreamingChatLifecycleTest {
 
         then(eventBus).should(times(1))
                 .unsubscribe(eq(LLMChangedEvent.EVENT_TYPE), any(EventListener.class));
-        then(eventBus).should(times(1))
-                .unsubscribe(eq(StopRequestEvent.EVENT_TYPE), any(EventListener.class));
     }
 }

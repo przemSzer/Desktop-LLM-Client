@@ -1,16 +1,12 @@
 package dev.local.ai.ui.chat.viewmodel;
 
+import dev.local.ai.core.chat.messages.Statistics;
+import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import javafx.beans.property.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import dev.local.ai.core.chat.messages.Statistics;
-import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
-
-/**
- * Model class representing a chat message.
- */
 public class ChatMessageViewModel {
 
     private final StringProperty content;

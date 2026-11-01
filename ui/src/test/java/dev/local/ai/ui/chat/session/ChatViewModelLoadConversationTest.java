@@ -2,8 +2,11 @@ package dev.local.ai.ui.chat.session;
 
 import dev.langchain4j.memory.ChatMemory;
 import dev.local.ai.core.chat.streaming.StreamingChat;
-import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
+import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
+import dev.local.ai.core.tools.gates.WaitForApprovalGate;
+import dev.local.ai.core.tools.settings.ToolSettingsWriter;
+import io.reactivex.rxjava4.core.Observable;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 
@@ -16,8 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,7 +46,7 @@ class ChatViewModelLoadConversationTest {
             CountDownLatch latch = new CountDownLatch(1);
             try {
                 Platform.startup(latch::countDown);
-            } catch (IllegalStateException alreadyStarted) {
+            } catch (IllegalStateException _) {
                 latch.countDown();
             }
             assertTrue(latch.await(5, TimeUnit.SECONDS),
@@ -74,16 +79,16 @@ class ChatViewModelLoadConversationTest {
     private ChatMemory newMemory;
 
     @Mock(lenient = true)
-    private ConversationSessionFactory sessionFactory;
+    private ChatSessionFactory sessionFactory;
 
     @Mock(lenient = true)
     private CommandManager commandManager;
 
     @Mock(lenient = true)
-    private CoreEventBus eventBus;
+    private ConversationStore conversationStore;
 
     @Mock(lenient = true)
-    private ConversationStore conversationStore;
+    private WaitForApprovalGate approval;
 
     private ChatSession initialSession;
     private ChatSession newSession;
@@ -95,14 +100,26 @@ class ChatViewModelLoadConversationTest {
         given(newMemory.messages()).willReturn(Collections.emptyList());
         given(initialChat.getSystemMessage()).willReturn("");
         given(newChat.getSystemMessage()).willReturn("");
+        given(initialChat.events()).willReturn(Observable.empty());
+        given(newChat.events()).willReturn(Observable.empty());
+        given(approval.events()).willReturn(Observable.empty());
 
-        initialSession = new ChatSession("conv-A", initialMemory, initialChat);
-        newSession = new ChatSession("conv-B", newMemory, newChat);
+        initialSession = new ChatSession("conv-A", initialMemory, initialChat, approval, emptyToolApproval());
+        newSession = new ChatSession("conv-B", newMemory, newChat, approval, emptyToolApproval());
 
         given(sessionFactory.openConversation("conv-B")).willReturn(newSession);
         given(conversationStore.findSummary(anyString())).willReturn(Optional.empty());
 
-        viewModel = new ChatViewModel(initialSession, sessionFactory, conversationStore, commandManager, eventBus);
+        viewModel = new ChatViewModel(initialSession, sessionFactory, conversationStore, commandManager);
+    }
+
+    private static SessionToolApprovalConfiguration emptyToolApproval() {
+        return new SessionToolApprovalConfiguration(
+                new MultipleToolExecutionGate(new WaitForApprovalGate()),
+                new ToolSettingsWriter(),
+                Path.of("unused-tool-settings.json"),
+                Set.of()
+        );
     }
 
     @Test
@@ -122,11 +139,11 @@ class ChatViewModelLoadConversationTest {
     }
 
     @Test
-    void shouldAttachCallbackToNewChat() throws InterruptedException {
+    void shouldSubscribeToTheNewChat() throws InterruptedException {
         viewModel.loadConversation("conv-B");
         runOnFxThreadAndWait(() -> { });
 
-        then(newChat).should().setCallback(viewModel);
+        then(newChat).should().events();
     }
 
     @Test
