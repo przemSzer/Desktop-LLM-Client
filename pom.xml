@@ -37,7 +37,7 @@
         <assertj.version>3.27.7</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
         <langchain4j.version>1.13.1</langchain4j.version>
-        <langchain4j-community.version>1.13.1-beta23</langchain4j-community.version>
+        <commons-exec.version>1.6.0</commons-exec.version>
         <bytebuddy.version>1.17.5</bytebuddy.version>
         <langchain4j-mcp.version>1.13.1-beta23</langchain4j-mcp.version>
         <langchain4j-apache-tika.version>1.13.1-beta23</langchain4j-apache-tika.version>
@@ -119,11 +119,10 @@
                 <artifactId>langchain4j-document-transformer-jsoup</artifactId>
                 <version>${langchain4j-jsoup.version}</version>
             </dependency>
-            <!-- local code execution engine -->
             <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-community-code-execution-engine-local</artifactId>
-                <version>${langchain4j-community.version}</version>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-exec</artifactId>
+                <version>${commons-exec.version}</version>
             </dependency>
         <!-- 
             Jackson-datatype-jsr310 is a necessary 

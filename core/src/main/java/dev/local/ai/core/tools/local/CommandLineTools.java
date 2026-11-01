@@ -1,8 +1,8 @@
 package dev.local.ai.core.tools.local;
 
 import dev.langchain4j.agent.tool.*;
-import dev.langchain4j.community.code.local.CommandLineTool;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.local.ai.core.tools.ITool;
 import dev.local.ai.core.tools.ToolDescriptor;
 import dev.local.ai.core.tools.ToolHelper;
@@ -21,12 +21,7 @@ public class CommandLineTools implements ITool {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandLineTools.class);
     private static final String TOOL_NAME = "executeLocalCommand";
-
-    private final CommandLineTool commandLineTool;
-
-    public CommandLineTools() {
-        this.commandLineTool = new CommandLineTool();
-    }
+    private static final String PARAMETER_NAME = "command";
 
     private String doExecute(String command){
         DefaultExecutor executor = DefaultExecutor.builder().get();
@@ -48,34 +43,46 @@ public class CommandLineTools implements ITool {
         }
     }
 
-    @Tool("Executes a local command. Returns the output of the command or error message in case of failure.")
-    public String executeLocalCommand(@P("The command to execute") String command, @ToolMemoryId String toolMemoryId) {
-        logger.info("Executing local command: {}, tool memory id: {}", command, toolMemoryId);
-        try {
-            return commandLineTool.execute(command);
-        } catch (Exception e) {
-            logger.error("Failed to execute local command: {}, tool memory id: {}", command, toolMemoryId, e);
-            var message = e.getMessage();
-            if (e.getCause() instanceof Exception cause) {
-                message += ", " + cause.getMessage();
-            }
-            return "Failed to execute local command, the following error occurred: " + message;
-        }
-    }
-
     ToolSpecification toolSpecifications() {
-        String osName = System.getProperty("os.name");
-        return ToolSpecifications.toolSpecificationsFrom(getInstance())
-                .stream()
-                .map(spec -> ToolSpecification.builder()
-                    .name(spec.name())
-                    .description(spec.description() + " The operating system is: " + osName)
-                    .parameters(spec.parameters())
-                    .build())
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Failed to find ToolSpecification for command line tools"));
-    }
+        String osName = System.getProperty("os.name", "");
+        String windowsRecipe = osName.startsWith("Windows")
+            ? """
 
+                On Windows, do not call dir, echo, type, cd, copy, or del directly.
+                Run those builtins through cmd.exe, for example: cmd /c dir C:\\absolute\\path
+                For a pipeline, pass one quoted script to PowerShell, for example: \
+                powershell -NoProfile -Command "Get-ChildItem -Path 'C:\\absolute\\path' | Select-Object -First 20 -ExpandProperty Name"
+                Quote paths inside that script with single quotes and a single backslash.
+                Do not write backslash-escaped quotes. A \\" is not an escaped quote: \
+                the backslash is kept and the quote ends the argument.
+                """
+            : "";
+        return ToolSpecification.builder()
+            .name(TOOL_NAME)
+            .description("""
+                Runs one local program and returns its standard output.
+                Pass the executable and its arguments as a single string, for example "git status".
+                This starts a process directly: pipes, redirects, &&, ||, ;, globs, and shell builtins \
+                (dir, echo, type, cd, copy, del) are not available.
+                The working directory is the application directory and is not kept between calls. \
+                Pass absolute paths.
+                On success the result is trimmed stdout. 
+                An empty string means exit code 0 and no output. \
+                stderr is not included on success.
+                A missing program or a non-zero exit is returned as an error. \
+                Do not repeat the same command unchanged.
+                The operating system is: %s.%s
+                """.formatted(osName, windowsRecipe))
+            .parameters(
+                JsonObjectSchema.builder()
+                    .addStringProperty(
+                    PARAMETER_NAME,
+                    "Executable plus arguments, one string. Example: git status")
+                .required(PARAMETER_NAME)
+                .build())
+            .build();
+    }
+    
     public ToolDescriptor toDescriptor() {
         return new ToolDescriptor(TOOL_NAME, "Execute local commands", toolSpecifications(), this);
     }
@@ -85,14 +92,19 @@ public class CommandLineTools implements ITool {
         if (!canExecute(toolExecutionRequest)) {
             return Optional.empty();
         }
-
         try {
             Map<String, String> args = ToolHelper.getArguments(toolExecutionRequest);
 
-            String cmd = args.get("arg0");
+            String cmd = args.get(PARAMETER_NAME);
             if (cmd == null || cmd.isBlank()) {
-                return Optional.of(ToolExecutionResultMessage.from(
-                    toolExecutionRequest, "Error: Missing required 'cmd' parameter"));
+                return Optional.of(
+                    ToolExecutionResultMessage.builder()
+                        .isError(true)
+                        .id(toolExecutionRequest.id())
+                        .toolName(toolExecutionRequest.name())
+                        .text("Error: Missing required '" + PARAMETER_NAME + "' parameter")
+                        .build()
+                );
             }
 
             logger.info("Executing command: {}", cmd);
