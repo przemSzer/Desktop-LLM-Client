@@ -55,7 +55,6 @@ public class MainApplication extends Application {
             throw new RuntimeException("Failed to start application", e);
         }catch(Exception ex){
             logger.error("Failed to load FXML file", ex);
-            ex.printStackTrace();
         }
     }
     

@@ -8,13 +8,13 @@ Connect to **Ollama**, **OpenAI**, **Anthropic**, or **Google Gemini**, stream r
 
 ## Status
 
-This is an early preview (`0.1.0`), not production software. I use it daily and it works well for me, but you should not rely on it for critical tasks. Fine for learning and personal experiments. See [Security](#security).
+This is an early preview (`0.1.1`), not production software. I use it daily and it works well for me, but you should not rely on it for critical tasks. Fine for learning and personal experiments. See [Security](#security).
 
 ## Features
 
 - Streaming chat with conversation history
 - Multi-provider connections (Ollama, OpenAI, Anthropic, Gemini) with your own API keys (BYOK - Bring Your Own Keys) - you pay for the usage of the LLM not a prepaid credits.
-- Tool use: local shell commands, web page download, MCP (experimental); off by default, enable from the chat toolbar; each call asks for confirmation unless you unlock that tool for the current chat
+- Tool use: local shell commands, web page download, MCP (experimental); off by default, enable from the chat toolbar; each call asks for confirmation unless you unlock/switch to brave mode that tool for the current chat
 - Document attachment (images, pdfs, txt etc.)
 - JavaFX desktop UI with MVVM (`core` domain, `ui` presentation)
 
