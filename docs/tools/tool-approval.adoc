@@ -30,7 +30,7 @@ Stored values are tool *ids* (`downloadWebPage`, `local-mcp-tavilysearch`), matc
 ----
 @startuml
 participant "Tools menu" as UI
-participant "SessionToolApproval" as Policy
+participant "SessionToolApprovalConfiguration" as Policy
 participant "MultipleToolExecutionGate" as Gate
 participant "tool-settings.json" as File
 
