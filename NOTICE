@@ -1,0 +1,62 @@
+Desktop LLM Client
+Copyright 2026 Przemysław Szeremeta
+
+This product is licensed under the Apache License, Version 2.0. See the LICENSE
+file for the full license text.
+
+========================================================================
+Third-party notices
+========================================================================
+
+This section lists material from third parties used by the application.
+Additional dependencies may be documented in a Help / About dialog in a
+future release.
+
+------------------------------------------------------------------------
+Twemoji (emoji graphics in chat UI)
+------------------------------------------------------------------------
+
+The chat UI renders emoji in AI messages using PNG graphics from the
+Twemoji project.
+
+  Copyright (c) Twitter, Inc. and other contributors
+  Graphics licensed under the Creative Commons Attribution 4.0 International
+  License (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+  Project: https://github.com/twitter/twemoji
+  Version: 14.0.2 (72x72 PNG assets)
+  Runtime: bundled under classpath chat/emoji/ (Maven generate-resources); jsDelivr CDN
+  is used only as a fallback when a specific PNG is missing (see HtmlEmojiWrapper)
+
+The Twemoji repository also includes build tooling and scripts under the
+MIT License. This notice applies to the emoji artwork (PNG) displayed in
+the application.
+
+------------------------------------------------------------------------
+KaTeX (math rendering in chat UI)
+------------------------------------------------------------------------
+
+The chat UI typesets display math ($$...$$), \[...\], \(...\), and symbol
+dollars such as $r$ with KaTeX. A bare amount ($100$) is left as text.
+
+  Copyright (c) 2013-2020 Khan Academy and other contributors
+  Licensed under the MIT License: https://opensource.org/licenses/MIT
+
+  Project: https://github.com/KaTeX/KaTeX
+  Version: 0.19.1
+  Runtime: bundled under classpath chat/katex/ (Maven generate-resources)
+
+------------------------------------------------------------------------
+Mermaid (diagrams in chat UI)
+------------------------------------------------------------------------
+
+The chat UI renders fenced ```mermaid blocks (flowcharts, sequence diagrams,
+pie charts, and XY bar/line charts) with Mermaid.
+
+  Copyright (c) 2014 - 2022 Knut Sveidqvist
+  Licensed under the MIT License: https://opensource.org/licenses/MIT
+
+  Project: https://github.com/mermaid-js/mermaid
+  Version: 10.9.5
+  Runtime: bundled under classpath chat/mermaid/ (Maven generate-resources)
+

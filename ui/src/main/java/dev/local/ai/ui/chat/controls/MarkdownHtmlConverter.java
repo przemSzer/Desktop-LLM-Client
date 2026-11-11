@@ -31,7 +31,10 @@ public class MarkdownHtmlConverter {
         if (markdown == null || markdown.isEmpty()) {
             return "";
         }
-        var document = parser.parse(markdown);
-        return renderer.render(document);
+        var protectedMath = KatexMathProtector.protect(markdown);
+        var normalized = InlineLatexSimplifier.simplify(protectedMath.markdown());
+        var document = parser.parse(normalized);
+        var html = HtmlEmojiWrapper.wrap(renderer.render(document));
+        return KatexMathProtector.restore(html, protectedMath.blocks());
     }
 }

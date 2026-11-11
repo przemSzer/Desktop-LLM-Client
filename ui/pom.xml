@@ -15,6 +15,12 @@
     <name>UI Module</name>
     <description>User interface components and presentation layer</description>
 
+    <properties>
+        <twemoji.version>14.0.2</twemoji.version>
+        <katex.version>0.19.1</katex.version>
+        <mermaid.version>10.9.5</mermaid.version>
+    </properties>
+
     <dependencies>
         <!-- Core module dependency -->
         <dependency>
@@ -123,7 +129,131 @@
     </dependencies>
     
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/emoji</directory>
+                <targetPath>chat/emoji</targetPath>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/katex</directory>
+                <targetPath>chat/katex</targetPath>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/mermaid</directory>
+                <targetPath>chat/mermaid</targetPath>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.13.0</version>
+                <executions>
+                    <execution>
+                        <id>download-twemoji</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/twitter/twemoji/archive/refs/tags/v${twemoji.version}.zip</url>
+                            <outputDirectory>${project.build.directory}/twemoji</outputDirectory>
+                            <outputFileName>twemoji-${twemoji.version}.zip</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-katex</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/KaTeX/KaTeX/releases/download/v${katex.version}/katex.zip</url>
+                            <outputDirectory>${project.build.directory}/katex-dist</outputDirectory>
+                            <outputFileName>katex-${katex.version}.zip</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-mermaid</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://registry.npmjs.org/mermaid/-/mermaid-${mermaid.version}.tgz</url>
+                            <outputDirectory>${project.build.directory}/mermaid-dist</outputDirectory>
+                            <outputFileName>mermaid-${mermaid.version}.tgz</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-twemoji-pngs</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/emoji</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/twemoji/twemoji-${twemoji.version}/assets/72x72</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-katex</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/katex</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/katex-dist/katex</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-mermaid</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/mermaid</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/mermaid-dist/package/dist</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>mermaid.min.js</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
