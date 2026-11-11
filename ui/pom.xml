@@ -17,6 +17,8 @@
 
     <properties>
         <twemoji.version>14.0.2</twemoji.version>
+        <katex.version>0.19.1</katex.version>
+        <mermaid.version>10.9.5</mermaid.version>
     </properties>
 
     <dependencies>
@@ -136,6 +138,16 @@
                 <targetPath>chat/emoji</targetPath>
                 <filtering>false</filtering>
             </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/katex</directory>
+                <targetPath>chat/katex</targetPath>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/chat/mermaid</directory>
+                <targetPath>chat/mermaid</targetPath>
+                <filtering>false</filtering>
+            </resource>
         </resources>
         <plugins>
             <plugin>
@@ -153,6 +165,32 @@
                             <url>https://github.com/twitter/twemoji/archive/refs/tags/v${twemoji.version}.zip</url>
                             <outputDirectory>${project.build.directory}/twemoji</outputDirectory>
                             <outputFileName>twemoji-${twemoji.version}.zip</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-katex</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/KaTeX/KaTeX/releases/download/v${katex.version}/katex.zip</url>
+                            <outputDirectory>${project.build.directory}/katex-dist</outputDirectory>
+                            <outputFileName>katex-${katex.version}.zip</outputFileName>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>download-mermaid</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://registry.npmjs.org/mermaid/-/mermaid-${mermaid.version}.tgz</url>
+                            <outputDirectory>${project.build.directory}/mermaid-dist</outputDirectory>
+                            <outputFileName>mermaid-${mermaid.version}.tgz</outputFileName>
                             <unpack>true</unpack>
                         </configuration>
                     </execution>
@@ -175,6 +213,41 @@
                                 <resource>
                                     <directory>${project.build.directory}/twemoji/twemoji-${twemoji.version}/assets/72x72</directory>
                                     <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-katex</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/katex</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/katex-dist/katex</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-mermaid</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-resources/chat/mermaid</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/mermaid-dist/package/dist</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>mermaid.min.js</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>

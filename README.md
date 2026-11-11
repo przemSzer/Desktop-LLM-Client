@@ -99,8 +99,8 @@ Provided **as-is** under Apache 2.0.
 ./mvnw package
 ```
 
-The `ui` module downloads [Twemoji](https://github.com/twitter/twemoji) PNGs during `generate-resources` (network on first build) so chat emoji work offline. See `ui/src/main/resources/chat/emoji/README.md`.
+The `ui` module downloads [Twemoji](https://github.com/twitter/twemoji) PNGs, [KaTeX](https://github.com/KaTeX/KaTeX), and [Mermaid](https://github.com/mermaid-js/mermaid) during `generate-resources` (network on first build) so chat emoji, math, and diagrams work offline. See `ui/src/main/resources/chat/emoji/README.md`, `ui/src/main/resources/chat/katex/README.md`, and `ui/src/main/resources/chat/mermaid/README.md`.
 
 ## License
 
-[Apache License 2.0](LICENSE). Third-party attributions (including Twemoji emoji graphics) are in [NOTICE](NOTICE).
+[Apache License 2.0](LICENSE). Third-party attributions (including Twemoji emoji graphics, KaTeX, and Mermaid) are in [NOTICE](NOTICE).

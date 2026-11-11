@@ -31,3 +31,32 @@ Twemoji project.
 The Twemoji repository also includes build tooling and scripts under the
 MIT License. This notice applies to the emoji artwork (PNG) displayed in
 the application.
+
+------------------------------------------------------------------------
+KaTeX (math rendering in chat UI)
+------------------------------------------------------------------------
+
+The chat UI typesets display math ($$...$$), \[...\], \(...\), and symbol
+dollars such as $r$ with KaTeX. A bare amount ($100$) is left as text.
+
+  Copyright (c) 2013-2020 Khan Academy and other contributors
+  Licensed under the MIT License: https://opensource.org/licenses/MIT
+
+  Project: https://github.com/KaTeX/KaTeX
+  Version: 0.19.1
+  Runtime: bundled under classpath chat/katex/ (Maven generate-resources)
+
+------------------------------------------------------------------------
+Mermaid (diagrams in chat UI)
+------------------------------------------------------------------------
+
+The chat UI renders fenced ```mermaid blocks (flowcharts, sequence diagrams,
+pie charts, and XY bar/line charts) with Mermaid.
+
+  Copyright (c) 2014 - 2022 Knut Sveidqvist
+  Licensed under the MIT License: https://opensource.org/licenses/MIT
+
+  Project: https://github.com/mermaid-js/mermaid
+  Version: 10.9.5
+  Runtime: bundled under classpath chat/mermaid/ (Maven generate-resources)
+

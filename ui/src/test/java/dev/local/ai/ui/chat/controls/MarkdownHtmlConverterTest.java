@@ -12,18 +12,64 @@ class MarkdownHtmlConverterTest {
     void wrapsEmojiInHeadingsForWebKit() {
         String html = converter.convertToHtml("## 💡 TEN SAM PRZYKŁAD");
 
-        assertThat(html).contains("<h2>");
-        assertThat(html).contains("class=\"emoji-img\"");
-        assertThat(html).contains("emoji/1f4a1.png");
-        assertThat(html).contains("TEN SAM PRZYKŁAD");
+        assertThat(html)
+                .contains("<h2>")
+                .contains("class=\"emoji-img\"")
+                .contains("emoji/1f4a1.png")
+                .contains("TEN SAM PRZYKŁAD");
     }
 
     @Test
-    void simplifiesInlineLatexFromGemma() {
+    void keepsSymbolDollarsForKatex() {
+        String html = converter.convertToHtml("- $r$ – **Nominalna stopa**");
+
+        assertThat(html)
+                .contains("\\(r\\)")
+                .contains("<strong>Nominalna stopa</strong>")
+                .doesNotContain("$r$");
+    }
+
+    @Test
+    void keepsInlineCommandForKatex() {
         String html = converter.convertToHtml("Krok 1 $\\rightarrow$ Krok 2");
 
-        assertThat(html).contains("→");
-        assertThat(html).doesNotContain("rightarrow");
+        assertThat(html)
+                .contains("\\(\\rightarrow\\)")
+                .doesNotContain("$");
+    }
+
+    @Test
+    void keepsDisplayMathForKatex() {
+        String html = converter.convertToHtml("$$\\mathbf{3738,19\\text{ zł}}$$");
+
+        assertThat(html)
+                .contains("$$\\mathbf{3738,19\\text{ zł}}$$")
+                .doesNotContain("<em>")
+                .doesNotContain("KATEXBLOCK");
+    }
+
+    @Test
+    void keepsSubscriptInsideDisplayMath() {
+        String html = converter.convertToHtml("$$x_i$$");
+
+        assertThat(html)
+                .contains("$$x_i$$")
+                .doesNotContain("<em>");
+    }
+
+    @Test
+    void leavesMermaidFenceForThePage() {
+        String html = converter.convertToHtml("""
+                ```mermaid
+                graph TD
+                  A["$r$"] --> B
+                ```
+                """);
+
+        assertThat(html)
+                .contains("language-mermaid")
+                .contains("$r$")
+                .doesNotContain("\\(r\\)");
     }
 
     @Test
