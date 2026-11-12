@@ -1,6 +1,7 @@
 package dev.local.ai.core.models;
 
 import dev.langchain4j.http.client.HttpClientBuilderLoader;
+import dev.langchain4j.model.anthropic.AnthropicChatRequestParameters;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
@@ -10,6 +11,8 @@ import dev.local.ai.core.connections.AnthropicConnection;
 import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
+import dev.local.ai.core.models.anthropic.LogAnthropicCacheInfo;
+import dev.local.ai.core.models.openai.OpenAiPromptCaching;
 
 import java.time.Duration;
 
@@ -36,13 +39,18 @@ public class StreamingChatModelsProvider {
 
     private StreamingChatModel openAIChatModel(LLMInfoAndConnection modelInfo) {
         var openAIConnection = (OpenAIConnection) modelInfo.connection();
-        return OpenAiStreamingChatModel
+        var modelName = modelInfo.modelInfo().name();
+        var builder = OpenAiStreamingChatModel
             .builder()
             .apiKey(openAIConnection.apiKey())
-            .modelName(modelInfo.modelInfo().name())
+            .modelName(modelName)
             .reasoningEffort("none")
-            .timeout(Duration.ofMinutes(5))
-            .build();
+            .timeout(Duration.ofMinutes(5));
+        var promptCacheOptions = OpenAiPromptCaching.forChat(modelName);
+        if (promptCacheOptions != null) {
+            builder.promptCacheOptions(promptCacheOptions);
+        }
+        return builder.build();
     }
 
     private StreamingChatModel ollamaChatModel(LLMInfoAndConnection modelInfo) {
@@ -77,12 +85,17 @@ public class StreamingChatModelsProvider {
         var anthropicConnection = (AnthropicConnection) modelInfo.connection();
         return AnthropicStreamingChatModel
             .builder()
+            .cacheSystemMessages(true)
+            .cacheTools(true)
+            .cacheAutomatically(true)
+            .cacheTtl(AnthropicChatRequestParameters.CACHE_TTL_1H)
             .apiKey(anthropicConnection.apiKey())
             .modelName(modelInfo.modelInfo().id())
             .returnThinking(true)
             .timeout(Duration.ofMinutes(5))
                 //TODO: brak limitu jak ogarnąć?
             .maxTokens(10 * 1024)
+            .listeners(new LogAnthropicCacheInfo())
             .build();
     }
 

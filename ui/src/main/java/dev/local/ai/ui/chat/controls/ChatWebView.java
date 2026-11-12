@@ -109,7 +109,10 @@ public class ChatWebView extends StackPane {
                         bodyHtml,
                         stats.inputTokens(),
                         stats.outputTokens(),
-                        stats.totalTokens());
+                        stats.totalTokens(),
+                        stats.cacheReadTokens(),
+                        stats.cacheWriteTokens(),
+                        stats.cacheIncludedInInput());
             } else {
                 callJs("addMessage", id, cssClass, typeLabel, bodyHtml);
             }

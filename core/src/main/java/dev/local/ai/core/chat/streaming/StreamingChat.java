@@ -10,7 +10,7 @@ import dev.langchain4j.model.chat.response.*;
 import dev.local.ai.core.chat.ILLMChat;
 import dev.local.ai.core.chat.LLMChangedEvent;
 import dev.local.ai.core.chat.messages.Message;
-import dev.local.ai.core.chat.messages.Statistics;
+import dev.local.ai.core.chat.messages.TokenUsageStatisticsExtractor;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.events.EventListener;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
@@ -43,6 +43,7 @@ public class StreamingChat implements ILLMChat, AutoCloseable {
     private final EventListener<LLMChangedEvent> llmChangedListener = this::onLLMChanged;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Subject<ChatEvent> events = PublishSubject.<ChatEvent>create().toSerialized();
+    private final TokenUsageStatisticsExtractor statisticsExtractor;
 
     //TODO: chatModel in fact should be initial chatModel,
     // but it also should be gathered from chatModelsProvider
@@ -57,6 +58,7 @@ public class StreamingChat implements ILLMChat, AutoCloseable {
         this.eventBus = eventBus;
         eventBus.subscribe(LLMChangedEvent.EVENT_TYPE, llmChangedListener);
         this.toolExecutor = toolExecutor;
+        this.statisticsExtractor = new TokenUsageStatisticsExtractor();
         this.messageToChatMessageConverter = new MessageToChatMessageConverter();
         logger.info("StreamingChat instance created with model: {}", initialChatModel != null ? initialChatModel.getClass().getSimpleName(): "null");
     }
@@ -220,7 +222,7 @@ public class StreamingChat implements ILLMChat, AutoCloseable {
                 );
             }else{
                 logger.info("AI response finished, usage: {}", response.tokenUsage());
-                var statistics = Statistics.fromTokenUsage(response.tokenUsage());
+                var statistics = statisticsExtractor.from(response.tokenUsage());
                 var aiMessage = Message.ai(response.aiMessage().text(),statistics);
                 emit(new ChatEvent.AiMessageCompleted(currentRequestId, aiMessage));
             }

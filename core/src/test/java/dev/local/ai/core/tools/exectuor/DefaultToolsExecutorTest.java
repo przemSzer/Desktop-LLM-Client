@@ -366,8 +366,9 @@ class DefaultToolsExecutorTest {
                     .onToolCallFinished(any());
         } finally {
             releaseGate.countDown();
-            interrupter.join(TimeUnit.SECONDS.toMillis(5));
+            // join throws when this thread is still interrupted and the virtual thread has not terminated yet
             Thread.interrupted();
+            interrupter.join(TimeUnit.SECONDS.toMillis(5));
         }
     }
 
