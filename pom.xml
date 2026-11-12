@@ -36,12 +36,10 @@
         <mockito.version>5.18.0</mockito.version>
         <assertj.version>3.27.7</assertj.version>
         <awaitility.version>4.3.0</awaitility.version>
-        <langchain4j.version>1.13.1</langchain4j.version>
+        <langchain4j.version>1.23.0</langchain4j.version>
+        <langchain4j-beta.version>1.23.0-beta33</langchain4j-beta.version>
         <commons-exec.version>1.6.0</commons-exec.version>
         <bytebuddy.version>1.17.5</bytebuddy.version>
-        <langchain4j-mcp.version>1.13.1-beta23</langchain4j-mcp.version>
-        <langchain4j-apache-tika.version>1.13.1-beta23</langchain4j-apache-tika.version>
-        <langchain4j-jsoup.version>1.13.1-beta23</langchain4j-jsoup.version>
         <atlantafx.version>2.1.0</atlantafx.version>
         <controlsfx.version>11.2.2</controlsfx.version>
         <ikonli.version>12.3.1</ikonli.version>
@@ -104,20 +102,20 @@
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-mcp</artifactId>
-                <version>${langchain4j-mcp.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
 
             <!-- apache tika documents -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-parser-apache-tika</artifactId>
-                <version>${langchain4j-apache-tika.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
             <!-- document transformer jsoup -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-document-transformer-jsoup</artifactId>
-                <version>${langchain4j-jsoup.version}</version>
+                <version>${langchain4j-beta.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
