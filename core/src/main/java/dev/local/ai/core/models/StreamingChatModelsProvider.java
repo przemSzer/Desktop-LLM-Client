@@ -12,6 +12,7 @@ import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.OllamaConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 import dev.local.ai.core.models.anthropic.LogAnthropicCacheInfo;
+import dev.local.ai.core.models.openai.OpenAiPromptCaching;
 
 import java.time.Duration;
 
@@ -38,13 +39,18 @@ public class StreamingChatModelsProvider {
 
     private StreamingChatModel openAIChatModel(LLMInfoAndConnection modelInfo) {
         var openAIConnection = (OpenAIConnection) modelInfo.connection();
-        return OpenAiStreamingChatModel
+        var modelName = modelInfo.modelInfo().name();
+        var builder = OpenAiStreamingChatModel
             .builder()
             .apiKey(openAIConnection.apiKey())
-            .modelName(modelInfo.modelInfo().name())
+            .modelName(modelName)
             .reasoningEffort("none")
-            .timeout(Duration.ofMinutes(5))
-            .build();
+            .timeout(Duration.ofMinutes(5));
+        var promptCacheOptions = OpenAiPromptCaching.forChat(modelName);
+        if (promptCacheOptions != null) {
+            builder.promptCacheOptions(promptCacheOptions);
+        }
+        return builder.build();
     }
 
     private StreamingChatModel ollamaChatModel(LLMInfoAndConnection modelInfo) {
