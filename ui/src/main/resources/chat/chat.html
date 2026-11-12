@@ -659,7 +659,21 @@ function addMessage(id, type, typeLabel, bodyHtml) {
     scrollToBottom();
 }
 
-function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalTokens) {
+function appendStatsRow(container, label, value) {
+    if (value === null || value === undefined) {
+        return;
+    }
+    const row = document.createElement('div');
+    row.className = 'stats-row';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'stats-label';
+    labelEl.textContent = label;
+    row.appendChild(labelEl);
+    row.appendChild(document.createTextNode(String(value)));
+    container.appendChild(row);
+}
+
+function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalTokens, cacheReadTokens, cacheWriteTokens, cacheIncludedInInput) {
     const div = document.createElement('div');
     div.className = 'message ai';
     div.id = 'msg-' + id;
@@ -689,12 +703,15 @@ function addAiMessage(id, typeLabel, bodyHtml, inputTokens, outputTokens, totalT
     statsToggle.className = 'stats-toggle';
     statsToggle.textContent = 'Token usage';
 
+    const cacheReported = cacheReadTokens != null || cacheWriteTokens != null;
+    const inputLabel = !cacheIncludedInInput && cacheReported ? 'Input (uncached)' : 'Input';
     const statsBody = document.createElement('div');
     statsBody.className = 'stats-body';
-    statsBody.innerHTML =
-        '<div class="stats-row"><span class="stats-label">Input</span>' + inputTokens + '</div>' +
-        '<div class="stats-row"><span class="stats-label">Output</span>' + outputTokens + '</div>' +
-        '<div class="stats-row"><span class="stats-label">Total</span>' + totalTokens + '</div>';
+    appendStatsRow(statsBody, inputLabel, inputTokens);
+    appendStatsRow(statsBody, 'Cache read', cacheReadTokens);
+    appendStatsRow(statsBody, 'Cache write', cacheWriteTokens);
+    appendStatsRow(statsBody, 'Output', outputTokens);
+    appendStatsRow(statsBody, 'Total', totalTokens);
 
     statsToggle.onclick = function() {
         statsToggle.classList.toggle('open');

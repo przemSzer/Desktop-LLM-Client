@@ -1,21 +1,23 @@
 package dev.local.ai.core.chat.messages;
 
-import dev.langchain4j.model.output.TokenUsage;
+/**
+ * Token counts for one model response.
+ * <p>
+ * {@code cacheReadTokens} and {@code cacheWriteTokens} are {@code null} when the provider did not
+ * report them. Zero means the provider reported that nothing was read or written.
+ * {@code cacheIncludedInInput} is true when those cache tokens are already part of
+ * {@code inputTokens}, as with OpenAI and Gemini. Anthropic reports them separately, so its
+ * {@code inputTokens} are only the uncached remainder.
+ */
+public record Statistics(
+        int inputTokens,
+        int outputTokens,
+        int totalTokens,
+        Integer cacheReadTokens,
+        Integer cacheWriteTokens,
+        boolean cacheIncludedInInput) {
 
-public record Statistics(int inputTokens, int outputTokens, int totalTokens) {
-
-    public static Statistics fromTokenUsage(TokenUsage usage) {
-        if (usage == null) {
-            return new Statistics(0, 0, 0);
-        }
-        int input = nullableInt(usage.inputTokenCount());
-        int output = nullableInt(usage.outputTokenCount());
-        Integer total = usage.totalTokenCount();
-        int totalTokens = total != null ? total : input + output;
-        return new Statistics(input, output, totalTokens);
-    }
-
-    private static int nullableInt(Integer value) {
-        return value != null ? value : 0;
+    public Statistics(int inputTokens, int outputTokens, int totalTokens) {
+        this(inputTokens, outputTokens, totalTokens, null, null, false);
     }
 }
