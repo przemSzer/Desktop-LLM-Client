@@ -21,6 +21,7 @@ import dev.local.ai.ui.connection.anthropic.AnthropicConnectionDialog;
 import dev.local.ai.ui.connection.google.GoogleConnectionDialog;
 import dev.local.ai.ui.connection.ollama.OllamaConnectionDialog;
 import dev.local.ai.ui.connection.openai.OpenAIConnectionDialog;
+import dev.local.ai.ui.connection.openaicompatible.OpenAICompatibleConnectionDialog;
 
 /**
  * ViewModel for the Connections UI following MVVM pattern.
@@ -131,7 +132,9 @@ public class ConnectionsViewModel {
     private INewConnectionDialog<?> getDialog(ConnectionProvider providerType) {
         switch (providerType) {
             case ConnectionProvider.OPENAI:
-                return new OpenAIConnectionDialog();                
+                return new OpenAIConnectionDialog();
+            case ConnectionProvider.OPENAI_COMPATIBLE:
+                return new OpenAICompatibleConnectionDialog();
             case ConnectionProvider.OLLAMA:
                 return new OllamaConnectionDialog();
             case ConnectionProvider.GOOGLE:

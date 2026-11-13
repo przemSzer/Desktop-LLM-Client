@@ -10,6 +10,7 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.local.ai.core.connections.AnthropicConnection;
 import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.OllamaConnection;
+import dev.local.ai.core.connections.OpenAICompatibleConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 import dev.local.ai.core.models.anthropic.LogAnthropicCacheInfo;
 import dev.local.ai.core.models.openai.OpenAiPromptCaching;
@@ -25,6 +26,9 @@ public class StreamingChatModelsProvider {
             }
             case OpenAIConnection _ -> {
                 return openAIChatModel(modelInfo);
+            }
+            case OpenAICompatibleConnection _ -> {
+                return openAICompatibleChatModel(modelInfo);
             }
             case GoogleConnection _ -> {
                 return googleGeminiChatModel(modelInfo);
@@ -49,6 +53,20 @@ public class StreamingChatModelsProvider {
         var promptCacheOptions = OpenAiPromptCaching.forChat(modelName);
         if (promptCacheOptions != null) {
             builder.promptCacheOptions(promptCacheOptions);
+        }
+        return builder.build();
+    }
+
+    private StreamingChatModel openAICompatibleChatModel(LLMInfoAndConnection modelInfo) {
+        var connection = (OpenAICompatibleConnection) modelInfo.connection();
+        var builder = OpenAiStreamingChatModel
+            .builder()
+            .baseUrl(connection.baseUrl())
+            .modelName(modelInfo.modelInfo().id())
+            .timeout(Duration.ofMinutes(5));
+        var apiKey = connection.apiKeyOrNull();
+        if (apiKey != null) {
+            builder.apiKey(apiKey);
         }
         return builder.build();
     }

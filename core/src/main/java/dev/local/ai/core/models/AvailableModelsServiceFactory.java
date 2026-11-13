@@ -4,6 +4,7 @@ import dev.local.ai.core.connections.AnthropicConnection;
 import dev.local.ai.core.connections.GoogleConnection;
 import dev.local.ai.core.connections.ModelProviderConnection;
 import dev.local.ai.core.connections.OllamaConnection;
+import dev.local.ai.core.connections.OpenAICompatibleConnection;
 import dev.local.ai.core.connections.OpenAIConnection;
 
 public class AvailableModelsServiceFactory {
@@ -18,6 +19,7 @@ public class AvailableModelsServiceFactory {
         return switch (connection) {
             case OllamaConnection ollamaConnection -> new OllamaModelService(ollamaConnection);
             case OpenAIConnection openAIConnection -> new OpenAIModelService(openAIConnection);
+            case OpenAICompatibleConnection compatibleConnection -> new OpenAICompatibleModelService(compatibleConnection);
             case GoogleConnection googleConnection -> new GoogleGeminiModelService(googleConnection);
             case AnthropicConnection anthropicConnection -> new AnthropicModelService(anthropicConnection);
             default -> throw new IllegalArgumentException("Unsupported connection type: " + connection.getClass());

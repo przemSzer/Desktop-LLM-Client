@@ -11,11 +11,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = OllamaConnection.class, name = "ollama"),
     @JsonSubTypes.Type(value = OpenAIConnection.class, name = "openai"),
+    @JsonSubTypes.Type(value = OpenAICompatibleConnection.class, name = "openai-compatible"),
     @JsonSubTypes.Type(value = GoogleConnection.class, name = "google"),
     @JsonSubTypes.Type(value = AnthropicConnection.class, name = "anthropic")
 })
 public sealed interface ModelProviderConnection
-    permits OllamaConnection, OpenAIConnection, GoogleConnection, AnthropicConnection {
+    permits OllamaConnection, OpenAIConnection, OpenAICompatibleConnection, GoogleConnection, AnthropicConnection {
     String id();
     String name();
     String description();

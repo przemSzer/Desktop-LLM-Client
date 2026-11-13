@@ -73,6 +73,39 @@ class ConnectionSerializationTest {
     }
 
     @Test
+    void testOpenAICompatibleConnectionSerialization() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        OpenAICompatibleConnection original = new OpenAICompatibleConnection(
+            "id-1",
+            "local",
+            "LM Studio",
+            "http://localhost:1234/v1/",
+            "secret"
+        );
+
+        String json = mapper.writeValueAsString(original);
+
+        assertTrue(json.contains("\"id\""));
+        assertTrue(json.contains("\"name\""));
+        assertTrue(json.contains("\"description\""));
+        assertTrue(json.contains("\"baseUrl\""));
+        assertTrue(json.contains("\"apiKey\""));
+        assertTrue(json.contains("\"type\""));
+        assertTrue(json.contains("\"openai-compatible\""));
+        assertFalse(json.contains("http://localhost:1234/v1/"));
+
+        OpenAICompatibleConnection deserialized = mapper.readValue(json, OpenAICompatibleConnection.class);
+
+        assertEquals(original.id(), deserialized.id());
+        assertEquals(original.name(), deserialized.name());
+        assertEquals(original.description(), deserialized.description());
+        assertEquals("http://localhost:1234/v1", deserialized.baseUrl());
+        assertEquals(original.apiKey(), deserialized.apiKey());
+        assertEquals(original.providerType(), deserialized.providerType());
+    }
+
+    @Test
     void testGoogleConnectionSerialization() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -130,6 +163,7 @@ class ConnectionSerializationTest {
         List<ModelProviderConnection> connections = List.of(
             new OllamaConnection("ollama-1", "Ollama Connection 1"),
             new OpenAIConnection("openai-1", "OpenAI Connection 1"),
+            new OpenAICompatibleConnection("compatible-1", "OpenAI Compatible Connection 1"),
             new GoogleConnection("google-1", "Google Connection 1"),
             new AnthropicConnection("anthropic-1", "Anthropic Connection 1")
         );
@@ -140,7 +174,8 @@ class ConnectionSerializationTest {
                 
         
         assertTrue(json.contains("\"type\":\"ollama\""));
-        assertTrue(json.contains("\"type\":\"openai\""));
+        assertTrue(json.contains("\"type\":\"openai\",") || json.contains("\"type\":\"openai\"}"));
+        assertTrue(json.contains("\"type\":\"openai-compatible\""));
         assertTrue(json.contains("\"type\":\"google\""));
         assertTrue(json.contains("\"type\":\"anthropic\""));
 
@@ -150,6 +185,8 @@ class ConnectionSerializationTest {
                 assertEquals("ollama-1", connection.name());
             } else if (connection instanceof OpenAIConnection) {
                 assertEquals("openai-1", connection.name());
+            } else if (connection instanceof OpenAICompatibleConnection) {
+                assertEquals("compatible-1", connection.name());
             } else if (connection instanceof GoogleConnection) {
                 assertEquals("google-1", connection.name());
             } else if (connection instanceof AnthropicConnection) {
