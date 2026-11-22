@@ -35,7 +35,7 @@ This app uses `name` as the tools-menu group title.
 A blank or missing `name` shows the map key.
 
 `enabled: false` means no chat may start that server. 
-A missing file means local tools only. 
+A missing file means built-in tools only. 
 Editing the file takes effect on the next app start. 
 Secrets sit in the file in plaintext, the same way provider keys sit in `connections.json`. 
 Placeholders such as `${env:NAME}` are not expanded.
@@ -99,7 +99,7 @@ so RPC to that server is one-at-a-time. Omitted or `false` leaves calls parallel
 == Tools menu
 
 The tools menu groups tools by server. 
-`Local` is first. Each configured startable MCP server is a collapsible group. 
+`Built-in` is first. Each configured startable MCP server is a collapsible group. 
 A group checkbox turns every tool from that server on or off.
 If the rows are still empty, checking the group connects, lists the tools, 
 and enables them all.

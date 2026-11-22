@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Local tools plus the MCP registry. Does not connect MCP servers at construction.
+ * Built-in tools plus the MCP registry. Does not connect MCP servers at construction.
  */
 public class AppToolsCatalog implements IToolProvider, AutoCloseable {
 
@@ -39,7 +39,7 @@ public class AppToolsCatalog implements IToolProvider, AutoCloseable {
     }
 
     /**
-     * Local tools and tools from MCP servers that currently have an open client.
+     * Built-in tools and tools from MCP servers that currently have an open client.
      */
     @Override
     public List<ToolDescriptor> getToolDescriptors() {

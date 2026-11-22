@@ -10,7 +10,7 @@ public record ToolDescriptor(
     ITool executor
 ) {
 
-    public static final String LOCAL_GROUP = "Local";
+    public static final String LOCAL_GROUP = "Built-in";
 
     public ToolDescriptor {
         if (group == null || group.isBlank()) {

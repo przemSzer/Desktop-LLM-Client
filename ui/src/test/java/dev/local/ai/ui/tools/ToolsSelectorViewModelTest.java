@@ -53,7 +53,7 @@ class ToolsSelectorViewModelTest {
                 .isNotEmpty();
         ToolGroupViewModel local = viewModel.getGroups().getFirst();
         assertThat(local.getDisplayName())
-                .isEqualTo("Local");
+                .isEqualTo("Built-in");
         assertThat(local.getTools())
                 .extracting(ToolItemViewModel::getToolId)
                 .contains("downloadWebPage", "executeLocalCommand");
@@ -103,7 +103,8 @@ class ToolsSelectorViewModelTest {
                 null,
                 Map.of(),
                 null,
-                30
+                30,
+                null
         );
         var withMcp = new AppToolsCatalog(new McpConnectionRegistry(
                 List.of(server),
@@ -115,6 +116,6 @@ class ToolsSelectorViewModelTest {
 
         assertThat(vm.getGroups())
                 .extracting(ToolGroupViewModel::getDisplayName)
-                .contains("Local", "Tavily");
+                .contains("Built-in", "Tavily");
     }
 }

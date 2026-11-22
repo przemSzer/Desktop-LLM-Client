@@ -10,7 +10,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
- * A group of tools in the tools menu (Local or one MCP server).
+ * A group of tools in the tools menu (Built-in or one MCP server).
  * {@link #selectionStateProperty()} is 0 = none, 1 = mixed, 2 = all.
  */
 public class ToolGroupViewModel {
