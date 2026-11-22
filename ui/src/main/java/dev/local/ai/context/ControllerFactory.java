@@ -37,7 +37,7 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
             if (type == ChatController.class) {
                 return new ChatController(
                         createChatViewModel(),
-                        app.toolProvider,
+                        app.toolsCatalog,
                         app.eventBus,
                         app.connectionsStore,
                         app.commandManager,

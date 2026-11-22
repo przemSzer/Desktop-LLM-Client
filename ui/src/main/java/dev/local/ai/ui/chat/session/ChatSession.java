@@ -9,12 +9,14 @@ public record ChatSession(
         ChatMemory chatMemory,
         StreamingChat chat,
         WaitForApprovalGate approval,
-        SessionToolApprovalConfiguration toolApproval
+        SessionToolApprovalConfiguration toolApproval,
+        SessionToolSelection toolSelection
 ) implements AutoCloseable
 {
     @Override
     public void close() {
         chat.close();
         approval.close();
+        toolSelection.close();
     }
 }

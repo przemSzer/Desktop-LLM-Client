@@ -7,7 +7,9 @@ import dev.local.ai.core.tools.settings.ToolSettingsWriter;
 
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public final class SessionToolApprovalConfiguration {
 
@@ -15,18 +17,28 @@ public final class SessionToolApprovalConfiguration {
     private final ToolSettingsWriter writer;
     private final Path settingsFile;
     private final Set<String> alwaysAllowedTools;
+    private final Supplier<List<String>> enabledToolIds;
+
+    public SessionToolApprovalConfiguration(MultipleToolExecutionGate gate,
+                                            ToolSettingsWriter writer,
+                                            Path settingsFile,
+                                            Set<String> alwaysAllowedTools,
+                                            Supplier<List<String>> enabledToolIds) {
+        this.gate = gate;
+        this.writer = writer;
+        this.settingsFile = settingsFile;
+        this.alwaysAllowedTools = new LinkedHashSet<>(alwaysAllowedTools);
+        this.enabledToolIds = enabledToolIds == null ? List::of : enabledToolIds;
+        for (String toolId : this.alwaysAllowedTools) {
+            gate.addGate(toolId, AlwaysApproveGate.INSTANCE);
+        }
+    }
 
     public SessionToolApprovalConfiguration(MultipleToolExecutionGate gate,
                                             ToolSettingsWriter writer,
                                             Path settingsFile,
                                             Set<String> alwaysAllowedTools) {
-        this.gate = gate;
-        this.writer = writer;
-        this.settingsFile = settingsFile;
-        this.alwaysAllowedTools = new LinkedHashSet<>(alwaysAllowedTools);
-        for (String toolId : this.alwaysAllowedTools) {
-            gate.addGate(toolId, AlwaysApproveGate.INSTANCE);
-        }
+        this(gate, writer, settingsFile, alwaysAllowedTools, List::of);
     }
 
     public Set<String> alwaysAllowedTools() {
@@ -50,7 +62,13 @@ public final class SessionToolApprovalConfiguration {
             }
         }
         if (changed) {
-            writer.write(settingsFile, new ToolSettings(alwaysAllowedTools.stream().toList()));
+            writer.write(
+                    settingsFile,
+                    new ToolSettings(
+                            alwaysAllowedTools.stream().toList(),
+                            enabledToolIds.get()
+                    )
+            );
         }
     }
 }

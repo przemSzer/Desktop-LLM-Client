@@ -8,7 +8,8 @@ import dev.local.ai.core.models.LLMInfoAndConnection;
 import dev.local.ai.core.models.ModelInfo;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.storage.models.LastSelectedModel;
-import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.core.tools.AppToolsCatalog;
+import dev.local.ai.core.tools.mcp.McpConnectionRegistry;
 import dev.local.ai.core.tools.settings.ToolSettings;
 import dev.local.ai.core.tools.settings.ToolSettingsReader;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;
@@ -47,9 +48,6 @@ class ChatSessionFactoryTest {
     private StreamingChatModelsProvider modelsProvider;
 
     @Mock(lenient = true)
-    private IToolProvider toolProvider;
-
-    @Mock(lenient = true)
     private CoreEventBus eventBus;
 
     @Mock(lenient = true)
@@ -71,11 +69,17 @@ class ChatSessionFactoryTest {
                 .willReturn(firstStreamingModel, secondStreamingModel);
 
         writer = new ToolSettingsWriter();
+        var catalog = new AppToolsCatalog(new McpConnectionRegistry(
+                List.of(),
+                config -> {
+                    throw new UnsupportedOperationException("no MCP in unit test");
+                }
+        ));
         factory = new ChatSessionFactory(
                 chatMemoryStore,
                 lastSelectedModel,
                 modelsProvider,
-                toolProvider,
+                catalog,
                 eventBus,
                 chatsDir,
                 new ToolSettingsReader(),
@@ -142,5 +146,18 @@ class ChatSessionFactoryTest {
                 .containsExactly("downloadWebPage");
         assertThat(sessionB.toolApproval().alwaysAllowedTools())
                 .isEmpty();
+    }
+
+    @Test
+    void should_restore_enabled_tools_from_conversation_settings() {
+        writer.write(
+                chatsDir.resolve("conv-A").resolve(ChatSessionFactory.TOOL_SETTINGS_FILE),
+                new ToolSettings(List.of(), List.of("downloadWebPage"))
+        );
+
+        ChatSession session = factory.openConversation("conv-A");
+
+        assertThat(session.toolSelection().enabledToolIds())
+                .containsExactly("downloadWebPage");
     }
 }

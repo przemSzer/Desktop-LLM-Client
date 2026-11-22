@@ -26,9 +26,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import dev.local.ai.ui.controls.OverlayLayer;
 import dev.local.ai.ui.controls.OverlayLayer.Placement;
@@ -38,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import dev.local.ai.core.connections.ConnectionsStore;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.storage.conversations.ConversationStore;
-import dev.local.ai.core.tools.IToolProvider;
+import dev.local.ai.core.tools.AppToolsCatalog;
 import dev.local.ai.ui.chat.command.NewConversationCommand;
 import dev.local.ai.ui.chat.command.RenameConversationCommand;
 import dev.local.ai.ui.chat.controls.ChatWebView;
@@ -56,6 +59,7 @@ import dev.local.ai.ui.files.viewmodel.FileStatus;
 import dev.local.ai.ui.models.model.LLMInfoViewModel;
 import dev.local.ai.ui.models.view.LLMSelectorView;
 import dev.local.ai.ui.theme.ThemeManager;
+import dev.local.ai.ui.tools.ToolGroupViewModel;
 import dev.local.ai.ui.tools.ToolItemViewModel;
 import dev.local.ai.ui.tools.ToolsSelectorView;
 import dev.local.ai.ui.tools.ToolsSelectorViewModel;
@@ -128,7 +132,7 @@ public class ChatController {
     private FileAttachmentViewModel composerFiles;
 
     private final ChatViewModel chatViewModel;
-    private final IToolProvider toolProvider;
+    private final AppToolsCatalog toolsCatalog;
     private final CoreEventBus eventBus;
     private final ConnectionsStore connectionsStore;
     private final CommandManager commandManager;
@@ -138,7 +142,7 @@ public class ChatController {
     private final ThemeManager themeManager;
 
     public ChatController(ChatViewModel chatViewModel,
-                          IToolProvider toolProvider,
+                          AppToolsCatalog toolsCatalog,
                           CoreEventBus eventBus,
                           ConnectionsStore connectionsStore,
                           CommandManager commandManager,
@@ -147,7 +151,7 @@ public class ChatController {
                           FileSelector fileSelector,
                           ThemeManager themeManager) {
         this.chatViewModel = chatViewModel;
-        this.toolProvider = toolProvider;
+        this.toolsCatalog = toolsCatalog;
         this.eventBus = eventBus;
         this.connectionsStore = connectionsStore;
         this.commandManager = commandManager;
@@ -162,7 +166,8 @@ public class ChatController {
         try {
             logger.debug("Initializing ChatController");
 
-            var toolsSelectorViewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+            var toolsSelectorViewModel = new ToolsSelectorViewModel(toolsCatalog);
+            toolsSelectorViewModel.bindSession(chatViewModel.toolSelection());
             toolsSelectorView.init(toolsSelectorViewModel);
             setupToolAlwaysAllow(toolsSelectorViewModel);
 
@@ -217,10 +222,27 @@ public class ChatController {
     }
 
     private void setupToolsPopover() {
-        toolsContent = new VBox(toolsSelectorView);
+        var toolsScroll = new ScrollPane(toolsSelectorView);
+        toolsScroll.setFitToWidth(true);
+        toolsScroll.setFitToHeight(false);
+        toolsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        toolsScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        toolsScroll.setMinHeight(0);
+        toolsScroll.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        toolsScroll.getStyleClass().add("tools-selector-scroll");
+        VBox.setVgrow(toolsScroll, Priority.ALWAYS);
+
+        toolsContent = new VBox(toolsScroll);
         toolsContent.setPadding(new Insets(30));
         toolsContent.setPrefWidth(360);
+        toolsContent.setMinHeight(0);
+        toolsContent.setFillWidth(true);
         toolsContent.getStyleClass().add(SYSTEM_POPOVER_CONTENT);
+        var toolsClip = new javafx.scene.shape.Rectangle();
+        toolsClip.widthProperty().bind(toolsContent.widthProperty());
+        toolsClip.heightProperty().bind(toolsContent.heightProperty());
+        toolsContent.setClip(toolsClip);
+        toolsSelectorView.setOnContentSizeChanged(overlay::reposition);
 
         toolsButton.setOnAction(event ->
                 overlay.toggle(toolsContent, toolsButton, Placement.ABOVE_LEFT));
@@ -238,21 +260,28 @@ public class ChatController {
     private void setupToolAlwaysAllow(ToolsSelectorViewModel toolsViewModel) {
         toolsViewModel.setOnAlwaysAllowChanged(chatViewModel::setToolAlwaysAllowed);
         toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools());
+        toolsViewModel.bindSession(chatViewModel.toolSelection());
         chatViewModel.currentConversationIdProperty()
-                .addListener(
-                        (obs, oldId, newId) ->
-                    toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools())
-                );
+                .addListener((obs, oldId, newId) -> {
+                    toolsViewModel.bindSession(chatViewModel.toolSelection());
+                    toolsViewModel.refreshAlwaysAllowed(chatViewModel.alwaysAllowedTools());
+                });
     }
 
     private IntegerBinding enabledToolCount() {
-        var tools = toolsSelectorView.getViewModel().getTools();
-        Observable[] dependencies = tools.stream()
-                .map(ToolItemViewModel::enabledProperty)
-                .toArray(Observable[]::new);
+        var groups = toolsSelectorView.getViewModel().getGroups();
+        java.util.List<Observable> deps = new java.util.ArrayList<>();
+        for (ToolGroupViewModel group : groups) {
+            deps.add(group.selectionStateProperty());
+            for (ToolItemViewModel tool : group.getTools()) {
+                deps.add(tool.enabledProperty());
+            }
+            group.getTools().addListener((javafx.collections.ListChangeListener<ToolItemViewModel>) c -> {
+            });
+        }
         return Bindings.createIntegerBinding(
-                () -> (int) tools.stream().filter(ToolItemViewModel::isEnabled).count(),
-                dependencies);
+                () -> toolsSelectorView.getViewModel().enabledToolCount(),
+                deps.toArray(Observable[]::new));
     }
 
     private void setupLLMPopover() {

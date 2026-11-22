@@ -1,0 +1,109 @@
+= MCP servers
+:toc:
+:toc-title: Contents
+
+This document describes how the app stores MCP server definitions, starts them on demand, and shares one client across chats.
+
+== Config file
+
+Servers live in `~/.dlc/mcp-servers.json`, next to `connections.json`. The shape follows the common `mcpServers` map used by Claude Desktop and Cursor, 
+so an entry can be pasted from those tools. LangChain4j has no config-file type; each entry is turned into a `DefaultMcpClient` by `DefaultMcpClientFactory`.
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "url": "http://localhost:8088/mcp",
+      "headers": {}
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:/Users/me"],
+      "env": { "API_KEY": "..." },
+      "enabled": false,
+      "serializeRequests": true
+    }
+  }
+}
+```
+
+Transport is inferred. If a `url` exists and is set, then streamable HTTP is used. 
+If `command` property is set, then stdio is used (`args` are optional). 
+An entry with both or neither is skipped. 
+Optional fields other clients ignore: `enabled`, `name`, `timeoutSeconds`, `workingDirectory`, `serializeRequests`.
+This app uses `name` as the tools-menu group title. 
+A blank or missing `name` shows the map key.
+
+`enabled: false` means no chat may start that server. 
+A missing file means local tools only. 
+Editing the file takes effect on the next app start. 
+Secrets sit in the file in plaintext, the same way provider keys sit in `connections.json`. 
+Placeholders such as `${env:NAME}` are not expanded.
+
+The map key is the server id.
+Each tool id is that key, a hyphen, and the MCP tool name, so the `tavily` entry stores `tavily-search`.
+Renaming a key orphans old always-allow and enabled-tool entries.
+
+== When a server starts
+
+`AppContext` reads `McpServersStore` at startup and connects nothing. `McpConnectionRegistry` keeps at most one `McpClient` per server id.
+
+[plantuml]
+----
+@startuml
+participant "Chat tools menu" as UI
+participant "SessionToolSelection" as Sel
+participant "McpConnectionRegistry" as Reg
+participant "McpClient" as Client
+
+UI -> Sel : enable server / tool
+Sel -> Reg : acquire(serverId)
+alt first acquire
+  Reg -> Client : create + listTools
+end
+Reg --> Sel : tool descriptors
+note over Reg : while the client is open, later chats increment the same refcount
+@enduml
+----
+
+A chat acquires a server when:
+
+* the user enables that server, or one of its tools, in the tools view
+* the chat is opened and `enabledToolIds` still lists a tool from that server
+
+The first time the user expands an MCP group that has no cached tools, the menu starts the client to list them.
+`McpConnectionRegistry.ensureToolList` creates the client, calls `listTools`, caches the names, and closes the client when no chat holds it.
+A later expand does not start the client again.
+
+A later acquire increments the reference count only while that client is still open.
+Each chat that holds the server counts as one reference.
+Enabling another tool from the same server in that chat does not acquire again.
+Chat A and chat B share one stdio process or one streamable-HTTP client.
+The session releases the server when:
+
+* its last tool from that server is turned off
+* the session closes
+
+An in-flight tool call holds the client until the call returns.
+The last release closes the client.
+The next acquire creates a new client.
+
+== Parallel tool calls
+
+`DefaultToolsExecutor` runs tool calls in parallel. 
+That is correct MCP behavior. 
+Some stdio stacks (for example Spring AI Sync + mcp-core's unicast outbound sink) might crash under concurrent replies with `Failed to enqueue message`. 
+In that case set `"serializeRequests": true` flag in the mcp json, on that server entry; `DefaultMcpClientFactory` then wraps the client in `SerializingMcpClient` 
+so RPC to that server is one-at-a-time. Omitted or `false` leaves calls parallel.
+
+== Tools menu
+
+The tools menu groups tools by server. 
+`Local` is first. Each configured startable MCP server is a collapsible group. 
+A group checkbox turns every tool from that server on or off.
+If the rows are still empty, checking the group connects, lists the tools, 
+and enables them all.
+Unchecking removes every enabled id with that server's prefix. 
+Individual rows stay behind the expander. 
+Enablement is per chat and is stored in that conversation's `tool-settings.json` as `enabledToolIds`. 
+Approval (the eye icon) stays separate; see link:tool-approval.adoc[Tool approval].

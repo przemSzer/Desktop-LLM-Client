@@ -18,13 +18,14 @@ Each conversation directory holds `tool-settings.json` beside `messages.json` an
 
 ```json
 {
-  "alwaysAllowedTools": ["downloadWebPage"]
+  "alwaysAllowedTools": ["downloadWebPage"],
+  "enabledToolIds": ["downloadWebPage", "tavily-search"]
 }
 ```
 
-Stored values are tool *ids* (`downloadWebPage`, `local-mcp-tavilysearch`), matching `ToolExecutionRequest.name()` and `ToolDescriptor.id()`.
+Stored values are tool *ids* (`downloadWebPage`, `tavily-search`), matching `ToolExecutionRequest.name()` and `ToolDescriptor.id()`.
 
-`SessionToolApprovalConfiguration` on the open session keeps the live gate map in sync and writes the file through `ToolSettingsWriter` when the user toggles the approval gate in the Tools menu. The eye icon means *ask before running*; eye-off means *always allow in this chat* (brave mode). Switching conversation reloads that chat's settings into the Tools menu; tool *enablement* for the model stays app-wide.
+`SessionToolApprovalConfiguration` on the open session keeps the live gate map in sync and writes the file through `ToolSettingsWriter` when the user toggles the approval gate in the Tools menu. The eye icon means *ask before running*; eye-off means *always allow in this chat* (brave mode). `enabledToolIds` is the set of tools the model may call in that chat; `SessionToolSelection` owns it and acquires MCP servers as needed. Switching conversation reloads both lists into the Tools menu. See link:mcp-servers.adoc[MCP servers].
 
 [plantuml]
 ----

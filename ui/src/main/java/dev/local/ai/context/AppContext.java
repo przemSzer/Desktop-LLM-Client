@@ -18,9 +18,10 @@ import dev.local.ai.core.storage.SettingsStorage;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.storage.conversations.JsonFileChatMemoryStore;
 import dev.local.ai.core.storage.models.LastSelectedModel;
-import dev.local.ai.core.tools.FilterableToolProvider;
-import dev.local.ai.core.tools.IToolProvider;
-import dev.local.ai.core.tools.ToolsProviderWithMCP;
+import dev.local.ai.core.tools.AppToolsCatalog;
+import dev.local.ai.core.tools.mcp.DefaultMcpClientFactory;
+import dev.local.ai.core.tools.mcp.McpConnectionRegistry;
+import dev.local.ai.core.tools.mcp.config.McpServersStore;
 import dev.local.ai.core.tools.settings.ToolSettingsReader;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
@@ -43,7 +44,7 @@ public final class AppContext implements AutoCloseable {
     public final StreamingChatModelsProvider modelsProvider;
     public final LastSelectedModel lastSelectedModel;
 
-    public final IToolProvider toolProvider;
+    public final AppToolsCatalog toolsCatalog;
 
     public final CommandManager commandManager;
 
@@ -77,10 +78,13 @@ public final class AppContext implements AutoCloseable {
         this.modelsProvider = new StreamingChatModelsProvider();
         this.lastSelectedModel = new LastSelectedModel(eventBus, settingsStorage, connectionsStore);
 
-        ToolsProviderWithMCP baseTools = new ToolsProviderWithMCP();
-        this.closeables.add(baseTools);
-
-        this.toolProvider = new FilterableToolProvider(baseTools, eventBus);
+        McpServersStore mcpServersStore = new McpServersStore();
+        McpConnectionRegistry mcpRegistry = new McpConnectionRegistry(
+                mcpServersStore.readStartable(),
+                new DefaultMcpClientFactory()
+        );
+        this.toolsCatalog = new AppToolsCatalog(mcpRegistry);
+        this.closeables.add(toolsCatalog);
 
         this.commandManager = new CommandManager();
 
@@ -88,7 +92,7 @@ public final class AppContext implements AutoCloseable {
             chatMemoryStore,
             lastSelectedModel,
             modelsProvider,
-            toolProvider,
+            toolsCatalog,
             eventBus,
             chatsDir,
             new ToolSettingsReader(),

@@ -65,7 +65,8 @@ public class McpServerToolProvider implements IToolProvider, AutoCloseable {
                 .build();
         return new ToolDescriptor(
                 toolName,
-                serverDisplayName + ": " + spec.name(),
+                spec.name(),
+                serverDisplayName,
                 spectWithChangedName,
                 new McpToolAdapter(mcpClient, serverId, spec.name())
         );

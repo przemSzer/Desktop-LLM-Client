@@ -18,6 +18,7 @@ import dev.local.ai.ui.chat.command.SendUserMessageToLLMCommand;
 import dev.local.ai.ui.chat.converters.MessageConverter;
 import dev.local.ai.ui.chat.session.ChatSession;
 import dev.local.ai.ui.chat.session.ChatSessionFactory;
+import dev.local.ai.ui.chat.session.SessionToolSelection;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.viewmodel.AttachedFileViewModel;
 import dev.local.ai.ui.files.viewmodel.FileStatus;
@@ -225,6 +226,14 @@ public class ChatViewModel {
 
     public void setToolAlwaysAllowed(String toolId, boolean alwaysAllowed) {
         session.toolApproval().setAlwaysAllowed(toolId, alwaysAllowed);
+    }
+
+    public SessionToolSelection toolSelection() {
+        return session.toolSelection();
+    }
+
+    public Set<String> enabledToolIds() {
+        return session.toolSelection().enabledToolIds();
     }
 
     public StringProperty currentConversationTitleProperty() {

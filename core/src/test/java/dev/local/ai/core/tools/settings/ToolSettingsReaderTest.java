@@ -63,6 +63,24 @@ class ToolSettingsReaderTest {
 
         assertThat(settings.alwaysAllowedTools())
                 .containsExactly("downloadWebPage", "local-mcp-tavilysearch");
+        assertThat(settings.enabledToolIds())
+                .isEmpty();
+    }
+
+    @Test
+    void should_return_enabled_tool_ids_from_file() throws Exception {
+        Path file = tempDir.resolve("tool-settings.json");
+        Files.writeString(file, """
+                {
+                  "alwaysAllowedTools": ["downloadWebPage"],
+                  "enabledToolIds": ["downloadWebPage", "tavily-search"]
+                }
+                """);
+
+        ToolSettings settings = reader.read(file);
+
+        assertThat(settings.enabledToolIds())
+                .containsExactly("downloadWebPage", "tavily-search");
     }
 
     @Test

@@ -1,5 +1,7 @@
 package dev.local.ai.ui.controls;
 
+import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -26,6 +28,15 @@ public final class OverlayLayer {
     private final Pane layer;
     private final Region scrim = new Region();
     private final ObjectProperty<Region> activeContent = new SimpleObjectProperty<>();
+
+    private Node shownOwner;
+    private Placement shownPlacement;
+    private boolean positioning;
+    private final InvalidationListener contentLayoutListener = observable -> {
+        if (!positioning && activeContent.get() != null) {
+            Platform.runLater(this::reposition);
+        }
+    };
 
     public OverlayLayer(Pane layer) {
         this.layer = layer;
@@ -56,10 +67,14 @@ public final class OverlayLayer {
     }
 
     public void show(Region content, Node owner, Placement placement) {
+        detachLayoutListener();
+        shownOwner = owner;
+        shownPlacement = placement;
         layer.getChildren().setAll(scrim, content);
         layer.setVisible(true);
         layer.applyCss();
         layer.layout();
+        content.layoutBoundsProperty().addListener(contentLayoutListener);
         position(content, owner, placement);
         activeContent.set(content);
     }
@@ -68,31 +83,64 @@ public final class OverlayLayer {
         if (activeContent.get() == null) {
             return;
         }
+        detachLayoutListener();
+        shownOwner = null;
+        shownPlacement = null;
         layer.getChildren().clear();
         layer.setVisible(false);
         activeContent.set(null);
     }
 
+    /**
+     * Re-measures and re-places the active content. Call after the content's preferred size
+     * changes while the overlay is open (for example when a section expands).
+     */
+    public void reposition() {
+        Region content = activeContent.get();
+        if (content == null || shownOwner == null || shownPlacement == null) {
+            return;
+        }
+        position(content, shownOwner, shownPlacement);
+    }
+
+    private void detachLayoutListener() {
+        Region content = activeContent.get();
+        if (content != null) {
+            content.layoutBoundsProperty().removeListener(contentLayoutListener);
+        }
+    }
+
     private void position(Region content, Node owner, Placement placement) {
-        Bounds ownerBounds = owner.localToScene(owner.getBoundsInLocal());
-        Point2D ownerTopLeft = layer.sceneToLocal(ownerBounds.getMinX(), ownerBounds.getMinY());
-        Point2D ownerBottomRight = layer.sceneToLocal(ownerBounds.getMaxX(), ownerBounds.getMaxY());
+        positioning = true;
+        try {
+            Bounds ownerBounds = owner.localToScene(owner.getBoundsInLocal());
+            Point2D ownerTopLeft = layer.sceneToLocal(ownerBounds.getMinX(), ownerBounds.getMinY());
+            Point2D ownerBottomRight = layer.sceneToLocal(ownerBounds.getMaxX(), ownerBounds.getMaxY());
 
-        content.applyCss();
-        double width = content.prefWidth(-1);
-        double height = content.prefHeight(width);
-        content.resize(width, height);
+            content.applyCss();
+            content.setMaxHeight(Double.MAX_VALUE);
+            double width = content.prefWidth(-1);
+            double preferredHeight = content.prefHeight(width);
+            double maxAllowedHeight = Math.max(0, layer.getHeight() - 2 * EDGE_MARGIN);
+            double height = Math.min(preferredHeight, maxAllowedHeight);
+            content.setMaxHeight(maxAllowedHeight);
+            content.setPrefHeight(height);
+            content.resize(width, height);
+            content.layout();
 
-        boolean alignRight = placement == Placement.BELOW_RIGHT || placement == Placement.ABOVE_RIGHT;
-        boolean above = placement == Placement.ABOVE_LEFT || placement == Placement.ABOVE_RIGHT;
+            boolean alignRight = placement == Placement.BELOW_RIGHT || placement == Placement.ABOVE_RIGHT;
+            boolean above = placement == Placement.ABOVE_LEFT || placement == Placement.ABOVE_RIGHT;
 
-        double x = alignRight ? ownerBottomRight.getX() - width : ownerTopLeft.getX();
-        double y = above ? ownerTopLeft.getY() - height - GAP : ownerBottomRight.getY() + GAP;
+            double x = alignRight ? ownerBottomRight.getX() - width : ownerTopLeft.getX();
+            double y = above ? ownerTopLeft.getY() - height - GAP : ownerBottomRight.getY() + GAP;
 
-        x = clamp(x, EDGE_MARGIN, layer.getWidth() - width - EDGE_MARGIN);
-        y = clamp(y, EDGE_MARGIN, layer.getHeight() - height - EDGE_MARGIN);
+            x = clamp(x, EDGE_MARGIN, layer.getWidth() - width - EDGE_MARGIN);
+            y = clamp(y, EDGE_MARGIN, layer.getHeight() - height - EDGE_MARGIN);
 
-        content.relocate(x, y);
+            content.relocate(x, y);
+        } finally {
+            positioning = false;
+        }
     }
 
     private static double clamp(double value, double min, double max) {
