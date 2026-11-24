@@ -4,6 +4,8 @@ import dev.local.ai.core.tools.AppToolsCatalog;
 import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
 import dev.local.ai.core.tools.gates.WaitForApprovalGate;
 import dev.local.ai.core.tools.mcp.McpConnectionRegistry;
+import dev.local.ai.core.tools.session.SessionToolApprovalConfiguration;
+import dev.local.ai.core.tools.session.SessionToolSelection;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;
 
 import java.nio.file.Path;

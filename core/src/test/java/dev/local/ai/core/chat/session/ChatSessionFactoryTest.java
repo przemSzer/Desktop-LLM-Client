@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.session;
+package dev.local.ai.core.chat.session;
 
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;

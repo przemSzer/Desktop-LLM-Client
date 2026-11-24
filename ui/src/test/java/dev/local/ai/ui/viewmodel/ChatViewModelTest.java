@@ -5,10 +5,10 @@ import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.tools.gates.WaitForApprovalGate;
 import io.reactivex.rxjava4.core.Observable;
-import dev.local.ai.ui.chat.session.ChatSession;
-import dev.local.ai.ui.chat.session.ChatSessionFactory;
+import dev.local.ai.core.chat.session.ChatSession;
+import dev.local.ai.core.chat.session.ChatSessionFactory;
+import dev.local.ai.core.tools.session.SessionToolApprovalConfiguration;
 import dev.local.ai.ui.chat.session.SessionTestSupport;
-import dev.local.ai.ui.chat.session.SessionToolApprovalConfiguration;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.commands.CommandManager;
 

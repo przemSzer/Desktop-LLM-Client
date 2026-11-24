@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.session;
+package dev.local.ai.core.chat.session;
 
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -12,6 +12,8 @@ import dev.local.ai.core.tools.IToolExecutor;
 import dev.local.ai.core.tools.exectuor.DefaultToolsExecutor;
 import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
 import dev.local.ai.core.tools.gates.WaitForApprovalGate;
+import dev.local.ai.core.tools.session.SessionToolApprovalConfiguration;
+import dev.local.ai.core.tools.session.SessionToolSelection;
 import dev.local.ai.core.tools.settings.ToolSettings;
 import dev.local.ai.core.tools.settings.ToolSettingsReader;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;

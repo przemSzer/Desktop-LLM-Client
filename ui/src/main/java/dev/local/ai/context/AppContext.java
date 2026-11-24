@@ -24,7 +24,7 @@ import dev.local.ai.core.tools.mcp.McpConnectionRegistry;
 import dev.local.ai.core.tools.mcp.config.McpServersStore;
 import dev.local.ai.core.tools.settings.ToolSettingsReader;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;
-import dev.local.ai.ui.chat.session.ChatSessionFactory;
+import dev.local.ai.core.chat.session.ChatSessionFactory;
 import dev.local.ai.ui.commands.CommandManager;
 import dev.local.ai.ui.files.dialogs.FileSelector;
 import dev.local.ai.ui.files.dialogs.OpenFilesDialog;

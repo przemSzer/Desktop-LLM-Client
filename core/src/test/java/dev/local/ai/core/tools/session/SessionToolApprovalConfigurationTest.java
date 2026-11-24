@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.session;
+package dev.local.ai.core.tools.session;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.local.ai.core.tools.IToolExecutionGate;

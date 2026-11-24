@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.session;
+package dev.local.ai.core.tools.session;
 
 import dev.local.ai.core.tools.gates.AlwaysApproveGate;
 import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;

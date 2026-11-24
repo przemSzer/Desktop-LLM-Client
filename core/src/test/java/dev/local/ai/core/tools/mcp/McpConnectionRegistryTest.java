@@ -141,10 +141,10 @@ class McpConnectionRegistryTest {
     }
 
     @Test
-    void should_cache_tool_names_after_ensureToolList_and_close_unused_server() throws Exception {
+    void should_cache_tool_names_after_cacheToolsConnectingIfNeeded_and_close_unused_server() throws Exception {
         given(mcpClient.listTools()).willReturn(List.of(spec("search")));
 
-        List<McpCachedTool> cached = registry.ensureToolList("tavily").get(2, TimeUnit.SECONDS);
+        List<McpCachedTool> cached = registry.cacheToolsConnectingIfNeeded("tavily").get(2, TimeUnit.SECONDS);
 
         assertThat(cached)
                 .extracting(McpCachedTool::id)

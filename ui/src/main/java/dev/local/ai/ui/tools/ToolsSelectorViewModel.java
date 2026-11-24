@@ -3,7 +3,7 @@ package dev.local.ai.ui.tools;
 import dev.local.ai.core.tools.AppToolsCatalog;
 import dev.local.ai.core.tools.ToolDescriptor;
 import dev.local.ai.core.tools.mcp.config.McpServerConfig;
-import dev.local.ai.ui.chat.session.SessionToolSelection;
+import dev.local.ai.core.tools.session.SessionToolSelection;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,7 +22,7 @@ public class ToolsSelectorViewModel {
 
     private final ObservableList<ToolGroupViewModel> groups;
     private final AppToolsCatalog catalog;
-    private SessionToolSelection toolSelection;
+    private SessionToolSelection sessionToolSelection;
     private BiConsumer<String, Boolean> alwaysAllowChangedHandler;
     private boolean refreshingApprovalGate;
     private boolean refreshingEnabled;
@@ -35,7 +35,7 @@ public class ToolsSelectorViewModel {
     }
 
     public void bindSession(SessionToolSelection selection) {
-        this.toolSelection = selection;
+        this.sessionToolSelection = selection;
         refreshEnabledFromSession();
         refreshAlwaysAllowed(Set.of());
     }
@@ -59,12 +59,12 @@ public class ToolsSelectorViewModel {
     }
 
     public void refreshEnabledFromSession() {
-        if (toolSelection == null) {
+        if (sessionToolSelection == null) {
             return;
         }
         refreshingEnabled = true;
         try {
-            Set<String> enabled = toolSelection.enabledToolIds();
+            Set<String> enabled = sessionToolSelection.enabledToolIds();
             for (ToolGroupViewModel group : groups) {
                 if (group.isMcpServer()) {
                     reloadMcpGroupTools(group, false);
@@ -111,20 +111,27 @@ public class ToolsSelectorViewModel {
                 group.getTools().add(createToolItem(descriptor.id(), descriptor.displayName()));
             }
         }
-        if (known.isEmpty() && acquireIfMissing && toolSelection != null) {
+        if (known.isEmpty() && acquireIfMissing && sessionToolSelection != null) {
             group.setStatusText("Connecting…");
-            catalog.mcpRegistry().ensureToolList(group.getGroupId())
-                    .whenComplete((cached, error) -> runOnFxThread(() -> {
-                        if (error != null) {
-                            logger.error("Failed to load tools for MCP server '{}'", group.getGroupId(), error);
-                            group.setStatusText("Failed");
-                            return;
-                        }
-                        reloadMcpGroupTools(group, false);
-                        refreshEnabledFromSession();
-                        group.refreshSelectionState();
-                    }));
+            catalog.mcpRegistry().cacheToolsConnectingIfNeeded(group.getGroupId())
+                    .whenComplete((_,ex ) ->
+                            groupToolsCached(ex, group)
+                    );
         }
+    }
+
+    private void groupToolsCached(Throwable error, ToolGroupViewModel group) {
+        runOnFxThread(
+                () -> {
+                    if (error != null) {
+                        logger.error("Failed to load tools for MCP server '{}'", group.getGroupId(), error);
+                        group.setStatusText("Failed");
+                        return;
+                    }
+                    reloadMcpGroupTools(group, false);
+                    refreshEnabledFromSession();
+                    group.refreshSelectionState();
+                });
     }
 
     private ToolItemViewModel createToolItem(String toolId, String displayName) {
@@ -143,10 +150,10 @@ public class ToolsSelectorViewModel {
     }
 
     private void toolEnabledChanged(ToolItemViewModel toolItem, boolean isEnabled) {
-        if (refreshingEnabled || updatingGroup || toolSelection == null) {
+        if (refreshingEnabled || updatingGroup || sessionToolSelection == null) {
             return;
         }
-        toolSelection.setToolEnabled(toolItem.getToolId(), isEnabled)
+        sessionToolSelection.setToolEnabled(toolItem.getToolId(), isEnabled)
                 .whenComplete((ignored, error) -> runOnFxThread(() -> {
                     if (error != null) {
                         logger.error("Failed to set tool '{}' enabled={}", toolItem.getToolId(), isEnabled, error);
@@ -164,7 +171,7 @@ public class ToolsSelectorViewModel {
     }
 
     public void toggleGroup(ToolGroupViewModel group) {
-        if (toolSelection == null || updatingGroup) {
+        if (sessionToolSelection == null || updatingGroup) {
             return;
         }
         boolean enable = group.getSelectionState() != ToolGroupViewModel.SELECTION_ALL;
@@ -173,7 +180,7 @@ public class ToolsSelectorViewModel {
             if (group.isMcpServer()) {
                 if (enable) {
                     group.setStatusText("Connecting…");
-                    toolSelection.enableServer(group.getGroupId())
+                    sessionToolSelection.enableServer(group.getGroupId())
                             .whenComplete((descriptors, error) -> runOnFxThread(() -> {
                                 updatingGroup = false;
                                 if (error != null) {
@@ -194,7 +201,7 @@ public class ToolsSelectorViewModel {
                             }));
                     return;
                 }
-                toolSelection.disableServer(group.getGroupId());
+                sessionToolSelection.disableServer(group.getGroupId());
                 refreshingEnabled = true;
                 try {
                     for (ToolItemViewModel tool : group.getTools()) {
@@ -206,7 +213,7 @@ public class ToolsSelectorViewModel {
                 group.refreshSelectionState();
             } else {
                 for (ToolItemViewModel tool : group.getTools()) {
-                    toolSelection.setToolEnabled(tool.getToolId(), enable);
+                    sessionToolSelection.setToolEnabled(tool.getToolId(), enable);
                     tool.setEnabled(enable);
                 }
                 group.refreshSelectionState();

@@ -156,12 +156,11 @@ public class McpConnectionRegistry implements AutoCloseable {
             }
         });
     }
-
     /**
      * Ensures the tool-name cache is filled. Starts the server if needed and closes it again
      * when no session holds a reference.
      */
-    public CompletableFuture<List<McpCachedTool>> ensureToolList(String serverId) {
+    public CompletableFuture<List<McpCachedTool>> cacheToolsConnectingIfNeeded(String serverId) {
         Optional<List<McpCachedTool>> cached = cachedTools(serverId);
         if (cached.isPresent()) {
             return CompletableFuture.completedFuture(cached.get());

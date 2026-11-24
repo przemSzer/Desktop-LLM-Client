@@ -1,0 +1,169 @@
+= Architecture overview
+:toc:
+:toc-title: Contents
+
+Entrance map for the desktop LLM client. Use this page to find *who owns what* and which topic doc to open next. Runtime detail for a live turn lives in the linked documents, not here.
+
+== Modules
+
+The repo has two main Maven modules.
+
+[cols="1,2,2"]
+|===
+|Module |May depend on |Role
+
+|`core`
+|nothing in `ui`
+|Models, streaming chat, tools, gates, MCP, storage, event bus
+
+|`ui`
+|`core`
+|JavaFX, `AppContext`, session factory, tools menu, chat bubbles
+|===
+
+Rule of thumb: policy and execution stay in `core`; `ui` wires sessions and reacts to streams.
+
+== Process wiring
+
+`AppContext` builds process-wide services once. `ChatSessionFactory` builds one `ChatSession` per open conversation.
+
+[plantuml]
+----
+@startuml
+left to right direction
+
+rectangle "AppContext" as AC {
+  rectangle "ConnectionsStore" as CONN
+  rectangle "StreamingChatModelsProvider" as MODELS
+  rectangle "AppToolsCatalog" as CAT
+  rectangle "McpConnectionRegistry" as MCP
+  rectangle "ConversationStore /\nChatMemoryStore" as STORE
+  rectangle "ChatSessionFactory" as FACTORY
+  rectangle "CoreEventBus" as BUS
+}
+
+CAT --> MCP
+FACTORY --> CAT
+FACTORY --> MODELS
+FACTORY --> STORE
+FACTORY --> BUS
+AC --> FACTORY
+
+rectangle "ChatSession\n(per conversation)" as SESSION {
+  rectangle "StreamingChat" as SC
+  rectangle "DefaultToolsExecutor" as EX
+  rectangle "MultipleToolExecutionGate" as MULTI
+  rectangle "WaitForApprovalGate" as WAIT
+  rectangle "SessionToolSelection" as SEL
+  rectangle "SessionToolApprovalConfiguration" as APPR
+  rectangle "ChatMemory" as MEM
+}
+
+FACTORY --> SESSION : openConversation(id)
+SC --> EX
+EX --> MULTI
+MULTI --> WAIT
+EX --> SEL : toolProvider()
+APPR --> MULTI : AlwaysApproveGate per tool id
+SEL --> CAT
+SC --> MEM
+@enduml
+----
+
+Invariant: `AppToolsCatalog` and the MCP registry are *shared*. Enablement, always-allow, and the wait gate are *per chat*.
+
+== Ownership
+
+When changing behavior, open the owner first, not a random leaf class.
+
+[cols="1,2,2"]
+|===
+|Concern |Owner |Notes
+
+|Process wiring
+|`AppContext`
+|Creates catalog, registry, session factory
+
+|Open conversation
+|`ChatSessionFactory`
+|Memory, gates, executor, `StreamingChat`, tool settings file
+
+|Session bundle
+|`ChatSession`
+|Holds chat, approval gate, tool approval + selection
+
+|Turn events
+|`StreamingChat`
+|One ordered chat event stream; does not approve tools
+
+|Approve / reject / stop pending
+|`WaitForApprovalGate`
+|Own approval event stream
+
+|Always-allow map
+|`SessionToolApprovalConfiguration`
+|Writes `alwaysAllowedTools`; installs `AlwaysApproveGate`
+
+|Which tools this chat may call
+|`SessionToolSelection`
+|`enabledToolIds`; acquires/releases MCP clients
+
+|Which tools exist
+|`AppToolsCatalog`
+|Local tools + tools from *connected* MCP servers
+
+|MCP connect lifecycle
+|`McpConnectionRegistry`
+|Refcounted clients; shared across chats
+
+|Run tool after gate
+|`DefaultToolsExecutor`
+|Does not know about Accept/Reject UI
+
+|Conversation files
+|`ConversationStore` / `JsonFileChatMemoryStore`
+|Under the chats directory; `tool-settings.json` beside messages
+|===
+
+== Start here when changing
+
+[cols="1,2"]
+|===
+|If you are working on… |Open
+
+|Send, stream, stop, tool results on the chat stream
+|link:StreamingChatArchitecture.adoc[Streaming chat architecture]
+
+|Accept / Reject, eye icon, `alwaysAllowedTools`
+|link:tools/tool-approval.adoc[Tool approval]
+
+|`mcp-servers.json`, lazy MCP start, tools menu groups
+|link:tools/mcp-servers.adoc[MCP servers]
+
+|New built-in tool (e.g. file tools)
+|`AppToolsCatalog` + a class under `core/.../tools/local/` (or a new package); approval still via gates
+
+|Per-chat persistence of tools
+|`tool-settings.json` via `ToolSettingsReader` / `ToolSettingsWriter`
+
+|Provider keys / model pick
+|`ConnectionsStore`, `LastSelectedModel`, `StreamingChatModelsProvider`
+|===
+
+== Packages that matter for tools
+
+Under `core/.../tools`:
+
+* `local/` / `web/` — built-in tools
+* `mcp/` — client factory, registry, MCP-backed descriptors
+* `gates/` — ask vs always-allow
+* `exectuor/` — runs approved calls
+* `settings/` — `ToolSettings` file shape
+
+Under `ui/.../chat/session`: factory, `ChatSession`, selection, approval configuration. Under `ui/.../tools`: tools menu view models.
+
+== How to keep this page useful
+
+* Add a row to *Start here* when a new subsystem gets its own `.adoc`.
+* Update the component diagram only when ownership moves (for example a workspace policy gate beside `WaitForApprovalGate`).
+* Put sequence detail in the topic doc, not on this page.
