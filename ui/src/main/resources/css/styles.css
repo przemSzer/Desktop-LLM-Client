@@ -366,3 +366,7 @@
 .about-oss .table-view {
     -fx-background-color: transparent;
 }
+
+.about-actions {
+    -fx-padding: 4px 20px 16px 20px;
+}

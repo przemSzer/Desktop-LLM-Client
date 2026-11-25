@@ -5,10 +5,13 @@ import javafx.application.HostServices;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -62,6 +65,15 @@ public final class AboutController {
         libraryTable.setItems(FXCollections.observableArrayList(libraries));
     }
 
+    @FXML
+    private void closeDialog(ActionEvent event) {
+        if (event.getSource() instanceof Node node
+                && node.getScene() != null
+                && node.getScene().getWindow() != null) {
+            node.getScene().getWindow().hide();
+        }
+    }
+
     private static void open(String url) {
         if (url == null || url.isBlank()) {
             return;
@@ -88,8 +100,11 @@ public final class AboutController {
                 }
             });
             copyright.getStyleClass().add("about-copyright");
-            copyright.setWrapText(true);
-            copyright.maxWidthProperty().bind(widthProperty().subtract(12));
+            copyright.setWrapText(false);
+            copyright.setTextOverrun(OverrunStyle.ELLIPSIS);
+            name.setMinWidth(0);
+            copyright.setMinWidth(0);
+            box.setFillWidth(true);
             box.setAlignment(Pos.CENTER_LEFT);
             setAlignment(Pos.CENTER_LEFT);
         }
