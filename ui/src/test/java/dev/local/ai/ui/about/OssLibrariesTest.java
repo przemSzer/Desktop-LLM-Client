@@ -29,16 +29,20 @@ class OssLibrariesTest {
     }
 
     @Test
-    void should_reject_a_line_with_the_wrong_field_count() {
-        assertThatThrownBy(() -> OssLibraries.parse(stream("Only|three|fields\n")))
+    void should_reject_a_line_with_the_wrong_field_count() throws Exception {
+        ByteArrayInputStream input = stream("Only|three|fields\n");
+
+        assertThatThrownBy(() -> OssLibraries.parse(input))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("line 1");
     }
 
     @Test
-    void should_reject_an_unresolved_version() {
-        assertThatThrownBy(() -> OssLibraries.parse(stream(
-                "Twemoji|${twemoji.version}|CC BY 4.0|https://example|https://example|\n")))
+    void should_reject_an_unresolved_version() throws Exception {
+        ByteArrayInputStream input = stream(
+                "Twemoji|${twemoji.version}|CC BY 4.0|https://example|https://example|\n");
+
+        assertThatThrownBy(() -> OssLibraries.parse(input))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("version");
     }

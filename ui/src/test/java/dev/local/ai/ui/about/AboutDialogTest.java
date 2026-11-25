@@ -25,7 +25,7 @@ class AboutDialogTest {
         CountDownLatch started = new CountDownLatch(1);
         try {
             Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyStarted) {
+        } catch (IllegalStateException _) {
             started.countDown();
         }
         assertThat(started.await(10, TimeUnit.SECONDS)).isTrue();
