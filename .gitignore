@@ -60,6 +60,7 @@ application.properties
 application.yml
 *.properties
 !src/main/resources/*.properties
+!ui/src/main/resources/about/app.properties
 
 # Secrets and local config
 .env
