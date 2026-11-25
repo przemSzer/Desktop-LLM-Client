@@ -1,0 +1,29 @@
+# Direct runtime dependencies and bundled assets whose licenses require attribution.
+# Test-scoped and provided dependencies are omitted.
+# Format: name|version|license|licenseUrl|projectUrl|copyright
+# version is filtered from the POM. Leave copyright empty when the license
+# does not require a specific notice beyond the license name.
+
+LangChain4j|${langchain4j.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j OpenAI|${langchain4j.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j Ollama|${langchain4j.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j Google AI Gemini|${langchain4j.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j Anthropic|${langchain4j.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j MCP|${langchain4j-beta.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j Apache Tika|${langchain4j-beta.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+LangChain4j Jsoup|${langchain4j-beta.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/langchain4j/langchain4j|
+Apache Commons Exec|${commons-exec.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://commons.apache.org/proper/commons-exec/|
+Jackson JSR-310|${jackson-jsr310.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/FasterXML/jackson-modules-java8|
+Typesafe Config|${typesafe-config.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/lightbend/config|
+Logback|${logback.version}|EPL 1.0 or LGPL 2.1|https://logback.qos.ch/license.html|https://logback.qos.ch/|
+SLF4J|${slf4j.version}|MIT License|https://opensource.org/licenses/MIT|https://www.slf4j.org/|
+RxJava|${rxjava.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/ReactiveX/RxJava|
+OpenJFX|${javafx.version}|GPL 2.0 with Classpath Exception|https://openjdk.org/legal/gplv2+ce.html|https://openjfx.io/|
+Flexmark|${flexmark.version}|BSD 2-Clause|https://opensource.org/licenses/BSD-2-Clause|https://github.com/vsch/flexmark-java|
+AtlantaFX|${atlantafx.version}|MIT License|https://opensource.org/licenses/MIT|https://github.com/mkpaz/Atlantafx|
+ControlsFX|${controlsfx.version}|BSD 3-Clause|https://opensource.org/licenses/BSD-3-Clause|https://github.com/controlsfx/controlsfx|
+Ikonli|${ikonli.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/kordamp/ikonli|
+JSpecify|${jspecify.version}|Apache License 2.0|https://www.apache.org/licenses/LICENSE-2.0|https://github.com/jspecify/jspecify|
+Twemoji|${twemoji.version}|CC BY 4.0|https://creativecommons.org/licenses/by/4.0/|https://github.com/twitter/twemoji|Copyright (c) Twitter, Inc. and other contributors
+KaTeX|${katex.version}|MIT License|https://opensource.org/licenses/MIT|https://github.com/KaTeX/KaTeX|Copyright (c) 2013-2020 Khan Academy and other contributors
+Mermaid|${mermaid.version}|MIT License|https://opensource.org/licenses/MIT|https://github.com/mermaid-js/mermaid|Copyright (c) 2014 - 2022 Knut Sveidqvist

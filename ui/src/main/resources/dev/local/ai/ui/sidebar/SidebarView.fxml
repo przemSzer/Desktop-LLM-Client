@@ -23,6 +23,9 @@
             <Button fx:id="settingsButton" mnemonicParsing="false" styleClass="flat">
                <graphic><FontIcon iconLiteral="fth-settings" iconSize="16" /></graphic>
             </Button>
+            <Button fx:id="aboutButton" mnemonicParsing="false" styleClass="flat">
+               <graphic><FontIcon iconLiteral="fth-info" iconSize="16" /></graphic>
+            </Button>
          </HBox>
       </VBox>
    </children>

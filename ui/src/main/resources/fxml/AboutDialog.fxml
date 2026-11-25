@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<TabPane minHeight="380.0" minWidth="520.0" prefHeight="480.0" prefWidth="720.0" styleClass="about-dialog" stylesheets="@../css/styles.css" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dev.local.ai.ui.about.AboutController">
+    <tabs>
+        <Tab closable="false" text="General">
+            <content>
+                <VBox fillWidth="true" styleClass="about-general">
+                    <children>
+                        <Label id="about-app-name" fx:id="nameLabel" styleClass="about-title" />
+                        <Label id="about-app-version" fx:id="versionLabel" styleClass="about-version" />
+                        <Label id="about-app-description" fx:id="descriptionLabel" maxWidth="Infinity" styleClass="about-description" wrapText="true" />
+                        <Label maxWidth="Infinity" styleClass="about-license" text="Licensed under the Apache License, Version 2.0." wrapText="true" />
+                        <Label maxWidth="Infinity" styleClass="about-license" text="Copyright 2026 Przemysław Szeremeta" wrapText="true" />
+                    </children>
+                </VBox>
+            </content>
+        </Tab>
+        <Tab closable="false" text="Open source">
+            <content>
+                <VBox fillWidth="true" styleClass="about-oss">
+                    <children>
+                        <Label maxWidth="Infinity" styleClass="about-oss-intro" text="Libraries distributed with this application whose licenses require attribution." wrapText="true" />
+                        <TableView id="about-oss-table" fx:id="libraryTable" VBox.vgrow="ALWAYS">
+                            <placeholder>
+                                <Label text="No libraries listed" />
+                            </placeholder>
+                            <columns>
+                                <TableColumn fx:id="libraryColumn" prefWidth="260.0" text="Library" />
+                                <TableColumn fx:id="versionColumn" prefWidth="110.0" text="Version" />
+                                <TableColumn fx:id="licenseColumn" prefWidth="240.0" text="License" />
+                            </columns>
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN" />
+                            </columnResizePolicy>
+                        </TableView>
+                    </children>
+                </VBox>
+            </content>
+        </Tab>
+    </tabs>
+</TabPane>
