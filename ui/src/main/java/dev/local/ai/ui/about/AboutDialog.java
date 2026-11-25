@@ -43,6 +43,7 @@ public final class AboutDialog {
             stage.initOwner(owner);
         }
         stage.setTitle("About");
+        stage.getIcons().setAll(AboutIcons.windowIcons());
         stage.setMinWidth(root.minWidth(-1));
         stage.setMinHeight(root.minHeight(-1));
         stage.setScene(new Scene(root));
