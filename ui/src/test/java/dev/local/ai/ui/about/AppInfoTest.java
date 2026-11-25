@@ -24,22 +24,26 @@ class AppInfoTest {
     }
 
     @Test
-    void should_reject_unresolved_property() {
-        assertThatThrownBy(() -> AppInfo.parse(stream("""
+    void should_reject_unresolved_property() throws Exception {
+        ByteArrayInputStream input = stream("""
                 name=${project.parent.name}
                 version=0.1.1
                 description=Desktop client
-                """)))
+                """);
+
+        assertThatThrownBy(() -> AppInfo.parse(input))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("name");
     }
 
     @Test
-    void should_reject_missing_property() {
-        assertThatThrownBy(() -> AppInfo.parse(stream("""
+    void should_reject_missing_property() throws Exception {
+        ByteArrayInputStream input = stream("""
                 name=Desktop LLM Client
                 version=0.1.1
-                """)))
+                """);
+
+        assertThatThrownBy(() -> AppInfo.parse(input))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("description");
     }
