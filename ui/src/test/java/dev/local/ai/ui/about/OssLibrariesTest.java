@@ -29,7 +29,7 @@ class OssLibrariesTest {
     }
 
     @Test
-    void should_reject_a_line_with_the_wrong_field_count() throws Exception {
+    void should_reject_a_line_with_the_wrong_field_count() {
         ByteArrayInputStream input = stream("Only|three|fields\n");
 
         assertThatThrownBy(() -> OssLibraries.parse(input))
@@ -38,7 +38,7 @@ class OssLibrariesTest {
     }
 
     @Test
-    void should_reject_an_unresolved_version() throws Exception {
+    void should_reject_an_unresolved_version() {
         ByteArrayInputStream input = stream(
                 "Twemoji|${twemoji.version}|CC BY 4.0|https://example|https://example|\n");
 
