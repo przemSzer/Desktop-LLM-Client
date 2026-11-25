@@ -1,0 +1,13 @@
+---
+description: Prefer FXML and MVVM when adding or changing JavaFX UI
+globs: ui/**/*.java,ui/**/*.fxml,ui/**/*.css
+alwaysApply: false
+---
+
+# JavaFX UI
+
+Apply when adding or changing screens, dialogs, and controls in `ui/`.
+
+- Prefer FXML for UI elements. Put layout, controls, and static text in an `.fxml` file and a controller. Do not assemble that structure in Java with `new VBox`, `new Label`, `new TableView`, `new Tab`, and similar calls.
+- Keep Java for behavior FXML cannot express: loading the file, event handlers, and cell factories.
+- Use the MVVM pattern. The FXML file is the view. A controller or view class binds those controls to a ViewModel. The ViewModel holds the screen state and actions. Domain logic stays in `core`.
