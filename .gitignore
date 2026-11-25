@@ -69,8 +69,10 @@ application.yml
 *.pem
 *.keystore
 
-# Personal / IDE agent artifacts
-.cursor/
+# Personal / IDE agent artifacts. Shared UI rules stay tracked.
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .run/
 
 # Local app data accidentally copied into the repo
