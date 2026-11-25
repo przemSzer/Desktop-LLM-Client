@@ -9,8 +9,9 @@ Third-party notices
 ========================================================================
 
 This section lists material from third parties used by the application.
-Additional dependencies may be documented in a Help / About dialog in a
-future release.
+The About dialog (sidebar, to the right of Settings) lists the open-source
+libraries whose licenses require attribution. The notices below cover bundled
+assets that are not Maven dependencies.
 
 ------------------------------------------------------------------------
 Twemoji (emoji graphics in chat UI)

@@ -103,4 +103,4 @@ The `ui` module downloads [Twemoji](https://github.com/twitter/twemoji) PNGs, [K
 
 ## License
 
-[Apache License 2.0](LICENSE). Third-party attributions (including Twemoji emoji graphics, KaTeX, and Mermaid) are in [NOTICE](NOTICE).
+[Apache License 2.0](LICENSE). Third-party attributions (including Twemoji emoji graphics, KaTeX, and Mermaid) are in [NOTICE](NOTICE) and in the About dialog.
