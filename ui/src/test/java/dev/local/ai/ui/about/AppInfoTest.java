@@ -24,7 +24,7 @@ class AppInfoTest {
     }
 
     @Test
-    void should_reject_unresolved_property() throws Exception {
+    void should_reject_unresolved_property() {
         ByteArrayInputStream input = stream("""
                 name=${project.parent.name}
                 version=0.1.1
@@ -37,7 +37,7 @@ class AppInfoTest {
     }
 
     @Test
-    void should_reject_missing_property() throws Exception {
+    void should_reject_missing_property() {
         ByteArrayInputStream input = stream("""
                 name=Desktop LLM Client
                 version=0.1.1
