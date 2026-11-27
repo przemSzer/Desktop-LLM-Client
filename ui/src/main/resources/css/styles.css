@@ -315,3 +315,58 @@
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-subtle;
 }
+
+/* ============================================================
+   About dialog
+   ============================================================ */
+.about-general,
+.about-oss {
+    -fx-padding: 20px;
+    -fx-spacing: 8px;
+}
+
+.about-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+}
+
+.about-version,
+.about-license,
+.about-oss-intro,
+.about-copyright {
+    -fx-text-fill: -color-fg-muted;
+}
+
+.about-version,
+.about-description,
+.about-license,
+.about-oss-intro {
+    -fx-font-size: 13px;
+}
+
+.about-description {
+    -fx-text-fill: -color-fg-default;
+    -fx-padding: 8px 0px 0px 0px;
+}
+
+.about-license {
+    -fx-padding: 12px 0px 0px 0px;
+}
+
+.about-copyright {
+    -fx-font-size: 11px;
+}
+
+.about-oss .hyperlink {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.about-oss .table-view {
+    -fx-background-color: transparent;
+}
+
+.about-actions {
+    -fx-padding: 4px 20px 16px 20px;
+}

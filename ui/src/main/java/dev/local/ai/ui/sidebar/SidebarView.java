@@ -4,6 +4,7 @@ import dev.local.ai.core.storage.SettingsStorage;
 import dev.local.ai.core.storage.conversations.ConversationStore;
 import dev.local.ai.core.storage.conversations.ConversationSummariesListener;
 import dev.local.ai.core.storage.conversations.ConversationSummary;
+import dev.local.ai.ui.about.AboutDialog;
 import dev.local.ai.ui.theme.ThemeManager;
 import dev.local.ai.ui.theme.ThemeSwitcherPopover;
 import javafx.beans.property.BooleanProperty;
@@ -18,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,9 @@ public final class SidebarView extends VBox {
 
     @FXML
     private Button settingsButton;
+
+    @FXML
+    private Button aboutButton;
 
     private SidebarViewModel viewModel;
     private ConversationStore conversationStore;
@@ -114,6 +119,11 @@ public final class SidebarView extends VBox {
         collapseButton.setOnAction(e -> toggleCollapsed());
 
         settingsButton.setOnAction(e -> themeSwitcherPopover.toggle(settingsButton));
+
+        aboutButton.setTooltip(new Tooltip("About"));
+        aboutButton.setAccessibleText("About");
+        aboutButton.setOnAction(e -> AboutDialog.show(
+                aboutButton.getScene() == null ? null : aboutButton.getScene().getWindow()));
 
         syncSelectionFromViewModel();
     }
