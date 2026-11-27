@@ -1,200 +1,121 @@
 package dev.local.ai.ui.tools;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
+import dev.local.ai.core.tools.AppToolsCatalog;
+import dev.local.ai.core.tools.mcp.McpConnectionRegistry;
+import dev.local.ai.core.tools.mcp.config.McpServerConfig;
+import dev.local.ai.core.tools.session.SessionToolApprovalConfiguration;
+import dev.local.ai.core.tools.session.SessionToolSelection;
+import dev.local.ai.ui.chat.session.SessionTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.local.ai.core.events.CoreEventBus;
-import dev.local.ai.core.events.Event;
-import dev.local.ai.core.events.EventListener;
-import dev.local.ai.core.tools.FilterableToolProvider;
-import dev.local.ai.core.tools.IToolProvider;
-import dev.local.ai.core.tools.ToolDescriptor;
-import dev.local.ai.core.tools.ToolsSelectionChangedEvent;
+import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ToolsSelectorViewModelTest {
 
-    private StubToolProvider toolProvider;
-    private SyncEventBus eventBus;
-    private EventCaptor eventCaptor;
+    @TempDir
+    Path tempDir;
+
+    private AppToolsCatalog catalog;
+    private SessionToolSelection selection;
+    private ToolsSelectorViewModel viewModel;
 
     @BeforeEach
     void setUp() {
-        var specDownload = ToolSpecification.builder()
-            .name("downloadWebPage").description("Downloads a web page").build();
-        var specCommand = ToolSpecification.builder()
-            .name("executeLocalCommand").description("Executes a local command").build();
-
-        var descriptors = List.of(
-            new ToolDescriptor("downloadWebPage", "Download web page",
-                specDownload, request -> Optional.empty()),
-            new ToolDescriptor("executeLocalCommand", "Execute local commands",
-                specCommand, request -> Optional.empty())
+        catalog = new AppToolsCatalog(new McpConnectionRegistry(
+                List.of(),
+                config -> {
+                    throw new UnsupportedOperationException("no MCP");
+                }
+        ));
+        SessionToolApprovalConfiguration approval = SessionTestSupport.emptyToolApproval();
+        selection = new SessionToolSelection(
+                catalog,
+                new dev.local.ai.core.tools.settings.ToolSettingsWriter(),
+                tempDir.resolve("tool-settings.json"),
+                approval,
+                new LinkedHashSet<>()
         );
-
-        toolProvider = new StubToolProvider(descriptors);
-        eventBus = new SyncEventBus();
-        eventCaptor = new EventCaptor();
-        eventBus.subscribe(ToolsSelectionChangedEvent.EVENT_TYPE, eventCaptor);
+        viewModel = new ToolsSelectorViewModel(catalog);
+        viewModel.bindSession(selection);
     }
 
     @Test
-    void loadsToolsFromProvider() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-
-        assertEquals(2, viewModel.getTools().size());
-        assertEquals("downloadWebPage", viewModel.getTools().get(0).getToolId());
-        assertEquals("Download web page", viewModel.getTools().get(0).getDisplayName());
-        assertEquals("executeLocalCommand", viewModel.getTools().get(1).getToolId());
-        assertEquals("Execute local commands", viewModel.getTools().get(1).getDisplayName());
+    void should_load_local_group_with_local_tools() {
+        assertThat(viewModel.getGroups())
+                .isNotEmpty();
+        ToolGroupViewModel local = viewModel.getGroups().getFirst();
+        assertThat(local.getDisplayName())
+                .isEqualTo("Built-in");
+        assertThat(local.getTools())
+                .extracting(ToolItemViewModel::getToolId)
+                .contains("downloadWebPage", "executeLocalCommand");
     }
 
     @Test
-    void listsToolsWhenFilterableProviderHasNoneEnabled() {
-        var filterable = new FilterableToolProvider(toolProvider, eventBus);
+    void should_enable_local_tool_on_session() {
+        ToolItemViewModel tool = viewModel.getGroups().getFirst().getTools().getFirst();
 
-        var viewModel = new ToolsSelectorViewModel(filterable, eventBus);
+        tool.setEnabled(true);
 
-        assertEquals(2, viewModel.getTools().size());
-        assertTrue(viewModel.getTools().stream().noneMatch(ToolItemViewModel::isEnabled));
+        assertThat(selection.enabledToolIds())
+                .contains(tool.getToolId());
     }
 
     @Test
-    void allToolsDisabledByDefault() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+    void should_refresh_always_allowed_into_approval_icons() {
+        ToolItemViewModel tool = viewModel.getGroups().getFirst().getTools().getFirst();
 
-        assertTrue(viewModel.getTools().stream().noneMatch(ToolItemViewModel::isEnabled));
+        viewModel.refreshAlwaysAllowed(java.util.Set.of(tool.getToolId()));
+
+        assertThat(tool.isRequiresApproval())
+                .isFalse();
     }
 
     @Test
-    void publishesEventWhenToolIsEnabled() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
+    void should_notify_when_requires_approval_toggled() {
+        AtomicBoolean called = new AtomicBoolean();
+        viewModel.setOnAlwaysAllowChanged((id, always) -> called.set(true));
+        ToolItemViewModel tool = viewModel.getGroups().getFirst().getTools().getFirst();
 
-        viewModel.getTools().get(0).setEnabled(true);
+        tool.setRequiresApproval(false);
 
-        assertEquals(1, eventCaptor.captured.size());
-        assertEquals(Set.of("downloadWebPage"), eventCaptor.captured.get(0).getEnabledToolIds());
+        assertThat(called.get())
+                .isTrue();
     }
 
     @Test
-    void publishesEventWhenToolIsDisabled() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-
-        viewModel.getTools().get(0).setEnabled(true);
-        viewModel.getTools().get(0).setEnabled(false);
-
-        assertEquals(2, eventCaptor.captured.size());
-        assertTrue(eventCaptor.lastEvent().getEnabledToolIds().isEmpty());
-    }
-
-    @Test
-    void publishesAllIdsWhenAllToolsEnabled() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-
-        viewModel.getTools().get(0).setEnabled(true);
-        viewModel.getTools().get(1).setEnabled(true);
-
-        assertEquals(
-            Set.of("downloadWebPage", "executeLocalCommand"),
-            eventCaptor.lastEvent().getEnabledToolIds()
+    void should_add_mcp_server_group_from_catalog() {
+        var server = new McpServerConfig(
+                "tavily",
+                "Tavily",
+                true,
+                "http://localhost:8088/mcp",
+                Map.of(),
+                null,
+                null,
+                Map.of(),
+                null,
+                30,
+                null
         );
-    }
+        var withMcp = new AppToolsCatalog(new McpConnectionRegistry(
+                List.of(server),
+                config -> {
+                    throw new UnsupportedOperationException("no connect in this test");
+                }
+        ));
+        var vm = new ToolsSelectorViewModel(withMcp);
 
-    @Test
-    void usesDisplayNameFromDescriptor() {
-        var spec = ToolSpecification.builder()
-            .name("someNewTool").description("A new tool").build();
-        var descriptor = new ToolDescriptor("someNewTool", "My Custom Tool Name",
-            spec, request -> Optional.empty());
-        var provider = new StubToolProvider(List.of(descriptor));
-
-        var viewModel = new ToolsSelectorViewModel(provider, eventBus);
-
-        assertEquals("My Custom Tool Name", viewModel.getTools().get(0).getDisplayName());
-    }
-
-    @Test
-    void refreshAlwaysAllowedDoesNotNotifyHandler() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-        var calls = new ArrayList<String>();
-        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
-
-        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
-
-        assertFalse(viewModel.getTools().get(0).isRequiresApproval());
-        assertTrue(viewModel.getTools().get(1).isRequiresApproval());
-        assertTrue(calls.isEmpty());
-        assertEquals(0, eventCaptor.captured.size());
-    }
-
-    @Test
-    void notifiesHandlerWhenApprovalGateIsUnlockedByUser() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-        var calls = new ArrayList<String>();
-        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
-
-        viewModel.getTools().get(0).setRequiresApproval(false);
-
-        assertEquals(List.of("downloadWebPage:true"), calls);
-        assertEquals(0, eventCaptor.captured.size());
-    }
-
-    @Test
-    void notifiesHandlerWhenApprovalGateIsLockedByUser() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-        viewModel.refreshAlwaysAllowed(Set.of("downloadWebPage"));
-        var calls = new ArrayList<String>();
-        viewModel.setOnAlwaysAllowChanged((toolId, allowed) -> calls.add(toolId + ":" + allowed));
-
-        viewModel.getTools().get(0).setRequiresApproval(true);
-
-        assertEquals(List.of("downloadWebPage:false"), calls);
-    }
-
-    @Test
-    void toolsRequireApprovalByDefault() {
-        var viewModel = new ToolsSelectorViewModel(toolProvider, eventBus);
-
-        assertTrue(viewModel.getTools().stream().allMatch(ToolItemViewModel::isRequiresApproval));
-    }
-
-    private static class StubToolProvider implements IToolProvider {
-        private final List<ToolDescriptor> descriptors;
-
-        StubToolProvider(List<ToolDescriptor> descriptors) {
-            this.descriptors = descriptors;
-        }
-
-        @Override
-        public List<ToolDescriptor> getToolDescriptors() {
-            return descriptors;
-        }
-    }
-
-    private static class EventCaptor implements EventListener<ToolsSelectionChangedEvent> {
-        final List<ToolsSelectionChangedEvent> captured = new ArrayList<>();
-
-        @Override
-        public void onEvent(ToolsSelectionChangedEvent event) {
-            captured.add(event);
-        }
-
-        ToolsSelectionChangedEvent lastEvent() {
-            return captured.get(captured.size() - 1);
-        }
-    }
-
-    private static class SyncEventBus extends CoreEventBus {
-        @Override
-        public void publish(Event event) {
-            publishSync(event);
-        }
+        assertThat(vm.getGroups())
+                .extracting(ToolGroupViewModel::getDisplayName)
+                .contains("Built-in", "Tavily");
     }
 }

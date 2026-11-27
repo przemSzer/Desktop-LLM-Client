@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import dev.local.ai.core.storage.conversations.ConversationSummary;
 import dev.local.ai.ui.chat.controller.ChatController;
-import dev.local.ai.ui.chat.session.ChatSession;
+import dev.local.ai.core.chat.session.ChatSession;
 import dev.local.ai.ui.chat.viewmodel.ChatViewModel;
 import dev.local.ai.ui.connection.ManageConnectionsDialog;
 import dev.local.ai.ui.connection.controller.ConnectionsViewController;
@@ -37,7 +37,7 @@ public final class ControllerFactory implements Callback<Class<?>, Object> {
             if (type == ChatController.class) {
                 return new ChatController(
                         createChatViewModel(),
-                        app.toolProvider,
+                        app.toolsCatalog,
                         app.eventBus,
                         app.connectionsStore,
                         app.commandManager,

@@ -1,4 +1,4 @@
-package dev.local.ai.ui.chat.session;
+package dev.local.ai.core.chat.session;
 
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -7,11 +7,13 @@ import dev.local.ai.core.chat.streaming.StreamingChat;
 import dev.local.ai.core.events.CoreEventBus;
 import dev.local.ai.core.models.StreamingChatModelsProvider;
 import dev.local.ai.core.storage.models.LastSelectedModel;
+import dev.local.ai.core.tools.AppToolsCatalog;
 import dev.local.ai.core.tools.IToolExecutor;
-import dev.local.ai.core.tools.IToolProvider;
 import dev.local.ai.core.tools.exectuor.DefaultToolsExecutor;
 import dev.local.ai.core.tools.gates.MultipleToolExecutionGate;
 import dev.local.ai.core.tools.gates.WaitForApprovalGate;
+import dev.local.ai.core.tools.session.SessionToolApprovalConfiguration;
+import dev.local.ai.core.tools.session.SessionToolSelection;
 import dev.local.ai.core.tools.settings.ToolSettings;
 import dev.local.ai.core.tools.settings.ToolSettingsReader;
 import dev.local.ai.core.tools.settings.ToolSettingsWriter;
@@ -27,7 +29,7 @@ public final class ChatSessionFactory {
     private final ChatMemoryStore chatMemoryStore;
     private final LastSelectedModel lastSelectedModel;
     private final StreamingChatModelsProvider modelsProvider;
-    private final IToolProvider toolProvider;
+    private final AppToolsCatalog toolsCatalog;
     private final CoreEventBus eventBus;
     private final Path chatsDirectory;
     private final ToolSettingsReader toolSettingsReader;
@@ -36,7 +38,7 @@ public final class ChatSessionFactory {
     public ChatSessionFactory(ChatMemoryStore chatMemoryStore,
                               LastSelectedModel lastSelectedModel,
                               StreamingChatModelsProvider modelsProvider,
-                              IToolProvider toolProvider,
+                              AppToolsCatalog toolsCatalog,
                               CoreEventBus eventBus,
                               Path chatsDirectory,
                               ToolSettingsReader toolSettingsReader,
@@ -44,7 +46,7 @@ public final class ChatSessionFactory {
         this.chatMemoryStore = chatMemoryStore;
         this.lastSelectedModel = lastSelectedModel;
         this.modelsProvider = modelsProvider;
-        this.toolProvider = toolProvider;
+        this.toolsCatalog = toolsCatalog;
         this.eventBus = eventBus;
         this.chatsDirectory = chatsDirectory;
         this.toolSettingsReader = toolSettingsReader;
@@ -57,20 +59,36 @@ public final class ChatSessionFactory {
         var multipleGate = new MultipleToolExecutionGate(alwaysAskGate);
         Path settingsFile = toolSettingsFile(conversationId);
         ToolSettings settings = toolSettingsReader.read(settingsFile);
+
+        var enabledIds = new LinkedHashSet<>(settings.enabledToolIds());
+        var alwaysAllowed = new LinkedHashSet<>(settings.alwaysAllowedTools());
+
         var toolApproval = new SessionToolApprovalConfiguration(
                 multipleGate,
                 toolSettingsWriter,
                 settingsFile,
-                new LinkedHashSet<>(settings.alwaysAllowedTools())
+                alwaysAllowed,
+                () -> enabledIds.stream().toList()
         );
-        var toolExecutor = new DefaultToolsExecutor(toolProvider, multipleGate);
+
+        var toolSelection = new SessionToolSelection(
+                toolsCatalog,
+                toolSettingsWriter,
+                settingsFile,
+                toolApproval,
+                enabledIds
+        );
+        toolSelection.restoreAcquiredServers();
+
+        var toolExecutor = new DefaultToolsExecutor(toolSelection.toolProvider(), multipleGate);
         StreamingChat chat = buildStreamingChat(memory, toolExecutor);
         return new ChatSession(
                 conversationId,
                 memory,
                 chat,
                 alwaysAskGate,
-                toolApproval
+                toolApproval,
+                toolSelection
         );
     }
 

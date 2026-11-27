@@ -80,7 +80,7 @@ Provided **as-is** under Apache 2.0.
 
 ## Screenshots
 
-![img.png](docs/img.png)
+![img.png](img.png)
 
 1. User message
 2. Model thinking (collapsible chain of thought)

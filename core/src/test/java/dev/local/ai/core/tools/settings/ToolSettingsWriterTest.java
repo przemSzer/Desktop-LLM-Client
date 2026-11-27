@@ -47,13 +47,18 @@ class ToolSettingsWriterTest {
     @Test
     void should_round_trip_always_allowed_tools_through_reader() {
         Path file = tempDir.resolve("conv-1").resolve("tool-settings.json");
-        ToolSettings original = new ToolSettings(List.of("downloadWebPage", "executeLocalCommand"));
+        ToolSettings original = new ToolSettings(
+                List.of("downloadWebPage", "executeLocalCommand"),
+                List.of("downloadWebPage")
+        );
 
         writer.write(file, original);
         ToolSettings loaded = reader.read(file);
 
         assertThat(loaded.alwaysAllowedTools())
                 .containsExactly("downloadWebPage", "executeLocalCommand");
+        assertThat(loaded.enabledToolIds())
+                .containsExactly("downloadWebPage");
     }
 
     @Test
